@@ -20,6 +20,16 @@ namespace D2MPClientInstaller
             Process.Start(info);
         }
 
+        static void LaunchD2MP(string path)
+        {
+            ProcessStartInfo info = new ProcessStartInfo("cmd.exe");
+            info.Arguments = "/C choice /C Y /N /D Y /T 1 & " + path;
+            info.CreateNoWindow = true;
+            info.RedirectStandardOutput = true;
+            info.UseShellExecute = false;
+            Process.Start(info);
+        }
+
         static void UninstallD2MP(string installdir)
         {
             Process[] proc = Process.GetProcessesByName("d2mp");
@@ -61,14 +71,14 @@ namespace D2MPClientInstaller
                 var target = Path.Combine(installdir, "installer.exe");
                 File.Delete(target);
                 File.Copy(currpath, target);
-                Process.Start(target);
+                LaunchD2MP(target);
                 DeleteOurselves(currpath);
                 return;
             }
             
             //We are in the install dir, download files
             WebClient client = new WebClient();
-            var info = client.DownloadString("http://d2mp.herokuapp.com/clientver").Split('|');
+            var info = client.DownloadString("http://d2modd.in:3000/clientver").Split('|');
             var versplit = info[0].Split(':');
             var verstr = versplit[1];
             if(versplit[0] == "version" && versplit[1] != "disabled")
@@ -80,12 +90,19 @@ namespace D2MPClientInstaller
                     client.DownloadFile(info[1], pakpath);
                     ZipFile.ExtractToDirectory(pakpath, installdir);
                     File.Delete(pakpath);
-                    Process.Start(Path.Combine(installdir, "d2mp.exe"));
                 }
             }else
             {
                 UninstallD2MP(installdir);
             }
+
+            var exepath = Path.Combine(installdir, "d2mp.exe");
+
+            if(File.Exists(exepath) && Process.GetProcessesByName("d2mp").Length == 0)
+            {
+                LaunchD2MP(exepath);
+            }
+
             //delete ourselves
             DeleteOurselves(currpath);
             return;
