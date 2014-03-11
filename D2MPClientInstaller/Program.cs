@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
-using System.IO.Compression;
 using System.Net;
 using System.Reflection;
 using System.Threading;
+using ICSharpCode.SharpZipLib.Core;
+using ICSharpCode.SharpZipLib.Zip;
 
 namespace D2MPClientInstaller
 {
@@ -13,20 +14,48 @@ namespace D2MPClientInstaller
         static void DeleteOurselves(string path)
         {
             ProcessStartInfo info = new ProcessStartInfo("cmd.exe");
-            info.Arguments = "/C choice /C Y /N /D Y /T 1 & Del " + path;
+            info.Arguments = "/C choice /C Y /N /D Y /T 3 & Del " + path;
             info.CreateNoWindow = true;
             info.RedirectStandardOutput = true;
             info.UseShellExecute = false;
             Process.Start(info);
         }
 
+        static void UnzipFromStream(Stream zipStream, string outFolder)
+        {
+
+            ZipInputStream zipInputStream = new ZipInputStream(zipStream);
+            ZipEntry zipEntry = zipInputStream.GetNextEntry();
+            while (zipEntry != null)
+            {
+                String entryFileName = zipEntry.Name;
+                // to remove the folder from the entry:- entryFileName = Path.GetFileName(entryFileName);
+                // Optionally match entrynames against a selection list here to skip as desired.
+                // The unpacked length is available in the zipEntry.Size property.
+
+                byte[] buffer = new byte[4096];     // 4K is optimum
+
+                // Manipulate the output filename here as desired.
+                String fullZipToPath = Path.Combine(outFolder, entryFileName);
+                string directoryName = Path.GetDirectoryName(fullZipToPath);
+                if (directoryName.Length > 0)
+                    Directory.CreateDirectory(directoryName);
+
+                // Unzip file in buffered chunks. This is just as fast as unpacking to a buffer the full size
+                // of the file, but does not waste memory.
+                // The "using" will close the stream even if an exception occurs.
+                using (FileStream streamWriter = File.Create(fullZipToPath))
+                {
+                    StreamUtils.Copy(zipInputStream, streamWriter, buffer);
+                }
+                zipEntry = zipInputStream.GetNextEntry();
+            }
+        }
+
         static void LaunchD2MP(string path)
         {
-            ProcessStartInfo info = new ProcessStartInfo("cmd.exe");
-            info.Arguments = "/C choice /C Y /N /D Y /T 1 & " + path;
-            info.CreateNoWindow = true;
-            info.RedirectStandardOutput = true;
-            info.UseShellExecute = false;
+            var info = new ProcessStartInfo(path);
+            info.WorkingDirectory = Path.GetDirectoryName(path);
             Process.Start(info);
         }
 
@@ -62,7 +91,6 @@ namespace D2MPClientInstaller
         {
             var installdir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "D2MP");
             var verpath = Path.Combine(installdir, "version.txt");
-            string pakpath = Path.Combine(installdir, "pak.zip");
             if(!Directory.Exists(installdir))
                 Directory.CreateDirectory(installdir);
             var currpath = Assembly.GetExecutingAssembly().Location;
@@ -87,9 +115,7 @@ namespace D2MPClientInstaller
                 if(!File.Exists(verpath) || File.ReadAllText(verpath) != versplit[1])
                 {
                     UninstallD2MP(installdir);
-                    client.DownloadFile(info[1], pakpath);
-                    ZipFile.ExtractToDirectory(pakpath, installdir);
-                    File.Delete(pakpath);
+                    UnzipFromStream(client.OpenRead(info[1]), installdir);
                 }
             }else
             {
