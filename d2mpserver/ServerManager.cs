@@ -84,6 +84,7 @@ namespace d2mpserver
             }
             info.Arguments += " -port " + port;
             info.WorkingDirectory = Path.GetDirectoryName(ServerManager.exePath);
+            log.Debug(info.FileName+" "+info.Arguments);
             Process serverProc = Process.Start(info);
             Server serv = new Server(serverProc, id, port, dev);
             log.Debug("server ID: "+id+" spawned");
