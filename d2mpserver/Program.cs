@@ -22,17 +22,17 @@ namespace d2mpserver
                 return;
             }
 
-            ServerConnection connection = new ServerConnection(manager);
-            if(!connection.Connect())
-            {
-                log.Fatal("Can't connect to the server!");
-                return;
-            }
+            //ServerConnection connection = new ServerConnection(manager);
+            //if(!connection.Connect())
+            //{
+            //    log.Fatal("Can't connect to the server!");
+            //    return;
+            //}
 
-            connection.StartServerThread();
+            //connection.StartServerThread();
 
             Console.ReadLine();
-            connection.Shutdown();
+            //connection.Shutdown();
         }
     }
 }
