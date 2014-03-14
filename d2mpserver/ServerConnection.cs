@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using WebSocketSharp;
 using d2mpserver.Properties;
@@ -55,11 +52,11 @@ namespace d2mpserver
                         int port = int.Parse(command[2]);
                         bool dev = bool.Parse(command[3]);
                         manager.LaunchServer(id, port, dev).OnShutdown += (sender, args) =>
-                                                                              {
-                                                                                  socket.SendAsync("onShutdown|" + id,
-                                                                                                   b => { });
-                                                                                  log.Debug("server shut down on its own: "+id);
-                                                                              };
+                            {
+                                socket.SendAsync("onShutdown|" + id,
+                                                b => { });
+                                log.Debug("server shut down on its own: "+id);
+                            };
                         break;
                     }
                 case "shutdownServer":
