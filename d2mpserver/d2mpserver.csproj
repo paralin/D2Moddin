@@ -42,7 +42,8 @@
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <Reference Include="websocket-sharp">
+    <Reference Include="websocket-sharp, Version=1.0.2.42943, Culture=neutral, PublicKeyToken=5660b08a1845a91e, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\WebSocketSharp.1.0.3-rc3\lib\websocket-sharp.dll</HintPath>
     </Reference>
   </ItemGroup>

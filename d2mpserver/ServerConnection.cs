@@ -90,11 +90,17 @@ namespace d2mpserver
                 log.Debug("Already connected.");
                 return true;
             }
-
             log.Debug("attempting connection to "+Settings.Default.serverIP);
             socket = new WebSocket(Settings.Default.serverIP);
             RegisterCallbacks();
-            socket.Connect();
+            try
+            {
+                socket.Connect();
+            }catch(Exception ex)
+            {
+                log.Error("Problem connecting: "+ex);
+                return false;
+            }
 
             return socket.IsAlive;
         }
