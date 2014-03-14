@@ -1,0 +1,24 @@
+﻿<?xml version='1.0' encoding='utf-8'?>
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="d2mpserver.Properties" GeneratedClassName="Settings">
+  <Profiles />
+  <Settings>
+    <Setting Name="serverIP" Type="System.String" Scope="User">
+      <Value Profile="(Default)">ws://d2modd.in:3006/</Value>
+    </Setting>
+    <Setting Name="connectPassword" Type="System.String" Scope="User">
+      <Value Profile="(Default)">mHCYLzo7SAcpIcxXCmlR</Value>
+    </Setting>
+    <Setting Name="exePath" Type="System.String" Scope="User">
+      <Value Profile="(Default)">C:\dotaserver\srcds.exe</Value>
+    </Setting>
+    <Setting Name="devArgs" Type="System.String" Scope="User">
+      <Value Profile="(Default)">-condebug -dev</Value>
+    </Setting>
+    <Setting Name="args" Type="System.String" Scope="User">
+      <Value Profile="(Default)">-console -game dota</Value>
+    </Setting>
+    <Setting Name="serverCount" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">10</Value>
+    </Setting>
+  </Settings>
+</SettingsFile>

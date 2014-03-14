@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
@@ -61,12 +63,16 @@ namespace d2mp
 
                 //Detect user
                 var config = File.ReadAllText(Path.Combine(steamDir, @"config\config.vdf"));
-                var matches = Regex.Match(config, "\"\\d{17}\"");
+                var matches = Regex.Matches(config, "\"\\d{17}\"");
                 string steamid;
-                if (matches.Success)
-                {
-                    steamid = matches.Value.Substring(1).Substring(0, matches.Value.Length - 2);
-                    log.Debug("Steam ID detected: " + steamid);
+                List<string> steamids = new List<string>();
+                if(matches.Count > 0){
+                    foreach (Match match in matches)
+                    {
+                        steamid = match.Value.Substring(1).Substring(0, match.Value.Length - 2);
+                        log.Debug("Steam ID detected: " + steamid);
+                        steamids.Add(steamid);
+                    }
                 }
                 else
                 {
@@ -128,7 +134,7 @@ namespace d2mp
                                     Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
                                                  "version.txt"));
                             log.Debug("sending version: " + ver);
-                            ws.Send("init:" + steamid + ":" + ver);
+                            ws.Send("init:" +String.Join(",", steamids.ToArray(), 0, steamids.Count) + ":" + ver);
                         }
                         catch (Exception ex)
                         {
