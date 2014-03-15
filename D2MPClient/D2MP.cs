@@ -109,7 +109,19 @@ namespace d2mp
                     int i = 0;
                     foreach (var dir in dirs)
                     {
-                        modNames[i] = Path.GetFileName(dir);
+                        var modName = Path.GetFileName(dir);
+                        log.Debug("Found mod: "+modName+" detecting version...");
+                        var versionFile = File.ReadAllText(Path.Combine(addonsDir, modName, "addoninfo.txt"));
+                        var match = Regex.Match(versionFile, "(addonversion)(\\s+)([+-]?\\d*\\.\\d+)(?![-+0-9\\.])", RegexOptions.IgnoreCase);
+                        if(match.Success)
+                        {
+                          var version = match.Groups[3].Value;
+                          log.Debug(modName+"="+version);
+                          modNames[i] = modName+"="+version;
+                        }else{
+                          log.Error("Can't find version info for mod: "+modName+", not including");
+                          modNames[i] = modName+"=?";
+                        }
                         i++;
                     }
                 }
