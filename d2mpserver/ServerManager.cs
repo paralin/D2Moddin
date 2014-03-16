@@ -120,6 +120,7 @@ namespace d2mpserver
             info.UseShellExecute = false;
             info.RedirectStandardInput = info.RedirectStandardOutput = info.RedirectStandardError = true;
             info.WorkingDirectory = Settings.Default.workingDir;
+            info.EnvironmentVariables.Add("DYLD_LIBRARY_PATH", info.WorkingDirectory+":"+info.WorkingDirectory+"/bin");
             log.Debug(info.FileName+" "+info.Arguments);
             Process serverProc = Process.Start(info);
             Server serv = new Server(serverProc, id, port, dev);
