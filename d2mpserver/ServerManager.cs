@@ -110,7 +110,16 @@ namespace d2mpserver
             }
             info.Arguments += " -port " + port;
             info.UseShellExecute = false;
-            info.WorkingDirectory = Path.GetDirectoryName(ServerManager.exePath);
+            int p = (int)Environment.OSVersion.Platform;
+            if ((p == 4) || (p == 6) || (p == 128))
+            {
+                info.WorkingDirectory = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            }
+            else
+            {
+                info.WorkingDirectory = Path.GetDirectoryName(ServerManager.exePath);
+            }
+            
             log.Debug(info.FileName+" "+info.Arguments);
             Process serverProc = Process.Start(info);
             Server serv = new Server(serverProc, id, port, dev);

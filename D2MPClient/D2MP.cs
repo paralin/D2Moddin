@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Text.RegularExpressions;
@@ -120,12 +121,12 @@ namespace d2mp
                         var modName = Path.GetFileName(dir);
                         log.Debug("Found mod: "+modName+" detecting version...");
                         var versionFile = File.ReadAllText(Path.Combine(addonsDir, modName+"/addoninfo.txt"));
-                        var match = Regex.Match(versionFile, "(addonversion)(\\s+)([+-]?\\d*\\.\\d+)(?![-+0-9\\.])", RegexOptions.IgnoreCase);
+                        var match = Regex.Match(versionFile, @"(addonversion)(\s+)(\d+\.)?(\d+\.)?(\d+\.)?(\*|\d+)", RegexOptions.IgnoreCase);
                         if(match.Success)
                         {
-                          var version = match.Groups[3].Value;
-                          log.Debug(modName+"="+version);
-                          modNames[i] = modName+"="+version;
+                            string version = match.Groups.Cast<Group>().ToList().Skip(3).Aggregate("", (current, part) => current + part.Value);
+                            log.Debug(modName+"="+version);
+                            modNames[i] = modName+"="+version;
                         }else{
                           log.Error("Can't find version info for mod: "+modName+", not including");
                           modNames[i] = modName+"=?";
