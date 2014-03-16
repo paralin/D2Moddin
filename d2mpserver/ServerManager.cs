@@ -95,6 +95,7 @@ namespace d2mpserver
                 {
                     log.Debug(id + ": " + line);
                 }
+                line = null;
                 while((line = stderr.ReadLine()) != null)
                 {
                     if (line.StartsWith("Console init"))
