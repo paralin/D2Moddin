@@ -20,5 +20,8 @@
     <Setting Name="serverCount" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">10</Value>
     </Setting>
+    <Setting Name="workingDir" Type="System.String" Scope="User">
+      <Value Profile="(Default)">C:\dotaserver\</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

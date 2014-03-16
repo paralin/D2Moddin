@@ -94,5 +94,17 @@ namespace d2mpserver.Properties {
                 this["serverCount"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("C:\\dotaserver\\")]
+        public string workingDir {
+            get {
+                return ((string)(this["workingDir"]));
+            }
+            set {
+                this["workingDir"] = value;
+            }
+        }
     }
 }

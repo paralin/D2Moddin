@@ -1,8 +1,8 @@
 ﻿<configuration>
 <configSections>
-<section name="log4net" 
-type="log4net.Config.Log4NetConfigurationSectionHandler, log4net, Version=1.2.10.0, 
-  Culture=neutral, PublicKeyToken=1b44e1d426115821" />
+<section name="log4net"
+type="log4net.Config.Log4NetConfigurationSectionHandler, log4net, Version=1.2.10.0, &#xD;&#xA;  Culture=neutral, PublicKeyToken=1b44e1d426115821"
+                                                    />
   <sectionGroup name="userSettings" type="System.Configuration.UserSettingsGroup, System, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
   <section name="d2mpserver.Properties.Settings" type="System.Configuration.ClientSettingsSection, System, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" allowExeDefinition="MachineToLocalUser" requirePermission="false"/>
   </sectionGroup>
@@ -40,25 +40,27 @@ type="log4net.Config.Log4NetConfigurationSectionHandler, log4net, Version=1.2.10
   <supportedRuntime version="v4.0" sku=".NETFramework,Version=v4.0"/></startup>
   <userSettings>
   <d2mpserver.Properties.Settings>
-  <setting name="serverIP" serializeAs="String">
-  <value>ws://d2modd.in:3006/</value>
-  <!--<value>ws://10.0.1.2:3006/</value>-->
-  </setting>
-  <setting name="connectPassword" serializeAs="String">
-  <value>mHCYLzo7SAcpIcxXCmlR</value>
-  </setting>
-  <setting name="exePath" serializeAs="String">
-  <value>C:\dotaserver\srcds.exe</value>
-  </setting>
-  <setting name="devArgs" serializeAs="String">
-  <value>-condebug -dev</value>
-  </setting>
-  <setting name="args" serializeAs="String">
-  <value>-console -game dota</value>
-  </setting>
-  <setting name="serverCount" serializeAs="String">
-  <value>10</value>
-  </setting>
+    <setting name="serverIP" serializeAs="String">
+      <value>ws://d2modd.in:3006/</value>
+    </setting>
+    <setting name="connectPassword" serializeAs="String">
+      <value>mHCYLzo7SAcpIcxXCmlR</value>
+    </setting>
+    <setting name="exePath" serializeAs="String">
+      <value>/home/d2mod/steamruntime/run.sh</value>
+    </setting>
+    <setting name="devArgs" serializeAs="String">
+      <value>-condebug -dev</value>
+    </setting>
+    <setting name="args" serializeAs="String">
+      <value>/home/d2mod/dota2/srcds_run -console -game dota</value>
+    </setting>
+    <setting name="serverCount" serializeAs="String">
+      <value>10</value>
+    </setting>
+    <setting name="workingDir" serializeAs="String">
+      <value>/home/d2mod/dota2/</value>
+    </setting>
   </d2mpserver.Properties.Settings>
   </userSettings>
   </configuration>
