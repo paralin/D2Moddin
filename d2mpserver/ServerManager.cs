@@ -86,14 +86,22 @@ namespace d2mpserver
         {
             var stdout = serverProc.StandardOutput;
             var stdin = serverProc.StandardInput;
+            var stderr = serverProc.StandardError;
             string line;
-            while((line = stdout.ReadLine()) != null)
+            while(!serverProc.HasExited)
             {
-                if(line.StartsWith("Console init"))
+                while ((line = stdout.ReadLine()) != null)
                 {
-                    SendModCommands(stdin);
+                    log.Debug(id + ": " + line);
                 }
-                log.Debug(id+": "+line);
+                while((line = stdout.ReadLine()) != null)
+                {
+                    if (line.StartsWith("Console init"))
+                    {
+                        SendModCommands(stdin);
+                    }
+                    log.Debug(id + ": " + line);
+                }
             }
             serverProc.WaitForExit();
             if (OnShutdown != null)
@@ -110,7 +118,7 @@ namespace d2mpserver
             }
             info.Arguments += " -port " + port;
             info.UseShellExecute = false;
-            info.RedirectStandardInput = info.RedirectStandardOutput = true;
+            info.RedirectStandardInput = info.RedirectStandardOutput = info.RedirectStandardError = true;
             info.WorkingDirectory = Settings.Default.workingDir;
             log.Debug(info.FileName+" "+info.Arguments);
             Process serverProc = Process.Start(info);
