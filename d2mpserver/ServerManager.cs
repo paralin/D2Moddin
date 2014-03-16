@@ -102,6 +102,7 @@ namespace d2mpserver
 
         public static Server Create(int id, int port, bool dev, string mod)
         {
+            var homedir = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
             ProcessStartInfo info = new ProcessStartInfo(ServerManager.exePath);
             info.Arguments = Settings.Default.args;
             if(dev)
@@ -111,16 +112,7 @@ namespace d2mpserver
             info.Arguments += " -port " + port;
             info.UseShellExecute = false;
             info.RedirectStandardInput = info.RedirectStandardOutput = true;
-            int p = (int)Environment.OSVersion.Platform;
-            if ((p == 4) || (p == 6) || (p == 128))
-            {
-                info.WorkingDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), "../");
-            }
-            else
-            {
-                info.WorkingDirectory = Path.GetDirectoryName(ServerManager.exePath);
-            }
-            
+            info.WorkingDirectory = Path.GetDirectoryName(ServerManager.exePath);
             log.Debug(info.FileName+" "+info.Arguments);
             Process serverProc = Process.Start(info);
             Server serv = new Server(serverProc, id, port, dev);
