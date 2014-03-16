@@ -51,7 +51,8 @@ namespace d2mpserver
                         int id = int.Parse(command[1]);
                         int port = int.Parse(command[2]);
                         bool dev = bool.Parse(command[3]);
-                        manager.LaunchServer(id, port, dev).OnShutdown += (sender, args) =>
+                        string mod = command[4];
+                        manager.LaunchServer(id, port, dev, mod).OnShutdown += (sender, args) =>
                             {
                                 socket.SendAsync("onShutdown|" + id,
                                                 b => { });

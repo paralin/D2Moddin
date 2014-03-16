@@ -18,7 +18,8 @@ namespace d2mp
     {
         private static string server = "ws://d2modd.in:3005/";
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
-
+        private static WebSocket ws;
+        private static string addonsDir;
         static void DeleteOurselves()
         {
             var currpath = Assembly.GetExecutingAssembly().Location;
@@ -38,6 +39,7 @@ namespace d2mp
             while (zipEntry != null)
             {
                 String entryFileName = zipEntry.Name;
+                log.Debug(" --> "+entryFileName);
                 // to remove the folder from the entry:- entryFileName = Path.GetFileName(entryFileName);
                 // Optionally match entrynames against a selection list here to skip as desired.
                 // The unpacked length is available in the zipEntry.Size property.
@@ -48,14 +50,20 @@ namespace d2mp
                 String fullZipToPath = Path.Combine(outFolder, entryFileName);
                 string directoryName = Path.GetDirectoryName(fullZipToPath);
                 if (directoryName.Length > 0)
-                    Directory.CreateDirectory(directoryName);
-
-                // Unzip file in buffered chunks. This is just as fast as unpacking to a buffer the full size
-                // of the file, but does not waste memory.
-                // The "using" will close the stream even if an exception occurs.
-                using (FileStream streamWriter = File.Create(fullZipToPath))
                 {
-                    StreamUtils.Copy(zipInputStream, streamWriter, buffer);
+                    Directory.CreateDirectory(directoryName);
+                    Thread.Sleep(30);
+                }
+
+                if(Path.GetFileName(fullZipToPath) != String.Empty)
+                {
+                    // Unzip file in buffered chunks. This is just as fast as unpacking to a buffer the full size
+                    // of the file, but does not waste memory.
+                    // The "using" will close the stream even if an exception occurs.
+                    using (FileStream streamWriter = File.Create(fullZipToPath))
+                    {
+                        StreamUtils.Copy(zipInputStream, streamWriter, buffer);
+                    }
                 }
                 zipEntry = zipInputStream.GetNextEntry();
             }
@@ -95,7 +103,7 @@ namespace d2mp
                     log.Debug("Steam found: " + steamDir);
                 }
 
-                var addonsDir = Path.Combine(steamDir, "steamapps/common/dota 2 beta/dota/addons/");
+                addonsDir = Path.Combine(steamDir, "steamapps/common/dota 2 beta/dota/addons/");
                 if (!Directory.Exists(addonsDir))
                 {
                     log.Fatal("Addons dir: " + addonsDir + " does not exist.");
@@ -111,7 +119,7 @@ namespace d2mp
                     {
                         var modName = Path.GetFileName(dir);
                         log.Debug("Found mod: "+modName+" detecting version...");
-                        var versionFile = File.ReadAllText(Path.Combine(addonsDir, modName, "addoninfo.txt"));
+                        var versionFile = File.ReadAllText(Path.Combine(addonsDir, modName+"/addoninfo.txt"));
                         var match = Regex.Match(versionFile, "(addonversion)(\\s+)([+-]?\\d*\\.\\d+)(?![-+0-9\\.])", RegexOptions.IgnoreCase);
                         if(match.Success)
                         {
@@ -150,7 +158,7 @@ namespace d2mp
                 int tryCount = 0;
                 while (tryCount < 10 && !shutDown)
                 {
-                    using (var ws = new WebSocket(server))
+                    using (ws = new WebSocket(server))
                     {
                         ws.OnMessage += (sender, e) =>
                             {
@@ -182,19 +190,7 @@ namespace d2mp
                                 switch (msgParts[0])
                                 {
                                     case "installmod":
-                                        var modname = msgParts[1];
-                                        log.Info("Server requested that we install mod " + modname + " from download " + msgParts[2]);
-                                        //delete if already exists
-                                        var targetDir = Path.Combine(addonsDir, modname);
-                                        if (Directory.Exists(targetDir))
-                                            Directory.Delete(targetDir, true);
-                                        //Make the dir again
-                                        Directory.CreateDirectory(targetDir);
-                                        //Stream the ZIP to the folder
-                                        WebClient client = new WebClient();
-                                        UnzipFromStream(client.OpenRead(msgParts[2]), targetDir);
-                                        log.Info("Mod installed!");
-                                        ws.Send("installedMod:"+modname);
+                                        ThreadPool.QueueUserWorkItem(InstallMod, msgParts);
                                         break;
                                     default:
                                         log.Error("Command not recognized: " + msgParts[0]);
@@ -241,6 +237,26 @@ namespace d2mp
             {
                 log.Fatal("Overall error in the program: "+ex);
             }
+        }
+
+        private static void InstallMod(object state)
+        {
+            var msgParts = (string[]) state;
+            var modname = msgParts[1];
+            var url = "http:" + msgParts[3];
+            log.Info("Server requested that we install mod " + modname + " from download " + url);
+                                        
+            //delete if already exists
+            var targetDir = Path.Combine(addonsDir, modname);
+            if (Directory.Exists(targetDir))
+                Directory.Delete(targetDir, true);
+            //Make the dir again
+            Directory.CreateDirectory(targetDir);
+            //Stream the ZIP to the folder
+            WebClient client = new WebClient();
+            UnzipFromStream(client.OpenRead(url), targetDir);
+            log.Info("Mod installed!");
+            ws.Send("installedMod:"+modname);
         }
     }
 

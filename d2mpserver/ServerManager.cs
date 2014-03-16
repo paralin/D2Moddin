@@ -21,13 +21,14 @@ namespace d2mpserver
         public bool LocateServerEXE()
         {
             exePath = Settings.Default.exePath;
-            return File.Exists(exePath);
+            //return File.Exists(exePath);
+            return true;
         }
 
-        public Server LaunchServer(int id, int port, bool dev)
+        public Server LaunchServer(int id, int port, bool dev, string mod)
         {
             log.Info("Launching server, ID: "+id+" on port "+port+(dev?" in devmode.":"."));
-            var serv = Server.Create(id, port, dev);
+            var serv = Server.Create(id, port, dev, mod);
             servers.Add(id, serv);
             return serv;
         }
@@ -57,6 +58,7 @@ namespace d2mpserver
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         private bool shutdown = false;
         public event ShutdownEventHandler OnShutdown;
+        private string mod = "";
        
 
         private Server(Process serverProc, int id, int port, bool dev)
@@ -67,14 +69,38 @@ namespace d2mpserver
             ThreadPool.QueueUserWorkItem(ServerThread);
         }
 
+        void SendModCommands(StreamWriter stdin)
+        {
+            log.Debug(id+": sending mod init commands");
+            stdin.WriteLine("update_addon_paths;");
+            stdin.WriteLine("dota_local_custom_enable 1;");
+            stdin.WriteLine("dota_local_custom_game "+mod+";");
+            stdin.WriteLine("dota_local_custom_map "+mod);
+            stdin.WriteLine("dota_force_gamemode 15;");
+            stdin.WriteLine("dota_wait_for_players_to_load 1;");
+            stdin.WriteLine("dota_wait_for_players_to_load_timeout 30;");
+            stdin.WriteLine("map "+mod+";");
+        }
+
         private void ServerThread(object state)
         {
+            var stdout = serverProc.StandardOutput;
+            var stdin = serverProc.StandardInput;
+            string line;
+            while((line = stdout.ReadLine()) != null)
+            {
+                if(line.StartsWith("Console init"))
+                {
+                    SendModCommands(stdin);
+                }
+                log.Debug(id+": "+line);
+            }
             serverProc.WaitForExit();
             if (OnShutdown != null)
                 OnShutdown(this, EventArgs.Empty);
         }
 
-        public static Server Create(int id, int port, bool dev)
+        public static Server Create(int id, int port, bool dev, string mod)
         {
             ProcessStartInfo info = new ProcessStartInfo(ServerManager.exePath);
             info.Arguments = Settings.Default.args;
@@ -83,10 +109,12 @@ namespace d2mpserver
                 info.Arguments += " " + Settings.Default.devArgs;
             }
             info.Arguments += " -port " + port;
+            info.UseShellExecute = true;
             info.WorkingDirectory = Path.GetDirectoryName(ServerManager.exePath);
             log.Debug(info.FileName+" "+info.Arguments);
             Process serverProc = Process.Start(info);
             Server serv = new Server(serverProc, id, port, dev);
+            serv.mod = mod;
             log.Debug("server ID: "+id+" spawned");
             return serv;
         }
