@@ -110,10 +110,11 @@ namespace d2mpserver
             }
             info.Arguments += " -port " + port;
             info.UseShellExecute = false;
+            info.RedirectStandardInput = info.RedirectStandardOutput = true;
             int p = (int)Environment.OSVersion.Platform;
             if ((p == 4) || (p == 6) || (p == 128))
             {
-                info.WorkingDirectory = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+                info.WorkingDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), "../");
             }
             else
             {
