@@ -109,7 +109,7 @@ namespace d2mpserver
                 info.Arguments += " " + Settings.Default.devArgs;
             }
             info.Arguments += " -port " + port;
-            info.UseShellExecute = true;
+            info.UseShellExecute = false;
             info.WorkingDirectory = Path.GetDirectoryName(ServerManager.exePath);
             log.Debug(info.FileName+" "+info.Arguments);
             Process serverProc = Process.Start(info);
