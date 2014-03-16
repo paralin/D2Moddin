@@ -90,6 +90,7 @@ namespace d2mpserver
             string line;
             while(!serverProc.HasExited)
             {
+                line = null;
                 while ((line = stdout.ReadLine()) != null)
                 {
                     log.Debug(id + ": " + line);
@@ -103,7 +104,6 @@ namespace d2mpserver
                     log.Debug(id + ": " + line);
                 }
             }
-            serverProc.WaitForExit();
             if (OnShutdown != null)
                 OnShutdown(this, EventArgs.Empty);
         }
