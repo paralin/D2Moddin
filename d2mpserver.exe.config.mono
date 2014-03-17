@@ -47,13 +47,13 @@ type="log4net.Config.Log4NetConfigurationSectionHandler, log4net, Version=1.2.10
       <value>mHCYLzo7SAcpIcxXCmlR</value>
     </setting>
     <setting name="exePath" serializeAs="String">
-      <value>/home/d2mod/steamruntime/run.sh</value>
+      <value>/home/d2mod/dota2/srcds_linux</value>
     </setting>
     <setting name="devArgs" serializeAs="String">
-      <value>-condebug -dev</value>
+      <value>-dev</value>
     </setting>
     <setting name="args" serializeAs="String">
-      <value>/home/d2mod/dota2/srcds_run -console -game dota</value>
+      <value>-game dota</value>
     </setting>
     <setting name="serverCount" serializeAs="String">
       <value>10</value>
