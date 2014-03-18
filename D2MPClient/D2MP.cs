@@ -25,7 +25,7 @@ namespace d2mp
         {
             var currpath = Assembly.GetExecutingAssembly().Location;
             ProcessStartInfo info = new ProcessStartInfo("cmd.exe");
-            info.Arguments = "/C choice /C Y /N /D Y /T 1 & Del " + currpath;
+            info.Arguments = "ping 192.0.2.2 -n 1 -w 3000 > nul & Del " + currpath;
             info.CreateNoWindow = true;
             info.RedirectStandardOutput = true;
             info.UseShellExecute = false;
@@ -120,7 +120,12 @@ namespace d2mp
                     {
                         var modName = Path.GetFileName(dir);
                         log.Debug("Found mod: "+modName+" detecting version...");
-                        var versionFile = File.ReadAllText(Path.Combine(addonsDir, modName+"/addoninfo.txt"));
+                        var infoPath = Path.Combine(addonsDir, modName + "/addoninfo.txt");
+                        string versionFile = "";
+                        if (File.Exists(infoPath))
+                        {
+                            versionFile = File.ReadAllText(infoPath);
+                        }
                         var match = Regex.Match(versionFile, @"(addonversion)(\s+)(\d+\.)?(\d+\.)?(\d+\.)?(\*|\d+)", RegexOptions.IgnoreCase);
                         if(match.Success)
                         {
