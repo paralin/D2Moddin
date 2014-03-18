@@ -31,8 +31,55 @@ namespace d2mpserver
 
             connection.StartServerThread();
 
-            Console.ReadLine();
+            bool shutdown = false;
+            bool controlling = false;
+            Server controlled = null;
+            string line;
+            while(!shutdown)
+            {
+              line = Console.ReadLine();
+              if(controlling){
+                if(line == "stopcontrolling" || controlled.shutdown){
+                  log.Debug("Stopped controlling server.");
+                  controlled = null;
+                  controlling = false;
+                }
+                else{
+                  controlled.ToSTDIN(line);
+                  continue;
+                }
+              }
+
+              var command = line.Split(' ');
+              try{
+                switch(command[0])
+                {
+                  case "exit":
+                    shutdown = true;
+                    log.Debug("Shutdown from console...");
+                    break;
+                  case "control":
+                    int id = int.Parse(command[1]);
+                    var serv = manager.GetServer(id);
+                    if(serv == null){
+                      log.Error("Server ID not known: "+id);
+                      break;
+                    }
+                    controlled = serv;
+                    controlling = true;
+                    log.Debug("Console started controlling: "+id);
+                    break;
+                  default:
+                    log.Error("Unknown command: "+line);
+                    break;
+                }
+              }
+              catch(Exception ex){
+                log.Error("Problem processing command: "+ex);
+              }
+            }
             connection.Shutdown();
+            manager.ShutdownAllServers();
         }
     }
 }

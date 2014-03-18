@@ -33,6 +33,13 @@ namespace d2mpserver
             return serv;
         }
 
+        public Server GetServer(int id)
+        {
+          if(!servers.ContainsKey(id))
+            return null;
+          return servers[id];
+        }
+
         public void ShutdownServer(int id)
         {
             servers[id].Shutdown();
@@ -56,7 +63,7 @@ namespace d2mpserver
         private int id;
         private int port;
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
-        private bool shutdown = false;
+        public bool shutdown = false;
         public event ShutdownEventHandler OnShutdown;
         private string mod = "";
        
@@ -67,6 +74,10 @@ namespace d2mpserver
             this.serverProc = serverProc;
             this.port = port;
             ThreadPool.QueueUserWorkItem(ServerThread);
+        }
+
+        public void ToSTDIN(string command){
+          serverProc.StandardInput.WriteLine(command);
         }
 
         void SendModCommands(StreamWriter stdin)
@@ -80,39 +91,30 @@ namespace d2mpserver
             stdin.WriteLine("dota_wait_for_players_to_load 1;");
             stdin.WriteLine("dota_wait_for_players_to_load_timeout 30;");
             stdin.WriteLine("map "+mod+";");
+            log.Debug(id+": map "+mod+";");
+        }
+
+        private void OutCallback(string line)
+        {
+          log.Debug(id+": "+line);
+          if(line.Contains("Console initialized."))
+            SendModCommands(serverProc.StandardInput);
         }
 
         private void ServerThread(object state)
         {
-            var stdout = serverProc.StandardOutput;
-            var stdin = serverProc.StandardInput;
-            var stderr = serverProc.StandardError;
-            string line;
-            while(!serverProc.HasExited)
-            {
-                line = null;
-                while ((line = stdout.ReadLine()) != null)
-                {
-                    log.Debug(id + ": " + line);
-                }
-                line = null;
-                while((line = stderr.ReadLine()) != null)
-                {
-                    if (line.StartsWith("Console init"))
-                    {
-                        SendModCommands(stdin);
-                    }
-                    log.Debug(id + ": " + line);
-                }
-            }
+            serverProc.WaitForExit();
             if (OnShutdown != null)
                 OnShutdown(this, EventArgs.Empty);
         }
 
         public static Server Create(int id, int port, bool dev, string mod)
         {
-            ProcessStartInfo info = new ProcessStartInfo(ServerManager.exePath);
+            Process serverProc = new Process();
+            ProcessStartInfo info = serverProc.StartInfo;
+            info.FileName = ServerManager.exePath;
             info.Arguments = Settings.Default.args;
+            info.CreateNoWindow = true;
             if(dev)
             {
                 info.Arguments += " " + Settings.Default.devArgs;
@@ -123,17 +125,24 @@ namespace d2mpserver
             info.WorkingDirectory = Settings.Default.workingDir;
             info.EnvironmentVariables.Add("LD_LIBRARY_PATH", info.WorkingDirectory+":"+info.WorkingDirectory+"/bin");
             log.Debug(info.FileName+" "+info.Arguments);
-            Process serverProc = Process.Start(info);
             Server serv = new Server(serverProc, id, port, dev);
+            serverProc.EnableRaisingEvents = true;
+            serverProc.OutputDataReceived += (sender, args) => serv.OutCallback(args.Data);
+            serverProc.ErrorDataReceived += (sender, args) => serv.OutCallback(args.Data);
+            serverProc.Start();
+            serverProc.BeginOutputReadLine();
+            serverProc.BeginErrorReadLine();
             serv.mod = mod;
-            log.Debug("server ID: "+id+" spawned");
+            log.Debug("server ID: "+id+" spawned, process ID "+serverProc.Id);
             return serv;
         }
 
         public void Shutdown()
         {
-            if (shutdown) return;
-            log.Debug("shutting down scrds id: "+id+" by server request");
+            log.Debug("shutting down scrds id: "+id);
+            shutdown = true;
+            serverProc.StandardInput.WriteLine("exit");
+            Thread.Sleep(300);
             serverProc.Kill();
         }
     }
