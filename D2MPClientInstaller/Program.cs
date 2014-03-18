@@ -11,10 +11,17 @@ namespace D2MPClientInstaller
 {
     static class Program
     {
+        private static bool doLog = false;
+        static void Log(string text)
+        {
+            if(doLog)
+                File.AppendAllText("d2mpinstaller.log", text+"\n");
+        }
+
         static void DeleteOurselves(string path)
         {
             ProcessStartInfo info = new ProcessStartInfo("cmd.exe");
-            info.Arguments = "/C choice /C Y /N /D Y /T 3 & Del " + path;
+            info.Arguments = "ping 192.0.2.2 -n 1 -w 3000 > nul & Del " + path;
             info.CreateNoWindow = true;
             info.RedirectStandardOutput = true;
             info.UseShellExecute = false;
@@ -89,17 +96,30 @@ namespace D2MPClientInstaller
         [STAThread]
         static void Main()
         {
+            Log("Finding install directories...");
             var installdir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "D2MP");
             var verpath = Path.Combine(installdir, "version.txt");
+            Log("Temporary dir: " + installdir);
+            Log("Verpath: "+verpath);
             if(!Directory.Exists(installdir))
                 Directory.CreateDirectory(installdir);
             var currpath = Assembly.GetExecutingAssembly().Location;
             if(Path.GetDirectoryName(currpath) != installdir)
             {
+                Log("Copying ourselves into the temporary directory...");
                 var target = Path.Combine(installdir, "installer.exe");
-                File.Delete(target);
+
+                try
+                {
+                    File.Delete(target);
+                }catch
+                {
+                    Log("Installer does not already exist in target dir.");
+                }
+
                 File.Copy(currpath, target);
                 LaunchD2MP(target);
+                Log("Deleting ourselves...");
                 DeleteOurselves(currpath);
                 return;
             }
@@ -107,6 +127,7 @@ namespace D2MPClientInstaller
             //We are in the install dir, download files
             WebClient client = new WebClient();
             var info = client.DownloadString("http://d2modd.in:3000/clientver").Split('|');
+            Log("Version string: "+String.Join(",", info));
             var versplit = info[0].Split(':');
             var verstr = versplit[1];
             if(versplit[0] == "version" && versplit[1] != "disabled")
@@ -114,7 +135,9 @@ namespace D2MPClientInstaller
                 //check for existing installed file
                 if(!File.Exists(verpath) || File.ReadAllText(verpath) != versplit[1])
                 {
+                    Log("Uninstalling old version..");
                     UninstallD2MP(installdir);
+                    Log("Unzipping new version...");
                     UnzipFromStream(client.OpenRead(info[1]), installdir);
                 }
             }else
