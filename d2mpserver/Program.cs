@@ -43,6 +43,10 @@ namespace d2mpserver
                   log.Debug("Stopped controlling server.");
                   controlled = null;
                   controlling = false;
+                  if(line == "stopcontrolling")
+                  {
+                    continue;
+                  }
                 }
                 else{
                   controlled.ToSTDIN(line);

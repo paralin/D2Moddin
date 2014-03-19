@@ -21,14 +21,14 @@ namespace d2mpserver
         public bool LocateServerEXE()
         {
             exePath = Settings.Default.exePath;
-            //return File.Exists(exePath);
             return true;
         }
 
-        public Server LaunchServer(int id, int port, bool dev, string mod)
+        public Server LaunchServer(int id, int port, bool dev, string mod, string rconPass)
         {
             log.Info("Launching server, ID: "+id+" on port "+port+(dev?" in devmode.":"."));
-            var serv = Server.Create(id, port, dev, mod);
+            var serv = Server.Create(id, port, dev, mod, rconPass);
+            serv.OnShutdown += (sender,args)=>servers.Remove(serv.id);
             servers.Add(id, serv);
             return serv;
         }
@@ -60,11 +60,12 @@ namespace d2mpserver
     public class Server
     {
         private Process serverProc;
-        private int id;
+        public int id;
         private int port;
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         public bool shutdown = false;
         public event ShutdownEventHandler OnShutdown;
+        public event ShutdownEventHandler OnReady;
         private string mod = "";
        
 
@@ -92,6 +93,8 @@ namespace d2mpserver
             stdin.WriteLine("dota_wait_for_players_to_load_timeout 30;");
             stdin.WriteLine("map "+mod+";");
             log.Debug(id+": map "+mod+";");
+            if(OnReady != null)
+              OnReady(this, EventArgs.Empty);
         }
 
         private void OutCallback(string line)
@@ -103,12 +106,16 @@ namespace d2mpserver
 
         private void ServerThread(object state)
         {
-            serverProc.WaitForExit();
+            while(!serverProc.HasExited){
+              serverProc.StandardInput.WriteLine();
+              Thread.Sleep(300);
+            }
             if (OnShutdown != null)
                 OnShutdown(this, EventArgs.Empty);
+            shutdown = true;
         }
 
-        public static Server Create(int id, int port, bool dev, string mod)
+        public static Server Create(int id, int port, bool dev, string mod, string rconPass)
         {
             Process serverProc = new Process();
             ProcessStartInfo info = serverProc.StartInfo;
@@ -120,6 +127,7 @@ namespace d2mpserver
                 info.Arguments += " " + Settings.Default.devArgs;
             }
             info.Arguments += " -port " + port;
+            info.Arguments += " +rcon_password "+rconPass;
             info.UseShellExecute = false;
             info.RedirectStandardInput = info.RedirectStandardOutput = info.RedirectStandardError = true;
             info.WorkingDirectory = Settings.Default.workingDir;

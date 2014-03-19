@@ -52,7 +52,14 @@ namespace d2mpserver
                         int port = int.Parse(command[2]);
                         bool dev = bool.Parse(command[3]);
                         string mod = command[4];
-                        manager.LaunchServer(id, port, dev, mod).OnShutdown += (sender, args) =>
+                        string rconPass = command[5];
+                        var serv = manager.LaunchServer(id, port, dev, mod, rconPass);
+                        serv.OnReady += (sender, args) =>
+                            {
+                                socket.SendAsync("serverLaunched|"+id, b=>{});
+                                log.Debug("server finished launching "+id);
+                            };
+                        serv.OnShutdown += (sender, args) =>
                             {
                                 socket.SendAsync("onShutdown|" + id,
                                                 b => { });
