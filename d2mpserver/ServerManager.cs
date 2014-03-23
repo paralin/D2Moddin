@@ -74,7 +74,6 @@ namespace d2mpserver
             this.id = id;
             this.serverProc = serverProc;
             this.port = port;
-            ThreadPool.QueueUserWorkItem(ServerThread);
         }
 
         public void ToSTDIN(string command){
@@ -97,11 +96,18 @@ namespace d2mpserver
               OnReady(this, EventArgs.Empty);
         }
 
+        public void StartThread(){
+            ThreadPool.QueueUserWorkItem(ServerThread);
+        }
+
         private void OutCallback(string line)
         {
           log.Debug(id+": "+line);
           if(line.Contains("Console initialized."))
             SendModCommands(serverProc.StandardInput);
+          else if(line.Contains("Match signout")){
+            serverProc.StandardInput.WriteLine("exit");
+          }
         }
 
         private void ServerThread(object state)
@@ -140,6 +146,7 @@ namespace d2mpserver
             serverProc.Start();
             serverProc.BeginOutputReadLine();
             serverProc.BeginErrorReadLine();
+            serv.StartThread();
             serv.mod = mod;
             log.Debug("server ID: "+id+" spawned, process ID "+serverProc.Id);
             return serv;
