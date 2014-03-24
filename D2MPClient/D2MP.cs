@@ -21,6 +21,7 @@ namespace d2mp
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         private static WebSocket ws;
         private static string addonsDir;
+
         static void DeleteOurselves()
         {
             var currpath = Assembly.GetExecutingAssembly().Location;
@@ -94,17 +95,19 @@ namespace d2mp
             {
                 var steam = new SteamFinder();
                 var steamDir = steam.FindSteam(true);
-                if (steamDir == null)
+                var dotaDir = steam.FindDota(true);
+                if (steamDir == null || dotaDir == null)
                 {
-                    log.Fatal("Steam was not found!");
+                    log.Fatal("Steam/dota was not found!");
                     return;
                 }
                 else
                 {
                     log.Debug("Steam found: " + steamDir);
+                    log.Debug("Dota found: "+dotaDir);
                 }
 
-                addonsDir = Path.Combine(steamDir, "steamapps/common/dota 2 beta/dota/addons/");
+                addonsDir = dotaDir;
                 if (!Directory.Exists(addonsDir))
                 {
                     log.Fatal("Addons dir: " + addonsDir + " does not exist.");
@@ -268,12 +271,12 @@ namespace d2mp
 
     public class SteamFinder
     {
-        private string cachedLocation;
+        private string cachedLocation = "";
+        private string cachedDotaLocation = "";
         private static string[] knownLocations = new string[] { @"C:\Steam\", @"C:\Program Files (x86)\Steam\", @"C:\Program Files\Steam\" };
 
         public SteamFinder()
         {
-            cachedLocation = "";
         }
 
         bool ContainsSteam(string dir)
@@ -311,6 +314,34 @@ namespace d2mp
             {
                 return cachedLocation;
             }
+        }
+
+        public string FindDota(bool delCache)
+        {
+            if (!delCache && cachedDotaLocation != null) return cachedDotaLocation;
+            var steamDir = FindSteam(false);
+            if(steamDir != null)
+            {
+                var dir = Path.Combine(steamDir, "steamapps/common/dota 2 beta/dota/addons/");
+                if (Directory.Exists(dir))
+                {
+                    cachedDotaLocation = dir;
+                    return dir;
+                }
+            }
+
+            //Get from registry
+            RegistryKey regKey = Registry.LocalMachine;
+            regKey =
+                regKey.OpenSubKey(@"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 570");
+
+            if (regKey != null)
+            {
+                cachedDotaLocation = regKey.GetValue("InstallLocation").ToString();
+                return cachedDotaLocation;
+            }
+
+            return null;
         }
     }
 }
