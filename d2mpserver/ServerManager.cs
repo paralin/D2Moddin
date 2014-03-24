@@ -157,8 +157,6 @@ namespace d2mpserver
             log.Debug("shutting down scrds id: "+id);
             shutdown = true;
             serverProc.StandardInput.WriteLine("exit");
-            Thread.Sleep(300);
-            serverProc.Kill();
         }
     }
 }

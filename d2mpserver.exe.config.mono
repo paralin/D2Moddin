@@ -47,19 +47,19 @@ type="log4net.Config.Log4NetConfigurationSectionHandler, log4net, Version=1.2.10
       <value>mHCYLzo7SAcpIcxXCmlR</value>
     </setting>
     <setting name="exePath" serializeAs="String">
-      <value>/home/d2mod/dota2/srcds_linux</value>
+      <value>/home/d2mod/dota2auto/srcds_run</value>
     </setting>
     <setting name="devArgs" serializeAs="String">
-      <value>-dev</value>
+      <value></value>
     </setting>
     <setting name="args" serializeAs="String">
-      <value>-game dota</value>
+      <value>-game dota -norestart</value>
     </setting>
     <setting name="serverCount" serializeAs="String">
       <value>10</value>
     </setting>
     <setting name="workingDir" serializeAs="String">
-      <value>/home/d2mod/dota2/</value>
+      <value>/home/d2mod/dota2auto/</value>
     </setting>
   </d2mpserver.Properties.Settings>
   </userSettings>
