@@ -8,9 +8,6 @@
     <Setting Name="connectPassword" Type="System.String" Scope="User">
       <Value Profile="(Default)">mHCYLzo7SAcpIcxXCmlR</Value>
     </Setting>
-    <Setting Name="exePath" Type="System.String" Scope="User">
-      <Value Profile="(Default)">C:\dotaserver\srcds.exe</Value>
-    </Setting>
     <Setting Name="devArgs" Type="System.String" Scope="User">
       <Value Profile="(Default)">-condebug -dev</Value>
     </Setting>
@@ -21,7 +18,19 @@
       <Value Profile="(Default)">10</Value>
     </Setting>
     <Setting Name="workingDir" Type="System.String" Scope="User">
-      <Value Profile="(Default)">C:\dotaserver\</Value>
+      <Value Profile="(Default)">{{exeloc}}\dotaserver\</Value>
+    </Setting>
+    <Setting Name="steamcmd" Type="System.String" Scope="User">
+      <Value Profile="(Default)">https://s3-us-west-2.amazonaws.com/d2mpclient/steamcmd.exe</Value>
+    </Setting>
+    <Setting Name="SteamCMDLogin" Type="System.String" Scope="User">
+      <Value Profile="(Default)">d2modding</Value>
+    </Setting>
+    <Setting Name="SteamCMDPass" Type="System.String" Scope="User">
+      <Value Profile="(Default)">Quantum1337</Value>
+    </Setting>
+    <Setting Name="srcds" Type="System.String" Scope="User">
+      <Value Profile="(Default)">https://s3-us-west-2.amazonaws.com/d2mpclient/srcds.exe</Value>
     </Setting>
   </Settings>
 </SettingsFile>

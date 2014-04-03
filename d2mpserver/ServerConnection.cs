@@ -1,4 +1,7 @@
 ﻿using System;
+using System.IO;
+using System.Net;
+using System.Runtime.Remoting.Channels;
 using System.Threading;
 using WebSocketSharp;
 using d2mpserver.Properties;
@@ -41,11 +44,28 @@ namespace d2mpserver
                                     };
         }
 
+        void PerformAddonInstalls(object state)
+        {
+            string[] addons = (string[]) state;
+            foreach (var addon in addons)
+            {
+                InstallAddon(addon);
+            }
+            SendInit();
+        }
+
         private void ProcessMessage(string data)
         {
             string[] command = data.Split('|');
             switch(command[0])
             {
+                case "installAddons":
+                    {
+                        string[] addons = command[1].Split(',');
+                        log.Debug("Installing addons: " + command[1]);
+                        ThreadPool.QueueUserWorkItem(PerformAddonInstalls, addons);
+                    }
+                    break;
                 case "launchServer":
                     {
                         int id = int.Parse(command[1]);
@@ -74,18 +94,49 @@ namespace d2mpserver
                     }
                     break;
                 case "authFail":
-                    {
-                        log.Fatal("Server doesn't like our init info, shutting down...");
-                        infoValid = false;
-                    }
+                    log.Debug("Auth password: " + Settings.Default.connectPassword + " is invalid.");
+                    log.Fatal("Server doesn't like our init info, shutting down...");
+                    infoValid = false;
                     break;
+            }
+        }
+
+        private void InstallAddon(string addon)
+        {
+            log.Debug("Attempting to install "+addon);
+            var parts = addon.Split('=');
+            //get path to addon
+            var path = Path.Combine(ServerManager.addonsPath, parts[0]);
+            if (Directory.Exists(path))
+            {
+                Directory.Delete(path, true);
+            }
+            Directory.CreateDirectory(path);
+            //download
+            using (var client = new WebClient())
+            {
+                Utils.UnzipFromStream(client.OpenRead(parts[2].Replace('+', '=')), ServerManager.addonsPath);
+            }
+            log.Debug("Addon downloaded and unzipped: "+parts[0]);
+            var mapspath = Path.Combine(path, "maps");
+            if (Directory.Exists(mapspath))
+            {
+                log.Debug("Maps directory exists, copying maps...");
+                var gmapspath = Path.Combine(ServerManager.gameRoot, "dota/maps/");
+                foreach (var file in Directory.GetFiles(mapspath))
+                    File.Copy(file, Path.Combine(gmapspath, Path.GetFileName(file)), true);
             }
         }
 
         public void SendInit()
         {
-            var msg = "init|" + Settings.Default.connectPassword + "|" + Settings.Default.serverCount;
+            var msg = "init|" + Settings.Default.connectPassword + "|" + Settings.Default.serverCount + "|" + GetAddonVersionsString();
             socket.Send(msg);
+        }
+
+        private string GetAddonVersionsString()
+        {
+            return manager.GetAddonVersions();
         }
 
         public bool Connect()

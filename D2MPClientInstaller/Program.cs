@@ -21,7 +21,7 @@ namespace D2MPClientInstaller
         static void DeleteOurselves(string path)
         {
             ProcessStartInfo info = new ProcessStartInfo("cmd.exe");
-            info.Arguments = "ping 192.0.2.2 -n 1 -w 3000 > nul & Del " + path;
+            info.Arguments = "/C timeout 3 & Del " + path;
             info.CreateNoWindow = true;
             info.RedirectStandardOutput = true;
             info.UseShellExecute = false;

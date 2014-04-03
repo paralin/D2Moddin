@@ -16,9 +16,9 @@ namespace d2mpserver
             log.Debug("Connect 'password': "+Settings.Default.connectPassword);
 
             ServerManager manager = new ServerManager();
-            if (!manager.LocateServerEXE())
+            if (!manager.SetupEnvironment())
             {
-                log.Fatal("Can't find scrds.exe");
+                log.Fatal("Failed to setup the server, exiting.");
                 return;
             }
 
@@ -32,28 +32,10 @@ namespace d2mpserver
             connection.StartServerThread();
 
             bool shutdown = false;
-            bool controlling = false;
-            Server controlled = null;
             string line;
             while(!shutdown)
             {
               line = Console.ReadLine();
-              if(controlling){
-                if(line == "stopcontrolling" || controlled.shutdown){
-                  log.Debug("Stopped controlling server.");
-                  controlled = null;
-                  controlling = false;
-                  if(line == "stopcontrolling")
-                  {
-                    continue;
-                  }
-                }
-                else{
-                  controlled.ToSTDIN(line);
-                  continue;
-                }
-              }
-
               var command = line.Split(' ');
               try{
                 switch(command[0])
@@ -61,17 +43,6 @@ namespace d2mpserver
                   case "exit":
                     shutdown = true;
                     log.Debug("Shutdown from console...");
-                    break;
-                  case "control":
-                    int id = int.Parse(command[1]);
-                    var serv = manager.GetServer(id);
-                    if(serv == null){
-                      log.Error("Server ID not known: "+id);
-                      break;
-                    }
-                    controlled = serv;
-                    controlling = true;
-                    log.Debug("Console started controlling: "+id);
                     break;
                   default:
                     log.Error("Unknown command: "+line);

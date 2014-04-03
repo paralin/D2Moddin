@@ -3,6 +3,10 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Reflection;
+using System.Runtime.Remoting.Messaging;
+using System.Security.Policy;
 using System.Text;
 using System.Threading;
 using d2mpserver.Properties;
@@ -16,28 +20,27 @@ namespace d2mpserver
     {
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         public static string exePath;
+        public static string workingdir;
+        public static string steamCmdPath;
+        public static string gameRoot;
+        public static string addonsPath;
+        public static string ourPath;
         Dictionary<int, Server> servers = new Dictionary<int, Server>();
-
-        public bool LocateServerEXE()
-        {
-            exePath = Settings.Default.exePath;
-            return true;
-        }
 
         public Server LaunchServer(int id, int port, bool dev, string mod, string rconPass)
         {
-            log.Info("Launching server, ID: "+id+" on port "+port+(dev?" in devmode.":"."));
+            log.Info("Launching server, ID: " + id + " on port " + port + (dev ? " in devmode." : "."));
             var serv = Server.Create(id, port, dev, mod, rconPass);
-            serv.OnShutdown += (sender,args)=>servers.Remove(serv.id);
+            serv.OnShutdown += (sender, args) => servers.Remove(serv.id);
             servers.Add(id, serv);
             return serv;
         }
 
         public Server GetServer(int id)
         {
-          if(!servers.ContainsKey(id))
-            return null;
-          return servers[id];
+            if (!servers.ContainsKey(id))
+                return null;
+            return servers[id];
         }
 
         public void ShutdownServer(int id)
@@ -48,11 +51,97 @@ namespace d2mpserver
 
         public void ShutdownAllServers()
         {
-            foreach(var server in servers)
+            foreach (var server in servers)
             {
                 server.Value.Shutdown();
             }
             servers.Clear();
+        }
+
+        public bool SetupEnvironment()
+        {
+            try
+            {
+                using (var client = new WebClient())
+                {
+                    log.Info("Setting up working directory...");
+                    ourPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                    workingdir = Settings.Default.workingDir.Replace("{{exeloc}}",
+                        ourPath);
+                    if (!Directory.Exists(workingdir))
+                    {
+                        Directory.CreateDirectory(workingdir);
+                        Directory.CreateDirectory(Path.Combine(workingdir, "steam"));
+                        Directory.CreateDirectory(Path.Combine(workingdir, "game"));
+                    }
+
+                    log.Debug("Working directory: " + workingdir);
+
+                    log.Debug("Searching for SteamCMD...");
+                    steamCmdPath = Path.Combine(workingdir, "steam/steamcmd.exe");
+                    if (!File.Exists(steamCmdPath))
+                    {
+                        log.Debug("Downloading SteamCMD....");
+                        client.DownloadFile(Settings.Default.steamcmd, steamCmdPath);
+                    }
+                    log.Debug("SteamCMD path: " + steamCmdPath);
+
+                    log.Debug("Launching SteamCMD to update Dota (570)...");
+                    SteamCMD.LaunchSteamCMD("+app_update 570").WaitForExitSync();
+                    log.Debug("SteamCMD finished! Continuing...");
+
+                    log.Debug("Finding dota.exe (Dota 2 root)...");
+                    var files = Directory.GetFiles(Path.Combine(workingdir, "game"), "dota.exe",
+                        SearchOption.AllDirectories);
+                    if (files.Length < 1)
+                    {
+                        log.Fatal("Could not find dota.exe in the game dirs! Make sure SteamCMD worked properly.");
+                        return false;
+                    }
+
+                    gameRoot = Path.GetDirectoryName(files[0]);
+                    log.Debug("Found Dota root: " + gameRoot);
+
+                    log.Debug("Patching gameinfo.txt...");
+                    PatchGameInfo(Path.Combine(gameRoot, "dota/gameinfo.txt"));
+
+                    log.Debug("Searching for srcds.exe");
+                    exePath = Path.Combine(gameRoot, "srcds.exe");
+                    if (!File.Exists(exePath))
+                    {
+                        log.Debug("Downloading srcds.exe...");
+                        client.DownloadFile(Settings.Default.srcds, exePath);
+                    }
+                    log.Debug("SRCDS path: " + exePath);
+
+                    addonsPath = Path.Combine(gameRoot, "dota/addons/");
+                    if (!Directory.Exists(addonsPath))
+                    {
+                        log.Fatal("Addons dir doesn't exist: " + addonsPath);
+                        return false;
+                    }
+
+                    File.Copy(Path.Combine(ourPath, "metamod.vdf"), Path.Combine(addonsPath, "metamod.vdf"), true);
+
+                    log.Info("Setup complete, continuing server startup...");
+                }
+            }
+            catch (Exception ex)
+            {
+                log.Fatal("Failed to setup the environment! " + ex);
+                return false;
+            }
+            return true;
+        }
+
+        private void PatchGameInfo(string combine)
+        {
+            File.Copy(Path.Combine(ourPath, "gameinfo.txt"), combine, true);
+        }
+
+        public string GetAddonVersions()
+        {
+            return String.Join(",", Directory.GetDirectories(addonsPath).Select(AddonInfo.DetectVersion).ToArray());
         }
     }
 
@@ -67,7 +156,7 @@ namespace d2mpserver
         public event ShutdownEventHandler OnShutdown;
         public event ShutdownEventHandler OnReady;
         private string mod = "";
-       
+
 
         private Server(Process serverProc, int id, int port, bool dev)
         {
@@ -76,45 +165,19 @@ namespace d2mpserver
             this.port = port;
         }
 
-        public void ToSTDIN(string command){
-          serverProc.StandardInput.WriteLine(command);
-        }
-
-        void SendModCommands(StreamWriter stdin)
+        public void StartThread()
         {
-            log.Debug(id+": sending mod init commands");
-            stdin.WriteLine("update_addon_paths;");
-            stdin.WriteLine("dota_local_custom_enable 1;");
-            stdin.WriteLine("dota_local_custom_game "+mod+";");
-            stdin.WriteLine("dota_local_custom_map "+mod);
-            stdin.WriteLine("dota_force_gamemode 15;");
-            stdin.WriteLine("dota_wait_for_players_to_load 1;");
-            stdin.WriteLine("dota_wait_for_players_to_load_timeout 30;");
-            stdin.WriteLine("map "+mod+";");
-            log.Debug(id+": map "+mod+";");
-            if(OnReady != null)
-              OnReady(this, EventArgs.Empty);
-        }
-
-        public void StartThread(){
             ThreadPool.QueueUserWorkItem(ServerThread);
-        }
-
-        private void OutCallback(string line)
-        {
-          log.Debug(id+": "+line);
-          if(line.Contains("Console initialized."))
-            SendModCommands(serverProc.StandardInput);
-          else if(line.Contains("Match signout")){
-            serverProc.StandardInput.WriteLine("exit");
-          }
         }
 
         private void ServerThread(object state)
         {
-            while(!serverProc.HasExited){
-              serverProc.StandardInput.WriteLine();
-              Thread.Sleep(300);
+            Thread.Sleep(5000);
+            if (OnReady != null)
+                OnReady(this, EventArgs.Empty);
+            while (!serverProc.HasExited)
+            {
+                Thread.Sleep(300);
             }
             if (OnShutdown != null)
                 OnShutdown(this, EventArgs.Empty);
@@ -127,34 +190,29 @@ namespace d2mpserver
             ProcessStartInfo info = serverProc.StartInfo;
             info.FileName = ServerManager.exePath;
             info.Arguments = Settings.Default.args;
-            info.CreateNoWindow = true;
-            if(dev)
+            //info.CreateNoWindow = true;
+            if (dev)
             {
                 info.Arguments += " " + Settings.Default.devArgs;
             }
             info.Arguments += " -port " + port;
-            info.Arguments += " +rcon_password "+rconPass;
+            info.Arguments += " +rcon_password " + rconPass;
             info.UseShellExecute = false;
-            info.RedirectStandardInput = info.RedirectStandardOutput = info.RedirectStandardError = true;
-            info.WorkingDirectory = Settings.Default.workingDir;
-            info.EnvironmentVariables.Add("LD_LIBRARY_PATH", info.WorkingDirectory+":"+info.WorkingDirectory+"/bin");
-            log.Debug(info.FileName+" "+info.Arguments);
+            //info.RedirectStandardInput = info.RedirectStandardOutput = info.RedirectStandardError = true;
+            info.WorkingDirectory = ServerManager.workingdir;
+            info.EnvironmentVariables.Add("LD_LIBRARY_PATH", info.WorkingDirectory + ":" + info.WorkingDirectory + "/bin");
+            log.Debug(info.FileName + " " + info.Arguments);
             Server serv = new Server(serverProc, id, port, dev);
-            serverProc.EnableRaisingEvents = true;
-            serverProc.OutputDataReceived += (sender, args) => serv.OutCallback(args.Data);
-            serverProc.ErrorDataReceived += (sender, args) => serv.OutCallback(args.Data);
             serverProc.Start();
-            serverProc.BeginOutputReadLine();
-            serverProc.BeginErrorReadLine();
             serv.StartThread();
             serv.mod = mod;
-            log.Debug("server ID: "+id+" spawned, process ID "+serverProc.Id);
+            log.Debug("server ID: " + id + " spawned, process ID " + serverProc.Id);
             return serv;
         }
 
         public void Shutdown()
         {
-            log.Debug("shutting down scrds id: "+id);
+            log.Debug("shutting down scrds id: " + id);
             shutdown = true;
             serverProc.StandardInput.WriteLine("exit");
         }

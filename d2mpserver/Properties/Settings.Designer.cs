@@ -12,7 +12,7 @@ namespace d2mpserver.Properties {
     
     
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "11.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "12.0.0.0")]
     internal sealed partial class Settings : global::System.Configuration.ApplicationSettingsBase {
         
         private static Settings defaultInstance = ((Settings)(global::System.Configuration.ApplicationSettingsBase.Synchronized(new Settings())));
@@ -44,18 +44,6 @@ namespace d2mpserver.Properties {
             }
             set {
                 this["connectPassword"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("C:\\dotaserver\\srcds.exe")]
-        public string exePath {
-            get {
-                return ((string)(this["exePath"]));
-            }
-            set {
-                this["exePath"] = value;
             }
         }
         
@@ -97,13 +85,61 @@ namespace d2mpserver.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("C:\\dotaserver\\")]
+        [global::System.Configuration.DefaultSettingValueAttribute("{{exeloc}}\\dotaserver\\")]
         public string workingDir {
             get {
                 return ((string)(this["workingDir"]));
             }
             set {
                 this["workingDir"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("https://s3-us-west-2.amazonaws.com/d2mpclient/steamcmd.exe")]
+        public string steamcmd {
+            get {
+                return ((string)(this["steamcmd"]));
+            }
+            set {
+                this["steamcmd"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("d2modding")]
+        public string SteamCMDLogin {
+            get {
+                return ((string)(this["SteamCMDLogin"]));
+            }
+            set {
+                this["SteamCMDLogin"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("Quantum1337")]
+        public string SteamCMDPass {
+            get {
+                return ((string)(this["SteamCMDPass"]));
+            }
+            set {
+                this["SteamCMDPass"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("https://s3-us-west-2.amazonaws.com/d2mpclient/srcds.exe")]
+        public string srcds {
+            get {
+                return ((string)(this["srcds"]));
+            }
+            set {
+                this["srcds"] = value;
             }
         }
     }
