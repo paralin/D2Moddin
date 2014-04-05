@@ -14,6 +14,7 @@ namespace d2mpserver
         public WebSocket socket = null;
         public bool infoValid = true;
         private bool shutdown = false;
+        private bool reconnecting = false;
         private ServerManager manager;
 
         public ServerConnection(ServerManager manager)
@@ -26,7 +27,7 @@ namespace d2mpserver
             socket.OnClose += (sender, args) =>
                                     {
                                         log.Debug("Disconnected from the server");
-                                        //Reconnect?
+                                        reconnecting = true;
                                     };
             socket.OnError += (sender, args) =>
                                     {
@@ -185,6 +186,19 @@ namespace d2mpserver
         {
             while(!shutdown)
             {
+                if (reconnecting)
+                {
+                    log.Debug("Attempting reconnection...");
+                    if (!Connect())
+                    {
+                        log.Debug("... failed, will try again in 10 seconds ...");
+                        Thread.Sleep(9900);
+                    }
+                    else
+                    {
+                        reconnecting = false;
+                    }
+                }
                 Thread.Sleep(100);
             }
             manager.ShutdownAllServers();

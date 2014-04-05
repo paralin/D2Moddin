@@ -8,6 +8,7 @@ using System.Net;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Windows.Forms;
 using ICSharpCode.SharpZipLib.Core;
 using ICSharpCode.SharpZipLib.Zip;
 using Microsoft.Win32;
@@ -21,12 +22,15 @@ namespace d2mp
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         private static WebSocket ws;
         private static string addonsDir;
+        public static bool shutDown = false;
+        public static bool doUninstall = false;
+        private static string[] modNames = null;
 
         static void DeleteOurselves()
         {
             var currpath = Assembly.GetExecutingAssembly().Location;
             ProcessStartInfo info = new ProcessStartInfo("cmd.exe");
-            info.Arguments = "ping 192.0.2.2 -n 1 -w 3000 > nul & Del " + currpath;
+            info.Arguments = "/C timeout 3 & Del " + currpath;
             info.CreateNoWindow = true;
             info.RedirectStandardOutput = true;
             info.UseShellExecute = false;
@@ -41,7 +45,7 @@ namespace d2mp
             while (zipEntry != null)
             {
                 String entryFileName = zipEntry.Name;
-                log.Debug(" --> "+entryFileName);
+                log.Debug(" --> " + entryFileName);
                 // to remove the folder from the entry:- entryFileName = Path.GetFileName(entryFileName);
                 // Optionally match entrynames against a selection list here to skip as desired.
                 // The unpacked length is available in the zipEntry.Size property.
@@ -57,7 +61,7 @@ namespace d2mp
                     Thread.Sleep(30);
                 }
 
-                if(Path.GetFileName(fullZipToPath) != String.Empty)
+                if (Path.GetFileName(fullZipToPath) != String.Empty)
                 {
                     // Unzip file in buffered chunks. This is just as fast as unpacking to a buffer the full size
                     // of the file, but does not waste memory.
@@ -74,7 +78,7 @@ namespace d2mp
         static void UninstallD2MP()
         {
             //Delete all files 
-            var d2mpexecutable = Path.GetFileName(Assembly.GetExecutingAssembly().Location);
+            var d2mpexecutable = Path.GetFileName(Assembly.GetExecutingAssembly().Location).ToLower();
             string[] filePaths = Directory.GetFiles(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
             foreach (string filePath in filePaths)
             {
@@ -85,11 +89,24 @@ namespace d2mp
                     File.Delete(filePath);
                 }
             }
+            DeleteOurselves();
         }
-        
+
         public static void main()
         {
             log.Debug("D2MP starting...");
+
+            var iconThread = new Thread(delegate()
+            {
+                using (var icon = new ProcessIcon())
+                {
+                    icon.Display();
+                    Application.Run();
+                }
+            });
+
+            iconThread.SetApartmentState(ApartmentState.STA);
+            iconThread.Start();
 
             try
             {
@@ -104,7 +121,7 @@ namespace d2mp
                 else
                 {
                     log.Debug("Steam found: " + steamDir);
-                    log.Debug("Dota found: "+dotaDir);
+                    log.Debug("Dota found: " + dotaDir);
                 }
 
                 addonsDir = dotaDir;
@@ -114,7 +131,7 @@ namespace d2mp
                     return;
                 }
 
-                string[] modNames = null;
+                
                 {
                     var dirs = Directory.GetDirectories(addonsDir);
                     modNames = new string[dirs.Length];
@@ -122,22 +139,28 @@ namespace d2mp
                     foreach (var dir in dirs)
                     {
                         var modName = Path.GetFileName(dir);
-                        log.Debug("Found mod: "+modName+" detecting version...");
+                        log.Debug("Found mod: " + modName + " detecting version...");
                         var infoPath = Path.Combine(addonsDir, modName + "/addoninfo.txt");
                         string versionFile = "";
                         if (File.Exists(infoPath))
                         {
                             versionFile = File.ReadAllText(infoPath);
                         }
-                        var match = Regex.Match(versionFile, @"(addonversion)(\s+)(\d+\.)?(\d+\.)?(\d+\.)?(\*|\d+)", RegexOptions.IgnoreCase);
-                        if(match.Success)
+                        var match = Regex.Match(versionFile, @"(addonversion)(\s+)(\d+\.)?(\d+\.)?(\d+\.)?(\*|\d+)",
+                            RegexOptions.IgnoreCase);
+                        if (match.Success)
                         {
-                            string version = match.Groups.Cast<Group>().ToList().Skip(3).Aggregate("", (current, part) => current + part.Value);
-                            log.Debug(modName+"="+version);
-                            modNames[i] = modName+"="+version;
-                        }else{
-                          log.Error("Can't find version info for mod: "+modName+", not including");
-                          modNames[i] = modName+"=?";
+                            string version = match.Groups.Cast<Group>()
+                                .ToList()
+                                .Skip(3)
+                                .Aggregate("", (current, part) => current + part.Value);
+                            log.Debug(modName + "=" + version);
+                            modNames[i] = modName + "=" + version;
+                        }
+                        else
+                        {
+                            log.Error("Can't find version info for mod: " + modName + ", not including");
+                            modNames[i] = modName + "=?";
                         }
                         i++;
                     }
@@ -163,49 +186,48 @@ namespace d2mp
                     return;
                 }
 
-                bool shutDown = false;
+                shutDown = false;
                 int tryCount = 0;
                 while (tryCount < 10 && !shutDown)
                 {
                     using (ws = new WebSocket(server))
                     {
                         ws.OnMessage += (sender, e) =>
-                            {
-                                log.Debug("server: " + e.Data);
-                                if (e.Data == "invalidid")
-                                {
-                                    log.Debug("Invalid ID!");
-                                    shutDown = true;
-                                    return;
-                                }
+                                        {
+                                            log.Debug("server: " + e.Data);
+                                            if (e.Data == "invalidid")
+                                            {
+                                                log.Debug("Invalid ID!");
+                                                shutDown = true;
+                                                return;
+                                            }
 
-                                if (e.Data == "close")
-                                {
-                                    log.Debug("Shutting down due to server request.");
-                                    shutDown = true;
-                                    return;
-                                }
+                                            if (e.Data == "close")
+                                            {
+                                                log.Debug("Shutting down due to server request.");
+                                                shutDown = true;
+                                                return;
+                                            }
 
-                                if (e.Data == "uninstall")
-                                {
-                                    log.Debug("Uninstalling due to server request...");
-                                    UninstallD2MP();
-                                    DeleteOurselves();
-                                    shutDown = true;
-                                    return;
-                                }
+                                            if (e.Data == "uninstall")
+                                            {
+                                                log.Debug("Uninstalling due to server request...");
+                                                UninstallD2MP();
+                                                shutDown = true;
+                                                return;
+                                            }
 
-                                var msgParts = e.Data.Split(':');
-                                switch (msgParts[0])
-                                {
-                                    case "installmod":
-                                        ThreadPool.QueueUserWorkItem(InstallMod, msgParts);
-                                        break;
-                                    default:
-                                        log.Error("Command not recognized: " + msgParts[0]);
-                                        break;
-                                }
-                            };
+                                            var msgParts = e.Data.Split(':');
+                                            switch (msgParts[0])
+                                            {
+                                                case "installmod":
+                                                    ThreadPool.QueueUserWorkItem(InstallMod, msgParts);
+                                                    break;
+                                                default:
+                                                    log.Error("Command not recognized: " + msgParts[0]);
+                                                    break;
+                                            }
+                                        };
 
                         ws.OnOpen += (sender, e) => log.Debug("Connected");
                         ws.OnClose += (sender, args) => log.Debug("Disconnected");
@@ -223,9 +245,10 @@ namespace d2mp
                             var ver =
                                 File.ReadAllText(
                                     Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
-                                                 "version.txt"));
+                                        "version.txt"));
                             log.Debug("sending version: " + ver);
-                            ws.Send("init:" + String.Join(",", steamids.ToArray(), 0, steamids.Count) + ":" + ver + ":" + String.Join(",",modNames));
+                            ws.Send("init:" + String.Join(",", steamids.ToArray(), 0, steamids.Count) + ":" + ver +
+                                    ":" + String.Join(",", modNames));
                         }
                         catch (Exception ex)
                         {
@@ -244,17 +267,25 @@ namespace d2mp
             }
             catch (Exception ex)
             {
-                log.Fatal("Overall error in the program: "+ex);
+                log.Fatal("Overall error in the program: " + ex);
             }
+
+            if (doUninstall)
+            {
+                UninstallD2MP();
+            }
+
+            Application.Exit();
         }
 
         private static void InstallMod(object state)
         {
-            var msgParts = (string[]) state;
-            var modname = msgParts[1];
+            var msgParts = (string[])state;
+            var modp = msgParts[1].Split('=');
+            var modname = modp[0];
             var url = "http:" + msgParts[3];
             log.Info("Server requested that we install mod " + modname + " from download " + url);
-                                        
+
             //delete if already exists
             var targetDir = Path.Combine(addonsDir, modname);
             if (Directory.Exists(targetDir))
@@ -265,7 +296,38 @@ namespace d2mp
             WebClient client = new WebClient();
             UnzipFromStream(client.OpenRead(url), targetDir);
             log.Info("Mod installed!");
-            ws.Send("installedMod:"+modname);
+            ws.Send("installedMod:" + modname);
+            for(int i=0; i<modNames.Length; i++)
+            {
+                string[] parts = modNames[i].Split('=');
+                if (parts[0] == modname)
+                {
+                    modNames[i] = msgParts[1];
+                    return;
+                }
+            }
+            var newArr = new string[modNames.Length + 1];
+            for (int i = 0; i < modNames.Length; i++)
+            {
+                newArr[i] = modNames[i];
+            }
+            newArr[modNames.Length] = msgParts[1];
+            modNames = newArr;
+        }
+
+        public static void Restart()
+        {
+            Process proc = new Process();
+            proc.StartInfo.FileName = Assembly.GetExecutingAssembly().Location;
+            proc.StartInfo.UseShellExecute = false;
+            proc.Start();
+            shutDown = true;
+        }
+
+        public static void ShowModList()
+        {
+            string message = "You currently have the following detected mods installed:\n\n"+String.Join(", ", modNames);
+            MessageBox.Show(message, "Installed Mods");
         }
     }
 
@@ -287,11 +349,11 @@ namespace d2mp
         public string FindSteam(bool delCache)
         {
             if (delCache) cachedLocation = "";
-            if(delCache || cachedLocation == "")
+            if (delCache || cachedLocation == "")
             {
-                foreach(var loc in knownLocations)
+                foreach (var loc in knownLocations)
                 {
-                    if(ContainsSteam(loc))
+                    if (ContainsSteam(loc))
                     {
                         cachedLocation = loc;
                         return loc;
@@ -310,7 +372,8 @@ namespace d2mp
 
                 //Search using file search? Eh... Return null.
                 return null;
-            }else
+            }
+            else
             {
                 return cachedLocation;
             }
@@ -320,7 +383,7 @@ namespace d2mp
         {
             if (!delCache && cachedDotaLocation != null) return cachedDotaLocation;
             var steamDir = FindSteam(false);
-            if(steamDir != null)
+            if (steamDir != null)
             {
                 var dir = Path.Combine(steamDir, "steamapps/common/dota 2 beta/dota/addons/");
                 if (Directory.Exists(dir))

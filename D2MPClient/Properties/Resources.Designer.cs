@@ -59,5 +59,15 @@ namespace d2mp.Properties {
                 resourceCulture = value;
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Icon similar to (Icon).
+        /// </summary>
+        internal static System.Drawing.Icon D2MPIconSmall {
+            get {
+                object obj = ResourceManager.GetObject("D2MPIconSmall", resourceCulture);
+                return ((System.Drawing.Icon)(obj));
+            }
+        }
     }
 }
