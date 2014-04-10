@@ -23,6 +23,10 @@ namespace d2mpserver
             proc = process;
         }
 
+        public void Kill(){
+          proc.Kill();
+        }
+
         public void ToSTDIN(string command)
         {
             proc.StandardInput.WriteLine(command);
