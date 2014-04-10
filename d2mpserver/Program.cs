@@ -23,6 +23,13 @@ namespace d2mpserver
             CTRL_SHUTDOWN_EVENT
         }
 
+        private static bool ConsoleCtrlCheck(CtrlTypes ctrlType)
+        {
+            ShutdownAll();
+            shutdown = true;
+            return true;
+        }
+
         public static void ShutdownAll()
         {
             if (connection != null)
@@ -39,6 +46,7 @@ namespace d2mpserver
         static ServerManager manager;
         static void Main(string[] args)
         {
+            SetConsoleCtrlHandler(ConsoleCtrlCheck, true);
             System.Net.ServicePointManager.ServerCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true;
             XmlConfigurator.Configure();
             log.Info("D2MP server starting...");
