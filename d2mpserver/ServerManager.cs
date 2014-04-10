@@ -25,6 +25,7 @@ namespace d2mpserver
         public static string gameRoot;
         public static string addonsPath;
         public static string ourPath;
+        private static volatile bool shutdown;
         Dictionary<int, Server> servers = new Dictionary<int, Server>();
 
         public Server LaunchServer(int id, int port, bool dev, string mod, string rconPass)
@@ -59,6 +60,16 @@ namespace d2mpserver
             servers.Clear();
         }
 
+        public void Shutdown()
+        {
+          ShutdownAllServers();
+          if(activeSteamCMD != null){
+            activeSteamCMD.Kill();
+          }
+          shutdown = true;
+        }
+
+        private SteamCMD activeSteamCMD = null;
         public bool SetupEnvironment()
         {
             try
@@ -88,8 +99,11 @@ namespace d2mpserver
                     log.Debug("SteamCMD path: " + steamCmdPath);
 
                     log.Debug("Launching SteamCMD to update Dota (570)...");
-                    SteamCMD.LaunchSteamCMD("+app_update 570").WaitForExitSync();
+                    activeSteamCMD = SteamCMD.LaunchSteamCMD("+app_update 570");
+                    activeSteamCMD.WaitForExitSync();
                     log.Debug("SteamCMD finished! Continuing...");
+                    activeSteamCMD = null;
+                    if(shutdown) { log.Debug("Environment setup canceled!"); return false;}
 
                     log.Debug("Finding dota.exe (Dota 2 root)...");
                     var files = Directory.GetFiles(Path.Combine(workingdir, "game"), "dota.exe",
