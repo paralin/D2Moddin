@@ -1,4 +1,6 @@
 ﻿using System;
+using System.IO;
+using System.Net.Mime;
 using System.Threading;
 using System.Runtime.InteropServices;
 using d2mpserver.Properties;
@@ -46,13 +48,20 @@ namespace d2mpserver
         static ServerManager manager;
         static void Main(string[] args)
         {
+            var defaultConfig = AppDomain.CurrentDomain.SetupInformation.ConfigurationFile + ".default";
+            if (!File.Exists(AppDomain.CurrentDomain.SetupInformation.ConfigurationFile) && File.Exists(defaultConfig))
+            {
+                File.Copy(defaultConfig, AppDomain.CurrentDomain.SetupInformation.ConfigurationFile);
+                ServerUpdater.RestartD2MP();
+                return;
+            }
+
+            XmlConfigurator.Configure();
             SetConsoleCtrlHandler(ConsoleCtrlCheck, true);
             System.Net.ServicePointManager.ServerCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true;
-            XmlConfigurator.Configure();
+            
             log.Info("D2MP server starting...");
-
-            log.Debug("Server IP: " + Settings.Default.serverIP);
-            log.Debug("Connect 'password': " + Settings.Default.connectPassword);
+            log.Debug("Connection address: " + Settings.Default.serverIP);
 
             manager = new ServerManager();
             if (!manager.SetupEnvironment())

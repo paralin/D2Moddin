@@ -41,5 +41,14 @@ namespace d2mpserver
             Process.Start(info);
             Environment.Exit(0);
         }
+
+        public static void RestartD2MP()
+        {
+            string command = "start /d \"" + Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "\" " + Path.GetFileName(Assembly.GetExecutingAssembly().Location) + " & exit";
+            ProcessStartInfo info = new ProcessStartInfo("cmd.exe");
+            info.Arguments = "/C timeout 1 & " + command;
+            info.UseShellExecute = false;
+            Process.Start(info);
+        }
     }
 }
