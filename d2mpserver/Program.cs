@@ -34,14 +34,18 @@ namespace d2mpserver
 
         public static void ShutdownAll()
         {
-            if (connection != null)
-                connection.Shutdown();
-            if (manager != null)
-            {
-                manager.Shutdown();
-            }
+            var conn = connection;
             connection = null;
+
+            var man = manager;
             manager = null;
+
+            if (conn != null)
+                conn.Shutdown();
+            if (man != null)
+            {
+                man.Shutdown();
+            }
         }
 
         static ServerConnection connection;
@@ -60,8 +64,10 @@ namespace d2mpserver
             SetConsoleCtrlHandler(ConsoleCtrlCheck, true);
             System.Net.ServicePointManager.ServerCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true;
             
-            log.Info("D2MP server starting...");
+            log.Info("D2MP server version "+ServerUpdater.version+" starting...");
             log.Debug("Connection address: " + Settings.Default.serverIP);
+
+            Console.Title = string.Format("[{0}] D2MP Server", ServerUpdater.version);
 
             manager = new ServerManager();
             if (!manager.SetupEnvironment())
