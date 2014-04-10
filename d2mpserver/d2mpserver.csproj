@@ -65,6 +65,7 @@
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
     <Compile Include="ServerConnection.cs" />
+    <Compile Include="ServerUpdater.cs" />
     <Compile Include="SteamCMD.cs" />
     <Compile Include="Utils.cs" />
   </ItemGroup>

@@ -34,7 +34,7 @@ namespace d2mp
             // Put the icon in the system tray and allow it react to mouse clicks.			
             ni.MouseClick += new MouseEventHandler(ni_MouseClick);
             ni.Icon = Resources.D2MPIconSmall;
-            ni.Text = "D2Moddin Mod Manager";
+            ni.Text = "D2Moddin Manager";
             ni.Visible = true;
 
             // Attach a context menu.
@@ -86,17 +86,16 @@ namespace d2mp
             item.Click += new EventHandler(Restart_Click);
             menu.Items.Add(item);
 
+            item = new ToolStripMenuItem();
+            item.Text = "Uninstall";
+            item.Click += new EventHandler(Uninstall_Click);
+            menu.Items.Add(item);
+
             // Mod List.
             item = new ToolStripMenuItem();
             item.Text = "Show Mod List";
             item.Click += new EventHandler(ModList_Click);
             menu.Items.Add(item);
-
-            // Uninstall.
-            //item = new ToolStripMenuItem();
-            //item.Text = "Exit & Uninstall";
-            //item.Click += new EventHandler(Uninstall_Click);
-            //menu.Items.Add(item);
 
             // Separator.
             sep = new ToolStripSeparator();
@@ -114,8 +113,7 @@ namespace d2mp
 
         private void Uninstall_Click(object sender, EventArgs e)
         {
-            D2MP.doUninstall = true;
-            D2MP.shutDown = true;
+            D2MP.Uninstall();
         }
 
         private void ModList_Click(object sender, EventArgs e)

@@ -45,6 +45,7 @@ namespace d2mpserver
 
         public void ShutdownServer(int id)
         {
+            if (!servers.ContainsKey(id)) return;
             servers[id].Shutdown();
             servers.Remove(id);
         }
@@ -214,7 +215,7 @@ namespace d2mpserver
         {
             log.Debug("shutting down scrds id: " + id);
             shutdown = true;
-            serverProc.StandardInput.WriteLine("exit");
+            serverProc.Kill();
         }
     }
 }

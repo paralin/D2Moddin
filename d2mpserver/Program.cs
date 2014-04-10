@@ -7,6 +7,7 @@ namespace d2mpserver
     class Program
     {
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        public static bool shutdown;
         static void Main(string[] args)
         {
             XmlConfigurator.Configure();
@@ -31,7 +32,7 @@ namespace d2mpserver
 
             connection.StartServerThread();
 
-            bool shutdown = false;
+            shutdown = false;
             string line;
             while(!shutdown)
             {

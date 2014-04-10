@@ -23,19 +23,9 @@ namespace d2mp
         private static WebSocket ws;
         private static string addonsDir;
         public static bool shutDown = false;
-        public static bool doUninstall = false;
+        public static string ourDir;
         private static string[] modNames = null;
 
-        static void DeleteOurselves()
-        {
-            var currpath = Assembly.GetExecutingAssembly().Location;
-            ProcessStartInfo info = new ProcessStartInfo("cmd.exe");
-            info.Arguments = "/C timeout 3 & Del " + currpath;
-            info.CreateNoWindow = true;
-            info.RedirectStandardOutput = true;
-            info.UseShellExecute = false;
-            Process.Start(info);
-        }
 
         static void UnzipFromStream(Stream zipStream, string outFolder)
         {
@@ -78,24 +68,20 @@ namespace d2mp
         static void UninstallD2MP()
         {
             //Delete all files 
-            var d2mpexecutable = Path.GetFileName(Assembly.GetExecutingAssembly().Location).ToLower();
-            string[] filePaths = Directory.GetFiles(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
-            foreach (string filePath in filePaths)
-            {
-                var name = new FileInfo(filePath).Name;
-                name = name.ToLower();
-                if (name != d2mpexecutable)
-                {
-                    File.Delete(filePath);
-                }
-            }
-            DeleteOurselves();
+            var installdir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            ProcessStartInfo info = new ProcessStartInfo("cmd.exe");
+            info.Arguments = "/C timeout 3 & Del /s /f /q " + installdir + " & exit";
+            info.CreateNoWindow = true;
+            info.RedirectStandardOutput = true;
+            info.UseShellExecute = false;
+            Process.Start(info);
         }
 
         public static void main()
         {
             log.Debug("D2MP starting...");
 
+            ourDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             var iconThread = new Thread(delegate()
             {
                 using (var icon = new ProcessIcon())
@@ -186,6 +172,21 @@ namespace d2mp
                     return;
                 }
 
+                log.Debug("Starting shutdown file watcher...");
+                string pathToShutdownFile = Path.Combine(ourDir, "d2mp.pid");
+                File.WriteAllText(pathToShutdownFile, "Delete this file to shutdown D2MP.");
+
+                FileSystemWatcher watcher = new FileSystemWatcher();
+                watcher.Path = ourDir;
+                watcher.NotifyFilter = NotifyFilters.LastAccess | NotifyFilters.LastWrite
+                                       | NotifyFilters.FileName;
+                watcher.Filter = "d2mp.pid";
+                watcher.Deleted += (sender, args) =>
+                                   {
+                                       shutDown = true;
+                                   };
+                watcher.EnableRaisingEvents = true;
+
                 shutDown = false;
                 int tryCount = 0;
                 while (tryCount < 10 && !shutDown)
@@ -270,11 +271,6 @@ namespace d2mp
                 log.Fatal("Overall error in the program: " + ex);
             }
 
-            if (doUninstall)
-            {
-                UninstallD2MP();
-            }
-
             Application.Exit();
         }
 
@@ -313,6 +309,12 @@ namespace d2mp
             }
             newArr[modNames.Length] = msgParts[1];
             modNames = newArr;
+        }
+
+        public static void Uninstall()
+        {
+            UninstallD2MP();
+            shutDown = true;
         }
 
         public static void Restart()

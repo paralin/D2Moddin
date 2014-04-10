@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Net;
+using System.Net.Mime;
 using System.Runtime.Remoting.Channels;
 using System.Threading;
 using WebSocketSharp;
@@ -96,8 +97,18 @@ namespace d2mpserver
                     break;
                 case "authFail":
                     log.Debug("Auth password: " + Settings.Default.connectPassword + " is invalid.");
-                    log.Fatal("Server doesn't like our init info, shutting down...");
+                    log.Fatal("Server doesn't like our init info (we're probably out of date), shutting down...");
                     infoValid = false;
+                    Environment.Exit(0);
+                    break;
+                case "outOfDate":
+                    log.Info("Server is out of date (current version is "+ServerUpdater.version+"), updating...");
+                    {
+                        var url = command[1];
+                        log.Debug("Downloading update from "+url+"...");
+                        ServerUpdater.UpdateFromURL(url);
+                        break;
+                    }
                     break;
             }
         }
@@ -131,7 +142,7 @@ namespace d2mpserver
 
         public void SendInit()
         {
-            var msg = "init|" + Settings.Default.connectPassword + "|" + Settings.Default.serverCount + "|" + GetAddonVersionsString();
+            var msg = "init|" + Settings.Default.connectPassword + "|" + Settings.Default.serverCount + "|" + GetAddonVersionsString()+"|"+ServerUpdater.version;
             socket.Send(msg);
         }
 
@@ -192,6 +203,7 @@ namespace d2mpserver
                     if (!Connect())
                     {
                         log.Debug("... failed, will try again in 10 seconds ...");
+                        manager.ShutdownAllServers();
                         Thread.Sleep(9900);
                     }
                     else

@@ -12,6 +12,7 @@ namespace D2MPClientInstaller
     static class Program
     {
         private static bool doLog = false;
+        private static string installdir;
         static void Log(string text)
         {
             if(doLog)
@@ -66,27 +67,39 @@ namespace D2MPClientInstaller
             Process.Start(info);
         }
 
-        static void UninstallD2MP(string installdir)
+        static void ShutdownD2MP()
         {
-            Process[] proc = Process.GetProcessesByName("d2mp");
-            if (proc.Length != 0)
+            var exepath = Path.Combine(installdir, "d2mp.exe");
+            var pidpath = Path.Combine(installdir, "d2mp.pid");
+            if (Process.GetProcessesByName("d2mp").Length != 0)
             {
-                foreach(var process in proc)
+                if (File.Exists(pidpath))
                 {
-                    process.Kill();
+                    File.Delete(pidpath);
+                    int wait = 0;
+                    while (wait < 30 && Process.GetProcessesByName("d2mp").Length != 0)
+                    {
+                        Thread.Sleep(1000);
+                        wait++;
+                    }
+                }
+                var remaining = Process.GetProcessesByName("d2mp");
+                foreach (var remain in remaining)
+                {
+                    remain.Kill();
+                    remain.WaitForExit();
                 }
             }
-            Thread.Sleep(2000);
+        }
+
+        static void UninstallD2MP(string installdir)
+        {
+            ShutdownD2MP();
             //Delete all files 
             string[] filePaths = Directory.GetFiles(installdir);
             foreach (string filePath in filePaths)
             {
-                var name = new FileInfo(filePath).Name;
-                name = name.ToLower();
-                if (name != "installer.exe")
-                {
-                    File.Delete(filePath);
-                }
+                File.Delete(filePath);
             }
         }
 
@@ -97,39 +110,17 @@ namespace D2MPClientInstaller
         static void Main()
         {
             Log("Finding install directories...");
-            var installdir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "D2MP");
+            installdir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "D2MP");
             var verpath = Path.Combine(installdir, "version.txt");
             Log("Temporary dir: " + installdir);
             Log("Verpath: "+verpath);
             if(!Directory.Exists(installdir))
                 Directory.CreateDirectory(installdir);
-            var currpath = Assembly.GetExecutingAssembly().Location;
-            if(Path.GetDirectoryName(currpath) != installdir)
-            {
-                Log("Copying ourselves into the temporary directory...");
-                var target = Path.Combine(installdir, "installer.exe");
 
-                try
-                {
-                    File.Delete(target);
-                }catch
-                {
-                    Log("Installer does not already exist in target dir.");
-                }
-
-                File.Copy(currpath, target);
-                LaunchD2MP(target);
-                Log("Deleting ourselves...");
-                DeleteOurselves(currpath);
-                return;
-            }
-            
-            //We are in the install dir, download files
             WebClient client = new WebClient();
-            var info = client.DownloadString("http://d2modd.in:3000/clientver").Split('|');
+            var info = client.DownloadString("http://d2modd.in/clientver").Split('|');
             Log("Version string: "+String.Join(",", info));
             var versplit = info[0].Split(':');
-            var verstr = versplit[1];
             if(versplit[0] == "version" && versplit[1] != "disabled")
             {
                 //check for existing installed file
@@ -145,15 +136,12 @@ namespace D2MPClientInstaller
                 UninstallD2MP(installdir);
             }
 
-            var exepath = Path.Combine(installdir, "d2mp.exe");
-
-            if(File.Exists(exepath) && Process.GetProcessesByName("d2mp").Length == 0)
-            {
-                LaunchD2MP(exepath);
-            }
-
+            Log("Launching D2MP...");
+            ShutdownD2MP();
+            LaunchD2MP(Path.Combine(installdir, "d2mp.exe"));
             //delete ourselves
-            DeleteOurselves(currpath);
+            Log("Deleting ourselves...");
+            DeleteOurselves(Assembly.GetExecutingAssembly().Location);
             return;
         }
     }
