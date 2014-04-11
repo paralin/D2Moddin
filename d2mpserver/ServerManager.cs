@@ -111,6 +111,9 @@ namespace d2mpserver
                     if (files.Length < 1)
                     {
                         log.Fatal("Could not find dota.exe in the game dirs! Make sure SteamCMD worked properly.");
+                        log.Debug(" - working dir: "+workingdir);
+                        log.Debug(" - looked for " + Path.Combine(workingdir, "game", "dota2.exe"));
+                        log.Debug(" - steamcmd path: "+steamCmdPath);
                         return false;
                     }
 
