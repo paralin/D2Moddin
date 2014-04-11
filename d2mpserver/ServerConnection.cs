@@ -103,11 +103,17 @@ namespace d2mpserver
                     break;
                 case "outOfDate":
                     log.Info("Server is out of date (current version is "+ServerUpdater.version+"), updating...");
+                    if (!Settings.Default.disableUpdate)
                     {
                         var url = command[1];
-                        log.Debug("Downloading update from "+url+"...");
+                        log.Debug("Downloading update from " + url + "...");
                         ServerUpdater.UpdateFromURL(url);
                         break;
+                    }
+                    else
+                    {
+                        log.Fatal("Server out of date but auto updating disabled. Exiting...");
+                        Program.shutdown = true;
                     }
                     break;
             }

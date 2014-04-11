@@ -5,12 +5,6 @@
     <Setting Name="serverIP" Type="System.String" Scope="User">
       <Value Profile="(Default)">ws://d2modd.in:3006/</Value>
     </Setting>
-    <Setting Name="connectPassword" Type="System.String" Scope="User">
-      <Value Profile="(Default)">mHCYLzo7SAcpIcxXCmlR</Value>
-    </Setting>
-    <Setting Name="devArgs" Type="System.String" Scope="User">
-      <Value Profile="(Default)">-condebug -dev</Value>
-    </Setting>
     <Setting Name="args" Type="System.String" Scope="User">
       <Value Profile="(Default)">-console -game dota</Value>
     </Setting>
@@ -31,6 +25,15 @@
     </Setting>
     <Setting Name="srcds" Type="System.String" Scope="User">
       <Value Profile="(Default)">https://s3-us-west-2.amazonaws.com/d2mpclient/srcds.exe</Value>
+    </Setting>
+    <Setting Name="connectPassword" Type="System.String" Scope="User">
+      <Value Profile="(Default)">kwxmMKDcuVjQNutZOwZy</Value>
+    </Setting>
+    <Setting Name="devArgs" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="disableUpdate" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">False</Value>
     </Setting>
   </Settings>
 </SettingsFile>

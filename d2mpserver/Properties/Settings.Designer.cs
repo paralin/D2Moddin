@@ -37,30 +37,6 @@ namespace d2mpserver.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("mHCYLzo7SAcpIcxXCmlR")]
-        public string connectPassword {
-            get {
-                return ((string)(this["connectPassword"]));
-            }
-            set {
-                this["connectPassword"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("-condebug -dev")]
-        public string devArgs {
-            get {
-                return ((string)(this["devArgs"]));
-            }
-            set {
-                this["devArgs"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("-console -game dota")]
         public string args {
             get {
@@ -140,6 +116,42 @@ namespace d2mpserver.Properties {
             }
             set {
                 this["srcds"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("kwxmMKDcuVjQNutZOwZy")]
+        public string connectPassword {
+            get {
+                return ((string)(this["connectPassword"]));
+            }
+            set {
+                this["connectPassword"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string devArgs {
+            get {
+                return ((string)(this["devArgs"]));
+            }
+            set {
+                this["devArgs"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool disableUpdate {
+            get {
+                return ((bool)(this["disableUpdate"]));
+            }
+            set {
+                this["disableUpdate"] = value;
             }
         }
     }
