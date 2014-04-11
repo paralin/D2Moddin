@@ -79,7 +79,7 @@ namespace d2mpserver
                     log.Info("Setting up working directory...");
                     ourPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
                     workingdir = Settings.Default.workingDir.Replace("{{exeloc}}",
-                        ourPath);
+                        ourPath).Replace('\\', '/');
                     if (!Directory.Exists(workingdir))
                     {
                         Directory.CreateDirectory(workingdir);
