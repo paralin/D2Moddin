@@ -34,9 +34,36 @@ namespace d2mpserver
             {
                 Utils.UnzipFromStream(wc.OpenRead(fromUrl), updateDir);
             }
-            string command = "copy /B /Y "+Path.Combine(updateDir, "*.*")+" "+rootDir+" & start /d \""+rootDir+"\" "+Path.GetFileName(Assembly.GetExecutingAssembly().Location)+" & rmdir \""+updateDir+"\" /s /q & exit";
+
+            //Make log dir
+            var logDir = Path.Combine(rootDir, "oldlogs");
+            if (!Directory.Exists(logDir))
+            {
+                Directory.CreateDirectory(logDir);
+            }
+            var logDirV = Path.Combine(logDir, ServerUpdater.version);
+            if (!Directory.Exists(logDirV))
+            {
+                Directory.CreateDirectory(logDirV);
+            }
+
+            //Move all log files
+            List<string> commands = Directory.EnumerateFiles(rootDir, "*.log").Select(logFile => string.Format("move /Y \"{0}\" \"{1}\"", logFile, Path.Combine(logDirV, Path.GetFileName(logFile)))).ToList();
+
+            //Delete everything from our local folder
+            commands.Add("del /F /Q \""+Path.Combine(rootDir, "*.*")+"\"");
+
+            //Copy in the update
+            commands.Add("copy /B /Y "+Path.Combine(updateDir, "*.*")+" "+rootDir);
+
+            //Start d2mpserver
+            commands.Add("start /d \""+rootDir+"\" "+Path.GetFileName(Assembly.GetExecutingAssembly().Location));
+
+            //Delete the update dir
+            commands.Add("rmdir \""+updateDir+"\" /s /q");
+            
             ProcessStartInfo info = new ProcessStartInfo("cmd.exe");
-            info.Arguments = "/C timeout 2 & " + command;
+            info.Arguments = "/C timeout 2 & " + string.Join(" & ", commands)+" & exit";
             info.UseShellExecute = false;
             Process.Start(info);
             Environment.Exit(0);
