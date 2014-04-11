@@ -190,13 +190,10 @@ namespace d2mpserver
 
         private void ServerThread(object state)
         {
-            Thread.Sleep(5000);
+            Thread.Sleep(100);
             if (OnReady != null)
                 OnReady(this, EventArgs.Empty);
-            while (!serverProc.HasExited)
-            {
-                Thread.Sleep(300);
-            }
+            serverProc.WaitForExit();
             if (OnShutdown != null)
                 OnShutdown(this, EventArgs.Empty);
             shutdown = true;
@@ -216,16 +213,30 @@ namespace d2mpserver
             info.Arguments += " -port " + port;
             info.Arguments += " +rcon_password " + rconPass;
             info.UseShellExecute = false;
-            //info.RedirectStandardInput = info.RedirectStandardOutput = info.RedirectStandardError = true;
+            info.CreateNoWindow = Settings.Default.headlessSRCDS;
+            info.RedirectStandardInput = info.RedirectStandardOutput = info.RedirectStandardError = Settings.Default.headlessSRCDS;
             info.WorkingDirectory = ServerManager.workingdir;
             info.EnvironmentVariables.Add("LD_LIBRARY_PATH", info.WorkingDirectory + ":" + info.WorkingDirectory + "/bin");
             log.Debug(info.FileName + " " + info.Arguments);
             Server serv = new Server(serverProc, id, port, dev);
+            if (Settings.Default.headlessSRCDS)
+                serverProc.OutputDataReceived += serv.OnOutputDataReceived;
             serverProc.Start();
+            if (Settings.Default.headlessSRCDS)
+            {
+                serverProc.BeginOutputReadLine();
+                serverProc.BeginErrorReadLine();
+            }
             serv.StartThread();
             serv.mod = mod;
             log.Debug("server ID: " + id + " spawned, process ID " + serverProc.Id);
             return serv;
+        }
+
+        private void OnOutputDataReceived(object sender, DataReceivedEventArgs args)
+        {
+            if (args.Data == null) return;
+            log.Debug(id+": "+args.Data);
         }
 
         public void Shutdown()

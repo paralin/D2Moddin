@@ -154,5 +154,17 @@ namespace d2mpserver.Properties {
                 this["disableUpdate"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool headlessSRCDS {
+            get {
+                return ((bool)(this["headlessSRCDS"]));
+            }
+            set {
+                this["headlessSRCDS"] = value;
+            }
+        }
     }
 }
