@@ -12,20 +12,8 @@ namespace d2mpserver
     {
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         public static volatile bool shutdown = false;
-        [DllImport("Kernel32")]
-        public static extern bool SetConsoleCtrlHandler(HandlerRoutine Handler, bool Add);
 
-        public delegate bool HandlerRoutine(CtrlTypes CtrlType);
-        public enum CtrlTypes
-        {
-            CTRL_C_EVENT = 0,
-            CTRL_BREAK_EVENT,
-            CTRL_CLOSE_EVENT,
-            CTRL_LOGOFF_EVENT = 5,
-            CTRL_SHUTDOWN_EVENT
-        }
-
-        private static bool ConsoleCtrlCheck(CtrlTypes ctrlType)
+        private static bool ShutdownImmediately()
         {
             ShutdownAll();
             shutdown = true;
@@ -60,8 +48,9 @@ namespace d2mpserver
                 return;
             }
 
+            Console.CancelKeyPress += (sender, arg) => ShutdownImmediately();
+
             XmlConfigurator.Configure();
-            SetConsoleCtrlHandler(ConsoleCtrlCheck, true);
             System.Net.ServicePointManager.ServerCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true;
             
             log.Info("D2MP server version "+ServerUpdater.version+" starting...");
