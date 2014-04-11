@@ -38,5 +38,11 @@
     <Setting Name="headlessSRCDS" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">False</Value>
     </Setting>
+    <Setting Name="portRangeStart" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">3000</Value>
+    </Setting>
+    <Setting Name="portRangeEnd" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">3100</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

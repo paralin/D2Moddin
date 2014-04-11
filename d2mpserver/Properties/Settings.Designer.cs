@@ -166,5 +166,29 @@ namespace d2mpserver.Properties {
                 this["headlessSRCDS"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("3000")]
+        public int portRangeStart {
+            get {
+                return ((int)(this["portRangeStart"]));
+            }
+            set {
+                this["portRangeStart"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("3100")]
+        public int portRangeEnd {
+            get {
+                return ((int)(this["portRangeEnd"]));
+            }
+            set {
+                this["portRangeEnd"] = value;
+            }
+        }
     }
 }
