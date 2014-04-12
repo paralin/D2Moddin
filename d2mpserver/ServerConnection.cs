@@ -61,6 +61,17 @@ namespace d2mpserver
             string[] command = data.Split('|');
             switch(command[0])
             {
+                case "shutdown":
+                    {
+                        Program.ShutdownAll();
+                    }
+                    break;
+                case "restart":
+                    {
+                        ServerUpdater.RestartD2MP();
+                        Program.ShutdownAll();
+                    }
+                    break;
                 case "installAddons":
                     {
                         string[] addons = command[1].Split(',');

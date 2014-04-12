@@ -16,7 +16,6 @@ namespace d2mpserver
         private static bool ShutdownImmediately()
         {
             ShutdownAll();
-            shutdown = true;
             return true;
         }
 
@@ -34,6 +33,7 @@ namespace d2mpserver
             {
                 man.Shutdown();
             }
+            shutdown = true;
         }
 
         static ServerConnection connection;
