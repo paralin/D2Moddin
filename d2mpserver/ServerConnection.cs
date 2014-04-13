@@ -46,12 +46,27 @@ namespace d2mpserver
                                     };
         }
 
-        void PerformAddonInstalls(object state)
+        private void PerformAddonOps(object state)
         {
-            string[] addons = (string[]) state;
-            foreach (var addon in addons)
+            string[] command = (string[]) state;
+
+            if (command[1] != "")
             {
-                InstallAddon(addon);
+                log.Debug("Installing addons: " + command[1]);
+                string[] addons = command[1].Split(',');
+                foreach (var addon in addons)
+                {
+                    InstallAddon(addon);
+                }
+            }
+            if (command[2] != "")
+            {
+                string[] deletions = command[2].Split(',');
+                log.Debug("Deleting addons: " + command[2]);
+                foreach (var deletion in deletions)
+                {
+                    DeleteAddon(deletion);
+                }
             }
             SendInit();
         }
@@ -72,11 +87,9 @@ namespace d2mpserver
                         Program.ShutdownAll();
                     }
                     break;
-                case "installAddons":
+                case "addonOps":
                     {
-                        string[] addons = command[1].Split(',');
-                        log.Debug("Installing addons: " + command[1]);
-                        ThreadPool.QueueUserWorkItem(PerformAddonInstalls, addons);
+                        ThreadPool.QueueUserWorkItem(PerformAddonOps, command);
                     }
                     break;
                 case "launchServer":
@@ -154,6 +167,21 @@ namespace d2mpserver
                 var gmapspath = Path.Combine(ServerManager.gameRoot, "dota/maps/");
                 foreach (var file in Directory.GetFiles(mapspath))
                     File.Copy(file, Path.Combine(gmapspath, Path.GetFileName(file)), true);
+            }
+        }
+
+        private void DeleteAddon(string addon)
+        {
+            log.Debug("Attempting to delete " + addon);
+            //get path to addon
+            var path = Path.Combine(ServerManager.addonsPath, addon);
+            if (Directory.Exists(path))
+            {
+                Directory.Delete(path, true);
+            }
+            else
+            {
+                log.Error("Addon doesn't exist?");
             }
         }
 
