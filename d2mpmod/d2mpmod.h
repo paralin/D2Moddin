@@ -1,15 +1,22 @@
 #pragma once
+#define VERSION_SAFE_STEAM_API_INTERFACES
 #include <ISmmPlugin.h>
-#include <curlpp/cURLpp.hpp>
-#include <curlpp/Easy.hpp>
-#include <curlpp/Options.hpp>
-
+#include "script_helpers.h"
+#include <jansson/jansson.h>
+#include <enginecallback.h>
+#include <vscript/ivscript.h>
+#include <http.h>
+#include <steam/isteamclient.h>
+#include <steam/steam_gameserver.h>
+#include <enginecallback.h>
+#include <string>
+#include <sstream>
 
 #if defined WIN32 && !defined snprintf
 #define snprintf _snprintf
 #endif
 
-#define LOG(msg) META_LOG(&g_D2MPPlugin, msg)
+#define LOG(msg) { META_LOG(&g_D2MPPlugin, msg); META_CONPRINT((std::string(msg)+"\n").c_str()); }
 
 class D2MPPlugin : public ISmmPlugin
 {
@@ -19,8 +26,6 @@ public:
 	bool Pause(char *error, size_t maxlen);
 	bool Unpause(char *error, size_t maxlen);
 	void AllPluginsLoaded();
-
-	bool Hook_GameInit();
 public:
 	const char *GetAuthor();
 	const char *GetName();
@@ -30,9 +35,23 @@ public:
 	const char *GetVersion();
 	const char *GetDate();
 	const char *GetLogTag();
-};
 
-void Hook_ServerActivate();
+private:
+	IScriptVM* Hook_CreateVMPost(ScriptLanguage_t language);
+	void Hook_DestroyVM(IScriptVM *pVM);
+	void Hook_GameServerSteamAPIActivatedPost();
+	void Hook_GameServerSteamAPIShutdown();
+	HSCRIPT m_Scope;
+	bool SendHTTPRequest(EHTTPMethod method, const char *pszURL, const char* json);
+
+	std::string baseURL;
+
+public:
+	void UploadResultValue(char* json);
+	void SetResultValue(const char* key, const char* value);
+
+	DECLARE_MY_SCRIPTDESC();
+};
 
 extern D2MPPlugin g_D2MPPlugin;
 
