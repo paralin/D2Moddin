@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
@@ -61,6 +62,11 @@ namespace d2mp
             if (e.Button == MouseButtons.Left)
             {
             }
+        }
+
+        public void DisplayBubble(string msg)
+        {
+            ni.ShowBalloonTip(2000, "D2Moddin", msg, ToolTipIcon.None);
         }
     }
 

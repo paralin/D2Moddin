@@ -25,7 +25,7 @@ namespace d2mp
         public static bool shutDown = false;
         public static string ourDir;
         private static string[] modNames = null;
-
+        private static volatile ProcessIcon icon;
 
         static void UnzipFromStream(Stream zipStream, string outFolder)
         {
@@ -84,7 +84,7 @@ namespace d2mp
             ourDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             var iconThread = new Thread(delegate()
             {
-                using (var icon = new ProcessIcon())
+                using (icon = new ProcessIcon())
                 {
                     icon.Display();
                     Application.Run();
@@ -189,7 +189,7 @@ namespace d2mp
 
                 shutDown = false;
                 int tryCount = 0;
-                while (tryCount < 10 && !shutDown)
+                while (tryCount < 30 && !shutDown)
                 {
                     using (ws = new WebSocket(server))
                     {
@@ -236,9 +236,22 @@ namespace d2mp
                         tryCount++;
                         if (!ws.IsAlive)
                         {
+                            if (tryCount == 1)
+                            {
+                                icon.DisplayBubble("Disconnected, attempting to reconnect...");
+                            }
                             log.Debug("Can't connect to server, tries: " + tryCount);
-                            tryCount++;
+                            Thread.Sleep(500);
                             continue;
+                        }
+
+                        if (tryCount > 1)
+                        {
+                            icon.DisplayBubble("Reconnected!");
+                        }
+                        else
+                        {
+                            icon.DisplayBubble("Connected and ready to begin installing mods.");
                         }
 
                         try
@@ -282,6 +295,8 @@ namespace d2mp
             var url = "http:" + msgParts[3];
             log.Info("Server requested that we install mod " + modname + " from download " + url);
 
+            icon.DisplayBubble("Downloading mod " + modname + "...");
+
             //delete if already exists
             var targetDir = Path.Combine(addonsDir, modname);
             if (Directory.Exists(targetDir))
@@ -292,6 +307,7 @@ namespace d2mp
             WebClient client = new WebClient();
             UnzipFromStream(client.OpenRead(url), targetDir);
             log.Info("Mod installed!");
+            icon.DisplayBubble("Mod downloaded successfully: "+modname+".");
             ws.Send("installedMod:" + modname);
             for(int i=0; i<modNames.Length; i++)
             {
