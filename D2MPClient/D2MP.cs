@@ -242,7 +242,7 @@ namespace d2mp
                                             if (e.Data == "uninstall")
                                             {
                                                 log.Debug("Uninstalling due to server request...");
-                                                UninstallD2MP();
+                                                Uninstall();
                                                 shutDown = true;
                                                 return;
                                             }

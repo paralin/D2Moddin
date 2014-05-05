@@ -68,7 +68,7 @@ namespace d2mpserver
             info.UseShellExecute = false;
             info.RedirectStandardInput = info.RedirectStandardOutput = info.RedirectStandardError = true;
             info.WorkingDirectory = ServerManager.workingdir;
-            //log.Debug(info.FileName + " " + info.Arguments);
+            log.Debug(info.FileName + " " + info.Arguments);
             SteamCMD cmd = new SteamCMD(serverProc);
             serverProc.EnableRaisingEvents = true;
             serverProc.OutputDataReceived += (sender, args) => cmd.OutCallback(args.Data);
