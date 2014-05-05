@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Reflection;
 using System.Runtime.Remoting.Messaging;
 using System.Security.Policy;
@@ -25,6 +26,7 @@ namespace d2mpserver
         public static string gameRoot;
         public static string addonsPath;
         public static string ourPath;
+        public static string bindIP;
         private static volatile bool shutdown;
         Dictionary<int, Server> servers = new Dictionary<int, Server>();
 
@@ -99,7 +101,7 @@ namespace d2mpserver
                     log.Debug("SteamCMD path: " + steamCmdPath);
 
                     log.Debug("Launching SteamCMD to update Dota (570)...");
-                    activeSteamCMD = SteamCMD.LaunchSteamCMD("+app_update 570");
+                    activeSteamCMD = SteamCMD.LaunchSteamCMD("+app_update 570"+(Settings.Default.steamVerify ? " verify" : ""));
                     activeSteamCMD.WaitForExitSync();
                     log.Debug("SteamCMD finished! Continuing...");
                     activeSteamCMD = null;
@@ -140,6 +142,14 @@ namespace d2mpserver
                     }
 
                     File.Copy(Path.Combine(ourPath, "metamod.vdf"), Path.Combine(addonsPath, "metamod.vdf"), true);
+
+                    using (UdpClient u = new UdpClient("8.8.8.8", 1))
+                    {
+                        IPAddress localAddr = ((IPEndPoint)u.Client.LocalEndPoint).Address;
+                        bindIP = localAddr.ToString();
+                    }
+
+                    log.Debug("Determined IP interface to bind to: "+bindIP);
 
                     log.Info("Setup complete, continuing server startup...");
                 }
@@ -211,12 +221,19 @@ namespace d2mpserver
                 info.Arguments += " " + Settings.Default.devArgs;
             }
             info.Arguments += " -port " + port;
+            info.Arguments += " -ip " + ServerManager.bindIP;
             info.Arguments += " +rcon_password " + rconPass;
+            info.Arguments += " +dota_local_addon_enable 1";
+            info.Arguments += " +dota_local_addon_game " + mod;
+            info.Arguments += " +dota_local_addon_map " + mod;
+            info.Arguments += " +dota_force_gamemode 15";
+            info.Arguments += " +update_addon_paths";
+            info.Arguments += " +map " + mod;
             info.UseShellExecute = false;
             info.CreateNoWindow = Settings.Default.headlessSRCDS;
             info.RedirectStandardInput = info.RedirectStandardOutput = info.RedirectStandardError = Settings.Default.headlessSRCDS;
             info.WorkingDirectory = ServerManager.workingdir;
-            info.EnvironmentVariables.Add("LD_LIBRARY_PATH", info.WorkingDirectory + ":" + info.WorkingDirectory + "/bin");
+            //info.EnvironmentVariables.Add("LD_LIBRARY_PATH", info.WorkingDirectory + ":" + info.WorkingDirectory + "/bin");
             log.Debug(info.FileName + " " + info.Arguments);
             Server serv = new Server(serverProc, id, port, dev);
             if (Settings.Default.headlessSRCDS)

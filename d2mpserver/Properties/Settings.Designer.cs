@@ -190,5 +190,17 @@ namespace d2mpserver.Properties {
                 this["portRangeEnd"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool steamVerify {
+            get {
+                return ((bool)(this["steamVerify"]));
+            }
+            set {
+                this["steamVerify"] = value;
+            }
+        }
     }
 }

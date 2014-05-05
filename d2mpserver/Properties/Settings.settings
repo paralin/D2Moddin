@@ -44,5 +44,8 @@
     <Setting Name="portRangeEnd" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">3100</Value>
     </Setting>
+    <Setting Name="steamVerify" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
   </Settings>
 </SettingsFile>
