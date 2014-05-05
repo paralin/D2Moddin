@@ -35,6 +35,7 @@ namespace d2mp
         static void LaunchDota2()
         {
             Process.Start("explorer.exe", "steam://run/570");
+            log.Debug("Launched Dota 2.");
         }
 
         static bool Dota2Running()
@@ -49,6 +50,7 @@ namespace d2mp
             foreach (Process p in localByName)
             {
                 p.Kill();
+                log.Debug("Killed Dota 2.");
             }
         }
 
@@ -256,6 +258,9 @@ namespace d2mp
                                                 case "setmod":
                                                     ThreadPool.QueueUserWorkItem(SetMod, msgParts);
                                                     break;
+                                                case "launchdota":
+                                                    ThreadPool.QueueUserWorkItem(LaunchDota, msgParts);
+                                                    break;
                                                 default:
                                                     log.Error("Command not recognized: " + msgParts[0]);
                                                     break;
@@ -326,6 +331,11 @@ namespace d2mp
             var name = File.ReadAllText(infoPath);
             log.Debug("Current active mod: " + name);
             return name;
+        }
+
+        private static void LaunchDota(object state)
+        {
+          if(!Dota2Running()) LaunchDota2();
         }
 
         private static void SetMod(object state)
