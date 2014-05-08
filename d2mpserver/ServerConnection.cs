@@ -87,6 +87,11 @@ namespace d2mpserver
                         Program.ShutdownAll();
                     }
                     break;
+                case "reinit":
+                    {
+                      SendInit();
+                    }
+                    break;
                 case "addonOps":
                     {
                         ThreadPool.QueueUserWorkItem(PerformAddonOps, command);
