@@ -348,7 +348,7 @@ namespace d2mp
                 if(Directory.Exists(modDir))
                     Directory.Delete(modDir, true);
                 log.Debug("Setting active mod to "+mod+".");
-                Microsoft.VisualBasic.FileIO.FileSystem.CopyDirectory(Path.Combine(d2mpDir, mod), modDir);
+                Microsoft.VisualBasic.FileIO.FileSystem.CopyDirectory(Path.Combine(d2mpDir, mod.split('=')[0]), modDir);
                 File.WriteAllText(Path.Combine(modDir, "modname.txt"), mod);
                 icon.DisplayBubble("Set active mod to "+mod+"!");
             }
