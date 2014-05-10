@@ -1,4 +1,21 @@
-﻿using System;
+﻿// <copyright file="D2MP.cs">
+// Copyright (c) 2014 All Right Reserved
+//
+// This source is subject to the License.
+// Please see the License.txt file for more information.
+// All other rights reserved.
+//
+// THIS CODE AND INFORMATION ARE PROVIDED "AS IS" WITHOUT WARRANTY OF ANY 
+// KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A
+// PARTICULAR PURPOSE.
+//
+// </copyright>
+// <author>Christian Stewart</author>
+// <email>kidovate@gmail.com</email>
+// <date>2014-05-10</date>
+// <summary>Core D2Moddin client functions.</summary>
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -54,6 +71,7 @@ namespace d2mp
             }
         }
 
+        //Pipe a zip download directly through the decompressor
         static void UnzipFromStream(Stream zipStream, string outFolder)
         {
             ZipInputStream zipInputStream = new ZipInputStream(zipStream);
@@ -62,13 +80,7 @@ namespace d2mp
             {
                 String entryFileName = zipEntry.Name;
                 log.Debug(" --> " + entryFileName);
-                // to remove the folder from the entry:- entryFileName = Path.GetFileName(entryFileName);
-                // Optionally match entrynames against a selection list here to skip as desired.
-                // The unpacked length is available in the zipEntry.Size property.
-
-                byte[] buffer = new byte[4096];     // 4K is optimum
-
-                // Manipulate the output filename here as desired.
+                byte[] buffer = new byte[4096];
                 String fullZipToPath = Path.Combine(outFolder, entryFileName);
                 string directoryName = Path.GetDirectoryName(fullZipToPath);
                 if (directoryName.Length > 0)
@@ -79,9 +91,6 @@ namespace d2mp
 
                 if (Path.GetFileName(fullZipToPath) != String.Empty)
                 {
-                    // Unzip file in buffered chunks. This is just as fast as unpacking to a buffer the full size
-                    // of the file, but does not waste memory.
-                    // The "using" will close the stream even if an exception occurs.
                     using (FileStream streamWriter = File.Create(fullZipToPath))
                     {
                         StreamUtils.Copy(zipInputStream, streamWriter, buffer);
@@ -93,7 +102,6 @@ namespace d2mp
 
         static void UninstallD2MP()
         {
-            //Delete all files 
             var installdir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             ProcessStartInfo info = new ProcessStartInfo("cmd.exe");
             info.Arguments = "/C timeout 3 & Del /s /f /q " + installdir + " & exit";
@@ -531,7 +539,6 @@ namespace d2mp
             RegistryKey regKey = Registry.LocalMachine;
             regKey =
                 regKey.OpenSubKey(@"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 570");
-
             if (regKey != null)
             {
                 cachedDotaLocation = regKey.GetValue("InstallLocation").ToString();
