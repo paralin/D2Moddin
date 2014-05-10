@@ -101,7 +101,7 @@ namespace d2mpserver
                     log.Debug("SteamCMD path: " + steamCmdPath);
 
                     log.Debug("Launching SteamCMD to update Dota (570)...");
-                    activeSteamCMD = SteamCMD.LaunchSteamCMD("+app_update 570"+(Settings.Default.steamVerify ? " verify" : ""));
+                    activeSteamCMD = SteamCMD.LaunchSteamCMD("+app_update 570"+(Settings.Default.steamVerify ? " validate" : ""));
                     activeSteamCMD.WaitForExitSync();
                     log.Debug("SteamCMD finished! Continuing...");
                     activeSteamCMD = null;
