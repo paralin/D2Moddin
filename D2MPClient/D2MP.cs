@@ -69,6 +69,7 @@ namespace d2mp
                 p.Kill();
                 log.Debug("Killed Dota 2.");
             }
+
         }
 
         //Pipe a zip download directly through the decompressor
@@ -378,6 +379,7 @@ namespace d2mp
                     log.Debug("Patched file to add d2moddin search path.");
                     if (Dota2Running())
                     {
+                        icon.DisplayBubble("Restarting Dota 2 for you...");
                         KillDota2();
                         LaunchDota2();
                     }
