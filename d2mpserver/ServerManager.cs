@@ -228,6 +228,9 @@ namespace d2mpserver
             info.Arguments += " +dota_local_addon_map " + mod;
             info.Arguments += " +dota_force_gamemode 15";
             info.Arguments += " +update_addon_paths";
+            info.Arguments += " +tv_maxclients 100 +tv_name D2Moddin +tv_delay 0 +tv_port " +
+                              (port + 1000) + " +tv_autorecord 1 +tv_secret_code 0";
+            info.Arguments += " +tv_enable 1";
             info.Arguments += " +map " + mod;
             info.UseShellExecute = false;
             info.CreateNoWindow = Settings.Default.headlessSRCDS;
