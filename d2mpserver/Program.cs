@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Configuration;
 using System.IO;
 using System.Net.Mime;
 using System.Threading;
@@ -55,6 +56,8 @@ namespace d2mpserver
             
             log.Info("D2MP server version "+ServerUpdater.version+" starting...");
             log.Debug("Connection address: " + Settings.Default.serverIP);
+            var configPath = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.PerUserRoaming).FilePath;
+            log.Info("Server config path: "+configPath);
 
             Console.Title = string.Format("[{0}] D2MP Server", ServerUpdater.version);
 

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -7,12 +8,13 @@ using System.Net;
 using System.Reflection;
 using System.Text;
 using System.Threading;
+using d2mpserver.Properties;
 
 namespace d2mpserver
 {
     public class ServerUpdater
     {
-        public static string version = "1.1.7";
+        public static string version = "1.2.6";
         private static string fromUrl;
 
         public static void UpdateFromURL(string url)
@@ -49,6 +51,11 @@ namespace d2mpserver
 
             //Move all log files
             List<string> commands = Directory.EnumerateFiles(rootDir, "*.log").Select(logFile => string.Format("move /Y \"{0}\" \"{1}\"", logFile, Path.Combine(logDirV, Path.GetFileName(logFile)))).ToList();
+
+            //Move the user config file
+            //var configPath = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.PerUserRoaming).FilePath;
+            //if(File.Exists(configPath))
+            //    commands.Add(string.Format("copy /Y \"{0}\" \"{1}\"", configPath, Path.Combine(updateDir, Path.GetFileName(configPath))));
 
             //Delete everything from our local folder
             commands.Add("del /F /Q \""+Path.Combine(rootDir, "*.*")+"\"");

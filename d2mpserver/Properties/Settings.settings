@@ -5,9 +5,6 @@
     <Setting Name="serverIP" Type="System.String" Scope="User">
       <Value Profile="(Default)">ws://d2modd.in:3006/</Value>
     </Setting>
-    <Setting Name="args" Type="System.String" Scope="User">
-      <Value Profile="(Default)">-console -game dota</Value>
-    </Setting>
     <Setting Name="serverCount" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">10</Value>
     </Setting>
@@ -38,14 +35,23 @@
     <Setting Name="headlessSRCDS" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">False</Value>
     </Setting>
-    <Setting Name="portRangeStart" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">3000</Value>
-    </Setting>
-    <Setting Name="portRangeEnd" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">3100</Value>
-    </Setting>
     <Setting Name="steamVerify" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">False</Value>
+    </Setting>
+    <Setting Name="args" Type="System.String" Scope="User">
+      <Value Profile="(Default)">-console -condebug -game dota</Value>
+    </Setting>
+    <Setting Name="portRangeStart" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">28000</Value>
+    </Setting>
+    <Setting Name="portRangeEnd" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">29000</Value>
+    </Setting>
+    <Setting Name="serverName" Type="System.String" Scope="User">
+      <Value Profile="(Default)">Unnamed Server</Value>
+    </Setting>
+    <Setting Name="serverRegion" Type="d2mpserver.ServerRegion" Scope="User">
+      <Value Profile="(Default)">UNKNOWN</Value>
     </Setting>
   </Settings>
 </SettingsFile>
