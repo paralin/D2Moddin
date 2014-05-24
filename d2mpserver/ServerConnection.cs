@@ -220,8 +220,15 @@ namespace d2mpserver
             {
                 log.Debug("Maps directory exists, copying maps...");
                 var gmapspath = Path.Combine(ServerManager.gameRoot, "dota/maps/");
-                foreach (var file in Directory.GetFiles(mapspath))
-                    File.Copy(file, Path.Combine(gmapspath, Path.GetFileName(file)), true);
+                try
+                {
+                    foreach (var file in Directory.GetFiles(mapspath))
+                        File.Copy(file, Path.Combine(gmapspath, Path.GetFileName(file)), true);
+                }
+                catch (Exception ex)
+                {
+                    log.Error("Can't copy the maps over, probably SRCDS is running.");
+                }
             }
         }
 

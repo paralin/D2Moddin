@@ -217,12 +217,14 @@ namespace d2mpserver
             shutdown = true;
         }
 
-        public static Server Create(int id, int port, bool dev, string mod, string rconPass, string[] commands)
+        public static Server Create(int id, int port, bool dev, string modp, string rconPass, string[] commands)
         {
             Process serverProc = new Process();
             ProcessStartInfo info = serverProc.StartInfo;
             info.FileName = ServerManager.exePath;
             info.Arguments = Settings.Default.args;
+            string[] modparts = modp.Split('=');
+            string mod = modparts[0];
             //info.CreateNoWindow = true;
             if (dev)
             {
