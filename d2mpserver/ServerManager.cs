@@ -27,13 +27,14 @@ namespace d2mpserver
         public static string addonsPath;
         public static string ourPath;
         public static string bindIP;
+        public static string cfgPath;
         private static volatile bool shutdown;
         Dictionary<int, Server> servers = new Dictionary<int, Server>();
 
-        public Server LaunchServer(int id, int port, bool dev, string mod, string rconPass)
+        public Server LaunchServer(int id, int port, bool dev, string mod, string rconPass, string[] commands)
         {
             log.Info("Launching server, ID: " + id + " on port " + port + (dev ? " in devmode." : "."));
-            var serv = Server.Create(id, port, dev, mod, rconPass);
+            var serv = Server.Create(id, port, dev, mod, rconPass, commands);
             serv.OnShutdown += (sender, args) => servers.Remove(serv.id);
             servers.Add(id, serv);
             return serv;
@@ -122,6 +123,14 @@ namespace d2mpserver
                     gameRoot = Path.GetDirectoryName(files[0]);
                     log.Debug("Found Dota root: " + gameRoot);
 
+                    log.Debug("Clearing cfg directory...");
+                    cfgPath = Path.Combine(gameRoot, "dota/cfg/");
+                    if (Directory.Exists(cfgPath))
+                    {
+                        Directory.Delete(cfgPath, true);
+                    }
+                    Directory.CreateDirectory(cfgPath);
+
                     log.Debug("Patching gameinfo.txt...");
                     PatchGameInfo(Path.Combine(gameRoot, "dota/gameinfo.txt"));
 
@@ -137,8 +146,7 @@ namespace d2mpserver
                     addonsPath = Path.Combine(gameRoot, "dota/addons/");
                     if (!Directory.Exists(addonsPath))
                     {
-                        log.Fatal("Addons dir doesn't exist: " + addonsPath);
-                        return false;
+                        Directory.CreateDirectory(addonsPath);
                     }
 
                     File.Copy(Path.Combine(ourPath, "metamod.vdf"), Path.Combine(addonsPath, "metamod.vdf"), true);
@@ -209,7 +217,7 @@ namespace d2mpserver
             shutdown = true;
         }
 
-        public static Server Create(int id, int port, bool dev, string mod, string rconPass)
+        public static Server Create(int id, int port, bool dev, string mod, string rconPass, string[] commands)
         {
             Process serverProc = new Process();
             ProcessStartInfo info = serverProc.StartInfo;
@@ -232,6 +240,10 @@ namespace d2mpserver
                               (port + 1000) + " +tv_autorecord 1 +tv_secret_code 0";
             info.Arguments += " +tv_enable 1";
             info.Arguments += " +map " + mod;
+            string cfgText = commands.Aggregate("", (current, command) => current + (command + ";"));
+            var cfgPath = Path.Combine(ServerManager.cfgPath, rconPass + ".cfg");
+            File.WriteAllText(cfgPath, cfgText);
+            info.Arguments += " +exec " + rconPass;
             info.UseShellExecute = false;
             info.CreateNoWindow = Settings.Default.headlessSRCDS;
             info.RedirectStandardInput = info.RedirectStandardOutput = info.RedirectStandardError = Settings.Default.headlessSRCDS;

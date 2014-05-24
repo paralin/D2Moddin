@@ -105,7 +105,8 @@ namespace d2mpserver
                         bool dev = bool.Parse(command[3]);
                         string mod = command[4];
                         string rconPass = command[5];
-                        var serv = manager.LaunchServer(id, port, dev, mod, rconPass);
+                        string[] commands = command[6].Split('&');
+                        var serv = manager.LaunchServer(id, port, dev, mod, rconPass, commands);
                         serv.OnReady += (sender, args) =>
                         {
                             socket.SendAsync("serverLaunched|" + id, b => { });

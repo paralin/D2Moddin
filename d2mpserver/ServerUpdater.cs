@@ -14,7 +14,7 @@ namespace d2mpserver
 {
     public class ServerUpdater
     {
-        public static string version = "1.3.2";
+        public static string version = "1.3.5";
         private static string fromUrl;
 
         public static void UpdateFromURL(string url)
