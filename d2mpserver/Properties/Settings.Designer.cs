@@ -169,7 +169,7 @@ namespace d2mpserver.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("-console -condebug -game dota")]
+        [global::System.Configuration.DefaultSettingValueAttribute("-console -condebug -game dota -nocrashdialog")]
         public string args {
             get {
                 return ((string)(this["args"]));

@@ -186,21 +186,32 @@ namespace d2mpserver
             }
             Directory.CreateDirectory(path);
             log.Debug("Downloading the addon to memory...");
-            using (var client = new WebClient())
+            try
             {
-                using (var mem = new MemoryStream(client.DownloadData(parts[2].Replace('+', '='))))
+                using (var client = new WebClient())
                 {
-                    log.Debug("Downloaded addon, length "+mem.Length+" bytes.");
-                    mem.Position = 0;
-                    try
+                    using (var mem = new MemoryStream(client.DownloadData(parts[2].Replace('+', '='))))
                     {
-                        Utils.UnzipFromStream(mem, ServerManager.addonsPath);
-                    }
-                    catch (Exception ex)
-                    {
-                        log.Error("Failed to unzip the mod properly!");
+                        log.Debug("Downloaded addon, length " + mem.Length + " bytes.");
+                        mem.Position = 0;
+                        try
+                        {
+                            Utils.UnzipFromStream(mem, ServerManager.addonsPath);
+                        }
+                        catch (Exception ex)
+                        {
+                            log.Error("Failed to unzip the mod properly!");
+                            log.Error(ex.ToString());
+                            return;
+                        }
                     }
                 }
+            }
+            catch (Exception ex)
+            {
+                log.Error("Failed to download the addon to the memory!");
+                log.Error(ex);
+                return;
             }
             log.Debug("Addon downloaded and unzipped: " + parts[0]);
             var mapspath = Path.Combine(path, "maps");

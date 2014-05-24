@@ -63,7 +63,7 @@ namespace d2mpserver
             info.FileName = ServerManager.steamCmdPath;
             info.CreateNoWindow = true;
             info.Arguments += " +login " + Settings.Default.SteamCMDLogin + " " + Settings.Default.SteamCMDPass;
-            info.Arguments += " +force_install_dir " + Path.Combine(ServerManager.workingdir, "game");
+            info.Arguments += " +force_install_dir \"" + Path.Combine(ServerManager.workingdir, "game")+"\"";
             info.Arguments += " " + launchargs + " +quit";
             info.UseShellExecute = false;
             info.RedirectStandardInput = info.RedirectStandardOutput = info.RedirectStandardError = true;

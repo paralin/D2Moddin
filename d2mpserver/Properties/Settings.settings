@@ -39,7 +39,7 @@
       <Value Profile="(Default)">False</Value>
     </Setting>
     <Setting Name="args" Type="System.String" Scope="User">
-      <Value Profile="(Default)">-console -condebug -game dota</Value>
+      <Value Profile="(Default)">-console -condebug -game dota -nocrashdialog</Value>
     </Setting>
     <Setting Name="portRangeStart" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">28000</Value>
