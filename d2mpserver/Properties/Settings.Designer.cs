@@ -226,5 +226,17 @@ namespace d2mpserver.Properties {
                 this["serverRegion"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string publicAddr {
+            get {
+                return ((string)(this["publicAddr"]));
+            }
+            set {
+                this["publicAddr"] = value;
+            }
+        }
     }
 }

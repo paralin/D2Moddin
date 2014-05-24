@@ -241,7 +241,7 @@ namespace d2mpserver
 
         public void SendInit()
         {
-            var msg = "init|" + Settings.Default.connectPassword + "|" + Settings.Default.serverCount + "|" + GetAddonVersionsString() + "|" + ServerUpdater.version + "|" + Settings.Default.portRangeStart + "-" + Settings.Default.portRangeEnd+"|"+(int)Settings.Default.serverRegion+"|"+Settings.Default.serverName.Replace('|', ' ');
+            var msg = "init|" + Settings.Default.connectPassword + "|" + Settings.Default.serverCount + "|" + GetAddonVersionsString() + "|" + ServerUpdater.version + "|" + Settings.Default.portRangeStart + "-" + Settings.Default.portRangeEnd+"|"+(int)Settings.Default.serverRegion+"|"+Settings.Default.serverName.Replace('|', ' ')+"|"+(Settings.Default.publicAddr);
             socket.Send(msg);
         }
 

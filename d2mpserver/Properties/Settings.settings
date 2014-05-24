@@ -53,5 +53,8 @@
     <Setting Name="serverRegion" Type="d2mpserver.ServerRegion" Scope="User">
       <Value Profile="(Default)">UNKNOWN</Value>
     </Setting>
+    <Setting Name="publicAddr" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
   </Settings>
 </SettingsFile>

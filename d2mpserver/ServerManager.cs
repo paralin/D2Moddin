@@ -221,7 +221,7 @@ namespace d2mpserver
                 info.Arguments += " " + Settings.Default.devArgs;
             }
             info.Arguments += " -port " + port;
-            info.Arguments += " -ip " + ServerManager.bindIP;
+            //info.Arguments += " -ip " + ServerManager.bindIP;
             info.Arguments += " +rcon_password " + rconPass;
             info.Arguments += " +dota_local_addon_enable 1";
             info.Arguments += " +dota_local_addon_game " + mod;
