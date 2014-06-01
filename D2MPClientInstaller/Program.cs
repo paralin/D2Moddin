@@ -40,7 +40,7 @@ namespace D2MPClientInstaller
         static void DeleteOurselves(string path)
         {
             ProcessStartInfo info = new ProcessStartInfo("cmd.exe");
-            info.Arguments = "/C timeout 3 & Del " + path;
+            info.Arguments = "/C timeout 3 & Del \"" + path+"\"";
             info.CreateNoWindow = true;
             info.RedirectStandardOutput = true;
             info.UseShellExecute = false;
@@ -49,7 +49,6 @@ namespace D2MPClientInstaller
 
         static void UnzipFromStream(Stream zipStream, string outFolder)
         {
-
             ZipInputStream zipInputStream = new ZipInputStream(zipStream);
             ZipEntry zipEntry = zipInputStream.GetNextEntry();
             while (zipEntry != null)

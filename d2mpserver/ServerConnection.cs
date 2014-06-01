@@ -311,7 +311,7 @@ namespace d2mpserver
                     if (!Connect())
                     {
                         log.Debug("... failed, will try again in 10 seconds ...");
-                        manager.ShutdownAllServers();
+                        //manager.ShutdownAllServers();
                         Thread.Sleep(9900);
                     }
                     else
