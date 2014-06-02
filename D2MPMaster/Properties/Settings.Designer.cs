@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace d2mpserver.Properties {
+namespace D2MPMaster.Properties {
     
     
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
@@ -25,26 +25,26 @@ namespace d2mpserver.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("ws://localhost:4000/")]
-        public string URI {
-            get {
-                return ((string)(this["URI"]));
-            }
-            set {
-                this["URI"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("mongodb://root:3s3msqKx7qDTpQNyfWem@candidate.20.mongolayer.com:10131,candidate.2" +
-            "1.mongolayer.com:10131")]
+        [global::System.Configuration.DefaultSettingValueAttribute("mongodb://root:fJgEBI4CiCtPfa@candidate.20.mongolayer.com:10131,candidate.21.mong" +
+            "olayer.com:10131/d2moddin")]
         public string MongoURL {
             get {
                 return ((string)(this["MongoURL"]));
             }
             set {
                 this["MongoURL"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("4000")]
+        public int URI {
+            get {
+                return ((int)(this["URI"]));
+            }
+            set {
+                this["URI"] = value;
             }
         }
         

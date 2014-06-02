@@ -1,0 +1,15 @@
+﻿<?xml version='1.0' encoding='utf-8'?>
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="D2MPMaster.Properties" GeneratedClassName="Settings">
+  <Profiles />
+  <Settings>
+    <Setting Name="MongoURL" Type="System.String" Scope="User">
+      <Value Profile="(Default)">mongodb://root:fJgEBI4CiCtPfa@candidate.20.mongolayer.com:10131,candidate.21.mongolayer.com:10131/d2moddin</Value>
+    </Setting>
+    <Setting Name="URI" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">4000</Value>
+    </Setting>
+    <Setting Name="MongoDB" Type="System.String" Scope="User">
+      <Value Profile="(Default)">d2moddin</Value>
+    </Setting>
+  </Settings>
+</SettingsFile>

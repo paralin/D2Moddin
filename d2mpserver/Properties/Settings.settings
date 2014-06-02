@@ -2,59 +2,14 @@
 <SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="d2mpserver.Properties" GeneratedClassName="Settings">
   <Profiles />
   <Settings>
-    <Setting Name="serverIP" Type="System.String" Scope="User">
-      <Value Profile="(Default)">ws://107.170.178.246:3006/</Value>
+    <Setting Name="URI" Type="System.String" Scope="User">
+      <Value Profile="(Default)">ws://localhost:4000/</Value>
     </Setting>
-    <Setting Name="serverCount" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">10</Value>
+    <Setting Name="MongoURL" Type="System.String" Scope="User">
+      <Value Profile="(Default)">mongodb://root:3s3msqKx7qDTpQNyfWem@candidate.20.mongolayer.com:10131,candidate.21.mongolayer.com:10131</Value>
     </Setting>
-    <Setting Name="workingDir" Type="System.String" Scope="User">
-      <Value Profile="(Default)">{{exeloc}}\dotaserver\</Value>
-    </Setting>
-    <Setting Name="steamcmd" Type="System.String" Scope="User">
-      <Value Profile="(Default)">https://s3-us-west-2.amazonaws.com/d2mpclient/steamcmd.exe</Value>
-    </Setting>
-    <Setting Name="SteamCMDLogin" Type="System.String" Scope="User">
-      <Value Profile="(Default)">d2modding</Value>
-    </Setting>
-    <Setting Name="SteamCMDPass" Type="System.String" Scope="User">
-      <Value Profile="(Default)">Quantum1337</Value>
-    </Setting>
-    <Setting Name="srcds" Type="System.String" Scope="User">
-      <Value Profile="(Default)">https://s3-us-west-2.amazonaws.com/d2mpclient/srcds.exe</Value>
-    </Setting>
-    <Setting Name="connectPassword" Type="System.String" Scope="User">
-      <Value Profile="(Default)">kwxmMKDcuVjQNutZOwZy</Value>
-    </Setting>
-    <Setting Name="devArgs" Type="System.String" Scope="User">
-      <Value Profile="(Default)" />
-    </Setting>
-    <Setting Name="disableUpdate" Type="System.Boolean" Scope="User">
-      <Value Profile="(Default)">False</Value>
-    </Setting>
-    <Setting Name="headlessSRCDS" Type="System.Boolean" Scope="User">
-      <Value Profile="(Default)">False</Value>
-    </Setting>
-    <Setting Name="steamVerify" Type="System.Boolean" Scope="User">
-      <Value Profile="(Default)">False</Value>
-    </Setting>
-    <Setting Name="args" Type="System.String" Scope="User">
-      <Value Profile="(Default)">-console -condebug -game dota -nocrashdialog</Value>
-    </Setting>
-    <Setting Name="portRangeStart" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">28000</Value>
-    </Setting>
-    <Setting Name="portRangeEnd" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">29000</Value>
-    </Setting>
-    <Setting Name="serverName" Type="System.String" Scope="User">
-      <Value Profile="(Default)">Unnamed Server</Value>
-    </Setting>
-    <Setting Name="serverRegion" Type="d2mpserver.ServerRegion" Scope="User">
-      <Value Profile="(Default)">UNKNOWN</Value>
-    </Setting>
-    <Setting Name="publicAddr" Type="System.String" Scope="User">
-      <Value Profile="(Default)" />
+    <Setting Name="MongoDB" Type="System.String" Scope="User">
+      <Value Profile="(Default)">d2moddin</Value>
     </Setting>
   </Settings>
 </SettingsFile>
