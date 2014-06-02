@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading;
 using D2MPMaster.Database;
+using D2MPMaster.Lobbies;
 using D2MPMaster.Properties;
 using log4net.Config;
 using WebSocketSharp.Server;
@@ -14,8 +15,11 @@ namespace D2MPMaster
 
         public static BrowserManager Browser;
         public static ServerManager Server;
+        public static LobbyManager LobbyManager;
+        public static WebSocketServer SocketServer;
         public static volatile bool shutdown;
-        static void Main(string[] args)
+
+        public static void Main(string[] args)
         {
             XmlConfigurator.Configure();
             System.Net.ServicePointManager.ServerCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true;
@@ -25,10 +29,12 @@ namespace D2MPMaster
             log.Info("Initializing database...");
             Mongo.Setup();
 
-            var wssv = new WebSocketServer(Settings.Default.URI);
+            var wssv = SocketServer = new WebSocketServer(Settings.Default.URI);
             wssv.AddWebSocketService<BrowserManager>("/browser");
             wssv.AddWebSocketService<ServerManager>("/server");
             wssv.Start();
+
+            LobbyManager = new LobbyManager();
 
             log.Info("Server running!");
 
@@ -41,6 +47,11 @@ namespace D2MPMaster
             wssv.Stop();
             
             log.Info("Done, shutting down...");
+
+            Browser = null;
+            Server = null;
+            LobbyManager = null;
+            SocketServer = null;
         }
     }
 }

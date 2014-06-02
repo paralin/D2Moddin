@@ -1,4 +1,7 @@
-﻿namespace D2MPMaster.Model
+﻿using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
+
+namespace D2MPMaster.Model
 {
     /// <summary>
     /// An addon stored in the database.
@@ -27,5 +30,6 @@
         public string bundle { get; set; }
         public string fetch { get; set; }
         public string user { get; set; }
+        public bool isPublic { get; set; }
     }
 }

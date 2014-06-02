@@ -14,6 +14,7 @@ namespace D2MPMaster.Model
         public Profile profile { get; set; }
         public Services services { get; set; }
         public Status status { get; set; }
+        public string[] authItems { get; set; }
     }
 
     public class Status

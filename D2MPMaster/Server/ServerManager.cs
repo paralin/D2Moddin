@@ -6,6 +6,12 @@ namespace D2MPMaster
     class ServerManager : WebSocketService
     {
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+
+        public ServerManager()
+        {
+            Program.Server = this;
+        }
+
         protected override void OnMessage(MessageEventArgs e)
         {
             base.OnMessage(e);
