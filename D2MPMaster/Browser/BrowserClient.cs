@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using D2MPMaster.Browser.Methods;
 using D2MPMaster.Database;
 using D2MPMaster.LiveData;
@@ -39,6 +40,8 @@ namespace D2MPMaster.Browser
 
 #region Variables
         private WebSocket socket;
+        private string lastMsg = "";
+        private DateTime lastMsgTime = DateTime.UtcNow;
         private bool _authed;
         private bool authed
         {
@@ -129,6 +132,7 @@ namespace D2MPMaster.Browser
                         break;
                     #endregion
                     case "createlobby":
+                    {
                         if (user == null)
                         {
                             RespondError(jdata, "You are not logged in!");
@@ -136,12 +140,95 @@ namespace D2MPMaster.Browser
                         }
                         //Parse the create lobby request
                         var req = jdata["req"].ToObject<CreateLobby>();
+                        if (req.name == null)
+                        {
+                            req.name = user.profile.name + "'s Lobby";
+                        }
+                        if (req.mod == null)
+                        {
+                            RespondError(jdata, "You did not specify a mod.");
+                            return;
+                        }
                         //Check if they are in a lobby
                         CheckLobby();
-                        if(lobby != null)
+                        if (lobby != null)
                             RespondError(jdata, "You are already in a lobby.");
                         lobby = LobbyManager.CreateLobby(user, req);
                         break;
+                    }
+                    case "switchteam":
+                    {
+                        if (user == null)
+                        {
+                            RespondError(jdata, "You are not logged in.");
+                            return;
+                        }
+                        if (lobby == null)
+                        {
+                            RespondError(jdata, "You are not in a lobby.");
+                            return;
+                        }
+                        //Parse the switch team request
+                        var req = jdata["req"].ToObject<SwitchTeam>();
+                        var goodguys = req.team == "radiant";
+                        if ((goodguys && lobby.TeamCount(lobby.radiant) >= 5) ||
+                            (!goodguys && lobby.TeamCount(lobby.dire) >= 5))
+                        {
+                            RespondError(jdata, "That team is full.");
+                            return;
+                        }
+                        Program.LobbyManager.RemoveFromTeam(lobby, user.services.steam.steamid);
+                        lobby.AddPlayer(goodguys ? lobby.radiant : lobby.dire, Player.FromUser(user));
+                        Program.LobbyManager.TransmitLobbyUpdate(lobby, new []{"radiant", "dire"});
+                        break;
+                    }
+                    case "leavelobby":
+                    {
+                        if (user == null)
+                        {
+                            RespondError(jdata, "You are not logged in.");
+                            return;
+                        }
+                        if (lobby == null)
+                        {
+                            RespondError(jdata, "You are not in a lobby.");
+                        }
+                        Program.LobbyManager.LeaveLobby(this);
+                        break;
+                    }
+                    case "chatmsg":
+                    {
+                        if (user == null)
+                        {
+                            RespondError(jdata, "You are not logged in (can't chat).");
+                            return;
+                        }
+                        if (lobby == null)
+                        {
+                            RespondError(jdata, "You are not in a lobby (can't chat).");
+                            return;
+                        }
+                        var req = jdata["req"].ToObject<ChatMessage>();
+                        var msg = req.message;
+                        if (msg == null) return;
+                        msg = Regex.Replace(msg, "^[\\w \\.\"'[]\\{\\}\\(\\)]+", "");
+                        if (msg == lastMsg)
+                        {
+                            RespondError(jdata, "You cannot send the same message twice in a row.");
+                            return;
+                        }
+                        var now = DateTime.UtcNow;
+                        TimeSpan span = now - lastMsgTime;
+                        if (span.TotalSeconds < 2)
+                        {
+                            RespondError(jdata, "You must wait 2 seconds between each message.");
+                            return;
+                        }
+                        lastMsg = msg;
+                        lastMsgTime = now;
+                        Program.LobbyManager.ChatMessage(lobby, msg, user.profile.name);
+                        break;
+                    }
                     default:
                         log.Debug(string.Format("Unknown command: {0}...", command.Substring(0, 10)));
                         return;

@@ -1,4 +1,5 @@
 ﻿using System.Dynamic;
+using System.Linq;
 using D2MPMaster.LiveData;
 using d2mpserver;
 
@@ -34,5 +35,20 @@ namespace D2MPMaster.Lobbies
         public int region { get; set; }
         public bool deleted { get; set; }
         public int status { get; set; }
+
+        public int TeamCount(Player[] team)
+        {
+            return team.Count(plyr => plyr != null);
+        }
+
+        public void AddPlayer(Player[] p0, Player fromUser)
+        {
+            for (var i = 0; i < p0.Length; i++)
+            {
+                if (p0[i] != null) continue;
+                p0[i] = fromUser;
+                return;
+            }
+        }
     }
 }

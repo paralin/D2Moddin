@@ -7,6 +7,8 @@ using D2MPMaster.Browser;
 using D2MPMaster.Browser.Methods;
 using D2MPMaster.Model;
 using d2mpserver;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace D2MPMaster.Lobbies
 {
@@ -62,16 +64,63 @@ namespace D2MPMaster.Lobbies
         public void TransmitLobbyUpdate(Lobby lobby, string[] fields)
         {
             Program.Browser.TransmitPublicLobbiesUpdate(new List<Lobby>(){lobby}, fields);
-            foreach (var plyr in lobby.radiant)
+            foreach (var plyr in lobby.radiant.Where(plyr => plyr != null))
             {
-                if (plyr == null) continue;
                 Program.Browser.TransmitLobbyUpdate(plyr.steam, lobby, fields);
             }
-            foreach (var plyr in lobby.dire)
+            foreach (var plyr in lobby.dire.Where(plyr => plyr != null))
             {
-                if (plyr == null) continue;
                 Program.Browser.TransmitLobbyUpdate(plyr.steam, lobby, fields);
             }
+        }
+
+        public string RemoveFromTeam(Lobby lob, string steamid)
+        {
+            for (int i = 0; i < lob.radiant.Length; i++)
+            {
+                var plyr = lob.radiant[i];
+                if (plyr != null && plyr.steam == steamid)
+                {
+                    lob.radiant[i] = null;
+                    return "radiant";
+                }
+            }
+            for (int i = 0; i < lob.dire.Length; i++)
+            {
+                var plyr = lob.dire[i];
+                if (plyr != null && plyr.steam == steamid)
+                {
+                    lob.dire[i] = null;
+                    return "dire";
+                }
+            }
+            return null;
+        }
+
+        public void CloseLobby(Lobby lob)
+        {
+            foreach (var plyr in lob.radiant)
+            {
+                if (plyr == null) continue;
+                var client = Program.Browser.UserClients[plyr.steam];
+                if (client != null)
+                {
+                    client.lobby = null;
+                    client.SendClearLobby(null);
+                }
+            }
+            foreach (var plyr in lob.dire)
+            {
+                if (plyr == null) continue;
+                var client = Program.Browser.UserClients[plyr.steam];
+                if (client != null)
+                {
+                    client.lobby = null;
+                    client.SendClearLobby(null);
+                }
+            }
+            PublicLobbies.Remove(lob);
+            PlayingLobbies.Remove(lob);
         }
 
         public void LeaveLobby(BrowserClient client)
@@ -82,25 +131,12 @@ namespace D2MPMaster.Lobbies
             client.lobby = null;
             client.SendClearLobby(null);
             //Find the player
-            for (int i = 0; i < lob.radiant.Length; i++)
+            var team = RemoveFromTeam(lob, client.user.services.steam.steamid);
+            if(team != null)
+                TransmitLobbyUpdate(lob, new[] { team });
+            if ((lob.TeamCount(lob.dire) == 0 && lob.TeamCount(lob.radiant) == 0) || lob.creatorid == client.user.Id)
             {
-                var plyr = lob.radiant[i];
-                if (plyr.steam == client.user.services.steam.steamid)
-                {
-                    lob.radiant[i] = null;
-                    TransmitLobbyUpdate(lob, new[]{"radiant"});
-                    return;
-                }
-            }
-            for (int i = 0; i < lob.dire.Length; i++)
-            {
-                var plyr = lob.dire[i];
-                if (plyr.steam == client.user.services.steam.steamid)
-                {
-                    lob.dire[i] = null;
-                    TransmitLobbyUpdate(lob, new[] { "dire" });
-                    return;
-                }
+                CloseLobby(lob);
             }
         }
 
@@ -113,7 +149,7 @@ namespace D2MPMaster.Lobbies
         public static Lobby CreateLobby(User user, CreateLobby req)
         {
             //Filter lobby name to alphanumeric only
-            string name = Regex.Replace(req.name, @"[^\w\d]", "");
+            string name = Regex.Replace(req.name, "^[\\w \\.\"'[]\\{\\}\\(\\)]+", "");
             //Constrain lobby name length to 40 characters
             if (name.Length > 40)
             {
@@ -127,7 +163,7 @@ namespace D2MPMaster.Lobbies
                 return null;
             }
 
-            Lobby lob = new Lobby()
+            var lob = new Lobby()
                         {
                             creator = user.profile.name,
                             creatorid = user.Id,
@@ -156,6 +192,25 @@ namespace D2MPMaster.Lobbies
             Program.LobbyManager.PlayingLobbies.Add(lob);
             Program.Browser.TransmitLobbySnapshot(user.services.steam.steamid, lob);
             return lob;
+        }
+
+        public void ChatMessage(Lobby lobby, string msg, string name)
+        {
+            string cmsg = name + ": " + msg;
+            if (msg.Length == 0) return;
+            if (msg.Length > 140) msg = msg.Substring(0, 140);
+            var cmd = new JObject();
+            cmd["msg"] = "chat";
+            cmd["message"] = cmsg;
+            var data = cmd.ToString(Formatting.None);
+            foreach (var client in lobby.dire.Where(e=>e!=null).Select(plyr => Program.Browser.UserClients[plyr.steam]).Where(client => client != null))
+            {
+                client.Send(data);
+            }
+            foreach (var client in lobby.radiant.Where(e => e != null).Select(plyr => Program.Browser.UserClients[plyr.steam]).Where(client => client != null))
+            {
+                client.Send(data);
+            }
         }
     }
 }

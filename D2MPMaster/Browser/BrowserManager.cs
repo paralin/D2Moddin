@@ -14,7 +14,7 @@ namespace D2MPMaster.Browser
     {
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         private Dictionary<string, BrowserClient> Clients = new Dictionary<string, BrowserClient>();
-        private Dictionary<string, BrowserClient> UserClients = new Dictionary<string, BrowserClient>(); 
+        public Dictionary<string, BrowserClient> UserClients = new Dictionary<string, BrowserClient>(); 
 
         public BrowserManager()
         {
@@ -70,7 +70,15 @@ namespace D2MPMaster.Browser
             upd["msg"] = "colupd";
             upd["ops"] = updates;
             var msg = upd.ToString(Formatting.None);
-            Sessions.Broadcast(msg);
+            Broadcast(msg);
+        }
+
+        public void Broadcast(string msg)
+        {
+            foreach (var client in Clients.Values)
+            {
+                client.Send(msg);
+            }
         }
 
         public void TransmitLobbyUpdate(string steamid, Lobby lobby, string[] fields)
@@ -104,7 +112,7 @@ namespace D2MPMaster.Browser
         {
             log.Debug(string.Format("Client disconnect #{0}", ID));
             Clients[ID].OnClose(e, ID);
-            Sessions.CloseSession(ID);
+            //Sessions.CloseSession(ID);
             base.OnClose(e);
         }
 
