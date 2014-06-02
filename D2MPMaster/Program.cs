@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading;
+using D2MPMaster.Browser;
 using D2MPMaster.Database;
 using D2MPMaster.Lobbies;
 using D2MPMaster.Properties;

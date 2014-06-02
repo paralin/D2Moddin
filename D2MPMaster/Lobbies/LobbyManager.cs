@@ -1,4 +1,6 @@
-﻿using System.Collections.ObjectModel;
+﻿using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Text.RegularExpressions;
 using D2MPMaster.Browser;
@@ -59,15 +61,26 @@ namespace D2MPMaster.Lobbies
 
         public void TransmitLobbyUpdate(Lobby lobby, string[] fields)
         {
-            
+            Program.Browser.TransmitPublicLobbiesUpdate(new List<Lobby>(){lobby}, fields);
+            foreach (var plyr in lobby.radiant)
+            {
+                if (plyr == null) continue;
+                Program.Browser.TransmitLobbyUpdate(plyr.steam, lobby, fields);
+            }
+            foreach (var plyr in lobby.dire)
+            {
+                if (plyr == null) continue;
+                Program.Browser.TransmitLobbyUpdate(plyr.steam, lobby, fields);
+            }
         }
 
         public void LeaveLobby(BrowserClient client)
         {
             if (client.lobby == null || client.user == null) return;
             var lob = client.lobby;
+            if (lob == null || lob.status > 1) return;
             client.lobby = null;
-            if (lob.status > 1) return;
+            client.SendClearLobby(null);
             //Find the player
             for (int i = 0; i < lob.radiant.Length; i++)
             {
@@ -141,6 +154,7 @@ namespace D2MPMaster.Lobbies
             lob.radiant[0] = Player.FromUser(user);
             Program.LobbyManager.PublicLobbies.Add(lob);
             Program.LobbyManager.PlayingLobbies.Add(lob);
+            Program.Browser.TransmitLobbySnapshot(user.services.steam.steamid, lob);
             return lob;
         }
     }

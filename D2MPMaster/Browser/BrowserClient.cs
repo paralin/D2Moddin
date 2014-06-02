@@ -1,16 +1,15 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
-using System.Net.WebSockets;
-using System.Runtime.Remoting.Contexts;
 using D2MPMaster.Browser.Methods;
 using D2MPMaster.Database;
+using D2MPMaster.LiveData;
 using D2MPMaster.Lobbies;
 using D2MPMaster.Model;
-using MongoDB.Bson;
-using MongoDB.Driver;
 using MongoDB.Driver.Builders;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using WebSocketSharp;
 using WebSocket = WebSocketSharp.WebSocket;
 /*
  * {
@@ -26,15 +25,37 @@ namespace D2MPMaster.Browser
     public class BrowserClient
     {
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        public Dictionary<string, WebSocket> sockets = new Dictionary<string, WebSocket>();
+        public string baseSession;
+        public WebSocket baseWebsocket;
+        private string _id;
 
-        public BrowserClient(WebSocketSharp.WebSocket socket)
+        public BrowserClient(WebSocket socket, string sessionID)
         {
             this.socket = socket;
+            sockets.Add(sessionID, socket);
+            baseSession = sessionID;
         }
 
 #region Variables
         private WebSocket socket;
-        private bool authed = false;
+        private bool _authed;
+        private bool authed
+        {
+            get { return _authed; }
+            set
+            {
+                _authed = value;
+                if (_authed)
+                {
+                    Program.Browser.RegisterUser(this, user);
+                }
+                else
+                {
+                    Program.Browser.DeregisterUser(this, user, _id);
+                }
+            }
+        }
         public User user = null;
         public Lobby lobby = null;
 #endregion
@@ -56,12 +77,13 @@ namespace D2MPMaster.Browser
 #endregion
 
 #region Message Handling
-        public void HandleMessage(string data, WebSocketContext context)
+        public void HandleMessage(string data, WebSocketContext context, string sessionID)
         {
             try
             {
                 var jdata = JObject.Parse(data);
                 var id = jdata["id"];
+                _id = sessionID;
                 if (id == null) return;
                 var command = id.Value<string>();
                 switch (command)
@@ -84,13 +106,17 @@ namespace D2MPMaster.Browser
                         var key = jdata["key"]["hashedToken"].Value<string>();
                         //Find it in the database
                         var usr = Mongo.Users.FindOneAs<User>(Query.EQ("_id", uid));
-                        var tokens = usr.services.resume.loginTokens;
-                        bool tokenfound = tokens.Any(token => token.hashedToken == key);
+                        bool tokenfound = false;
+                        if (usr != null)
+                        {
+                            var tokens = usr.services.resume.loginTokens;
+                            tokenfound = tokens.Any(token => token.hashedToken == key);
+                        }
                         if (tokenfound && usr.status.online)
                         {
                             log.Debug(string.Format("Authentication {0} -> {1} ", uid, key));
-                            authed = true;
                             user = usr;
+                            authed = true;
                             context.WebSocket.Send("{\"msg\": \"auth\", \"status\": true}");
                         }
                         else
@@ -103,6 +129,11 @@ namespace D2MPMaster.Browser
                         break;
                     #endregion
                     case "createlobby":
+                        if (user == null)
+                        {
+                            RespondError(jdata, "You are not logged in!");
+                            return;
+                        }
                         //Parse the create lobby request
                         var req = jdata["req"].ToObject<CreateLobby>();
                         //Check if they are in a lobby
@@ -122,5 +153,50 @@ namespace D2MPMaster.Browser
             } //Handle all malformed JSON / no ID field / other troll data
         }
 #endregion
+
+        public void OnClose(CloseEventArgs closeEventArgs, string sessionID)
+        {
+            sockets.Remove(sessionID);
+            if (sockets.Count == 0)
+            {
+                Program.Browser.DeregisterClient(this, baseSession);
+                if(user != null && lobby != null)
+                    Program.LobbyManager.LeaveLobby(this);
+            }
+        }
+
+        public void RegisterSocket(WebSocket webSocket, string session)
+        {
+            sockets[session] = webSocket;
+        }
+
+        public void Obsolete()
+        {
+            sockets = null;
+            baseSession = null;
+            baseWebsocket = null;
+        }
+
+        public void SendClearLobby(WebSocket webSocket)
+        {
+            var upd = new JObject();
+            upd["msg"] = "colupd";
+            upd["ops"] = new JArray {DiffGenerator.RemoveAll("lobbies")};
+            var msg = upd.ToString(Formatting.None);
+            if (webSocket != null)
+                webSocket.Send(upd.ToString(Formatting.None));
+            else
+            {
+                Send(msg);
+            }
+        }
+
+        public void Send(string msg)
+        {
+            foreach (var sock in sockets.Values)
+            {
+                sock.Send(msg);
+            }
+        }
     }
 }
