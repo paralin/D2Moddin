@@ -44,7 +44,7 @@ namespace D2MPMaster.Server
         {
             ID = id;
             Socket = creationContext.WebSocket;
-            Address = creationContext.Host;
+            Address = creationContext.Host.Replace("localhost", "127.0.0.1");
         }
 
         public void OnClose(object o, string id)
@@ -105,7 +105,6 @@ namespace D2MPMaster.Server
                         {
                             var instance = Instances[msg.id];
                             Program.LobbyManager.OnServerReady(instance);
-                            Instances.Remove(msg.id);
                         }
                         break;
                     }

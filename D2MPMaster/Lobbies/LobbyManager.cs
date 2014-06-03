@@ -85,13 +85,16 @@ namespace D2MPMaster.Lobbies
 
         public void CalculateQueue()
         {
-            foreach (var lobby in LobbyQueue)
+
+            foreach (var lobby in LobbyQueue.ToArray())
             {
                 var server = Program.Server.FindForLobby(lobby);
                 if (server == null) continue;
                 GameInstance instance = server.StartInstance(lobby);
                 lobby.status = LobbyStatus.Configure;
                 TransmitLobbyUpdate(lobby, new []{"status"});
+                SendLaunchDota(lobby);
+                LobbyQueue.Remove(lobby);
             }
         }
 
@@ -152,25 +155,15 @@ namespace D2MPMaster.Lobbies
 
         public void CloseLobby(Lobby lob)
         {
-            foreach (var plyr in lob.radiant)
+            foreach (var client in from plyr in lob.radiant where plyr != null where Program.Browser.UserClients.ContainsKey(plyr.steam) select Program.Browser.UserClients[plyr.steam] into client where client != null select client)
             {
-                if (plyr == null) continue;
-                var client = Program.Browser.UserClients[plyr.steam];
-                if (client != null)
-                {
-                    client.lobby = null;
-                    client.SendClearLobby(null);
-                }
+                client.lobby = null;
+                client.SendClearLobby(null);
             }
-            foreach (var plyr in lob.dire)
+            foreach (var client in from plyr in lob.dire where plyr != null where Program.Browser.UserClients.ContainsKey(plyr.steam) select Program.Browser.UserClients[plyr.steam] into client where client != null select client)
             {
-                if (plyr == null) continue;
-                var client = Program.Browser.UserClients[plyr.steam];
-                if (client != null)
-                {
-                    client.lobby = null;
-                    client.SendClearLobby(null);
-                }
+                client.lobby = null;
+                client.SendClearLobby(null);
             }
             PublicLobbies.Remove(lob);
             PlayingLobbies.Remove(lob);
@@ -343,7 +336,7 @@ namespace D2MPMaster.Lobbies
                 lobby.serverIP = instance.Server.Address.Split(':')[0]+":"+instance.port;
                 lobby.status = LobbyStatus.Play;
                 TransmitLobbyUpdate(lobby, new []{"serverIP", "status"});
-                SendLaunchDota(lobby);
+                SendConnectDota(lobby);
             }
         }
 
@@ -356,6 +349,18 @@ namespace D2MPMaster.Lobbies
             foreach (var client in lobby.dire.Where(plyr => plyr != null).Select(plyr => Program.Client.ClientUID.Values.FirstOrDefault(m => m.SteamID == plyr.steam)).Where(client => client != null))
             {
                 client.LaunchDota();
+            }
+        }
+
+        private void SendConnectDota(Lobby lobby)
+        {
+            foreach (var client in lobby.radiant.Where(plyr => plyr != null).Select(plyr => Program.Client.ClientUID.Values.FirstOrDefault(m => m.SteamID == plyr.steam)).Where(client => client != null))
+            {
+                client.ConnectDota(lobby.serverIP);
+            }
+            foreach (var client in lobby.dire.Where(plyr => plyr != null).Select(plyr => Program.Client.ClientUID.Values.FirstOrDefault(m => m.SteamID == plyr.steam)).Where(client => client != null))
+            {
+                client.ConnectDota(lobby.serverIP);
             }
         }
     }

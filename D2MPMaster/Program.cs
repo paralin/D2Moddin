@@ -1,4 +1,6 @@
-﻿using System;
+﻿
+using System;
+using System.Net;
 using System.Threading;
 using D2MPMaster.Browser;
 using D2MPMaster.Client;
@@ -8,13 +10,14 @@ using D2MPMaster.Properties;
 using D2MPMaster.Server;
 using D2MPMaster.Storage;
 using log4net.Config;
+using MongoDB.Driver.Linq;
 using WebSocketSharp.Server;
 
 namespace D2MPMaster
 {
     class Program
     {
-        private static string version = "0.0.1";
+        private static string version = "1.0.0";
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
         public static BrowserManager Browser;

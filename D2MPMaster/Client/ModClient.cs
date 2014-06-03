@@ -113,5 +113,10 @@ namespace D2MPMaster.Client
                 log.Error("Parsing client message.", ex);
             }
         }
+
+        public void ConnectDota(string serverIp)
+        {
+            Socket.Send(JObject.FromObject(new ConnectDota(){ip=serverIp,msg="Game is ready."}).ToString(Formatting.None));
+        }
     }
 }
