@@ -36,6 +36,7 @@ namespace D2MPMaster.Browser
             this.socket = socket;
             sockets.Add(sessionID, socket);
             baseSession = sessionID;
+            baseWebsocket = socket;
         }
 
 #region Variables
@@ -180,6 +181,10 @@ namespace D2MPMaster.Browser
                         Program.LobbyManager.RemoveFromTeam(lobby, user.services.steam.steamid);
                         lobby.AddPlayer(goodguys ? lobby.radiant : lobby.dire, Player.FromUser(user));
                         Program.LobbyManager.TransmitLobbyUpdate(lobby, new []{"radiant", "dire"});
+                        if (lobby.status == 0 && lobby.isPublic)
+                        {
+                            Program.Browser.TransmitPublicLobbiesUpdate(new List<Lobby> { lobby }, new[] { "radiant", "dire" });
+                        }
                         break;
                     }
                     case "leavelobby":
@@ -229,6 +234,76 @@ namespace D2MPMaster.Browser
                         Program.LobbyManager.ChatMessage(lobby, msg, user.profile.name);
                         break;
                     }
+                    case "kickplayer":
+                    {
+                        if (user == null)
+                        {
+                            RespondError(jdata, "You are not logged in (can't kick).");
+                            return;
+                        }
+                        if (lobby == null)
+                        {
+                            RespondError(jdata, "You are not in a lobby (can't kick).");
+                            return;
+                        }
+                        if (lobby.creatorid != user.Id)
+                        {
+                            RespondError(jdata, "You are not the lobby host.");
+                            return;
+                        }
+                        var req = jdata["req"].ToObject<KickPlayer>();
+                        Program.LobbyManager.BanFromLobby(lobby, req.steam);
+                        break;
+                    }
+                    case "setname":
+                    {
+                        if (user == null)
+                        {
+                            RespondError(jdata, "You are not logged in (can't kick).");
+                            return;
+                        }
+                        if (lobby == null)
+                        {
+                            RespondError(jdata, "You are not in a lobby (can't kick).");
+                            return;
+                        }
+                        if (lobby.creatorid != user.Id)
+                        {
+                            RespondError(jdata, "You are not the lobby host.");
+                            return;
+                        }
+
+                        var req = jdata["req"].ToObject<SetName>();
+                        var err = req.Validate();
+                        if (err != null)
+                        {
+                            RespondError(jdata, err);
+                            return;
+                        }
+                        Program.LobbyManager.SetTitle(lobby, req.name);
+                        break;
+                    }
+                    case "setregion":
+                    {
+                        if (user == null)
+                        {
+                            RespondError(jdata, "You are not logged in (can't kick).");
+                            return;
+                        }
+                        if (lobby == null)
+                        {
+                            RespondError(jdata, "You are not in a lobby (can't kick).");
+                            return;
+                        }
+                        if (lobby.creatorid != user.Id)
+                        {
+                            RespondError(jdata, "You are not the lobby host.");
+                            return;
+                        }
+                        var req = jdata["req"].ToObject<SetRegion>();
+                        Program.LobbyManager.SetRegion(lobby, req.region);
+                        break;
+                    }
                     default:
                         log.Debug(string.Format("Unknown command: {0}...", command.Substring(0, 10)));
                         return;
@@ -254,7 +329,7 @@ namespace D2MPMaster.Browser
 
         public void RegisterSocket(WebSocket webSocket, string session)
         {
-            sockets[session] = webSocket;
+            sockets.Add(session, webSocket);
         }
 
         public void Obsolete()
@@ -282,6 +357,7 @@ namespace D2MPMaster.Browser
         {
             foreach (var sock in sockets.Values)
             {
+                if (sock == null) continue;
                 sock.Send(msg);
             }
         }

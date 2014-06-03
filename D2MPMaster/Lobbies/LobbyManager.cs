@@ -1,10 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Linq;
 using System.Text.RegularExpressions;
 using D2MPMaster.Browser;
 using D2MPMaster.Browser.Methods;
+using D2MPMaster.LiveData;
 using D2MPMaster.Model;
 using d2mpserver;
 using Newtonsoft.Json;
@@ -63,7 +65,6 @@ namespace D2MPMaster.Lobbies
 
         public void TransmitLobbyUpdate(Lobby lobby, string[] fields)
         {
-            Program.Browser.TransmitPublicLobbiesUpdate(new List<Lobby>(){lobby}, fields);
             foreach (var plyr in lobby.radiant.Where(plyr => plyr != null))
             {
                 Program.Browser.TransmitLobbyUpdate(plyr.steam, lobby, fields);
@@ -71,6 +72,10 @@ namespace D2MPMaster.Lobbies
             foreach (var plyr in lobby.dire.Where(plyr => plyr != null))
             {
                 Program.Browser.TransmitLobbyUpdate(plyr.steam, lobby, fields);
+            }
+            if (lobby.status == 0 && lobby.isPublic)
+            {
+                Program.Browser.TransmitPublicLobbiesUpdate(new List<Lobby> { lobby }, fields);
             }
         }
 
@@ -211,6 +216,44 @@ namespace D2MPMaster.Lobbies
             {
                 client.Send(data);
             }
+        }
+
+        public void BanFromLobby(Lobby lobby, string steam)
+        {
+            var client = Program.Browser.UserClients[steam];
+            if (client == null) return;
+            if (!lobby.banned.Contains(steam))
+            {
+                var arr = lobby.banned;
+                Array.Resize(ref arr, lobby.banned.Length+1);
+                lobby.banned[lobby.banned.Length] = steam;
+            }
+            LeaveLobby(client);
+        }
+
+        public void TransmitPublicLobbySnapshot(BrowserClient client)
+        {
+            var msg = new JObject();
+            msg["msg"] = "colupd";
+            var ops = new JArray {DiffGenerator.RemoveAll("publicLobbies")};
+            foreach (var lobby in PublicLobbies)
+            {
+                ops.Add(lobby.Add("publicLobbies"));
+            }
+            msg["ops"] = ops;
+            client.Send(msg.ToString(Formatting.None));
+        }
+
+        public void SetTitle(Lobby lobby, string name)
+        {
+            lobby.name = name;
+            TransmitLobbyUpdate(lobby, new[] { "name" });
+        }
+
+        public void SetRegion(Lobby lobby, ServerRegion region)
+        {
+            lobby.region = region;
+            TransmitLobbyUpdate(lobby, new[] { "region" });
         }
     }
 }

@@ -64,6 +64,8 @@
     <Compile Include="Browser\BrowserClient.cs" />
     <Compile Include="Browser\Methods\ChatMessage.cs" />
     <Compile Include="Browser\Methods\CreateLobby.cs" />
+    <Compile Include="Browser\Methods\KickPlayer.cs" />
+    <Compile Include="Browser\Methods\SetOption.cs" />
     <Compile Include="Browser\Methods\SwitchTeam.cs" />
     <Compile Include="Database\Mongo.cs" />
     <Compile Include="Enums.cs" />

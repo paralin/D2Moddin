@@ -25,19 +25,6 @@ namespace D2MPMaster.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("mongodb://root:fJgEBI4CiCtPfa@candidate.20.mongolayer.com:10131,candidate.21.mong" +
-            "olayer.com:10131/d2moddin")]
-        public string MongoURL {
-            get {
-                return ((string)(this["MongoURL"]));
-            }
-            set {
-                this["MongoURL"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("4000")]
         public int URI {
             get {
@@ -50,7 +37,19 @@ namespace D2MPMaster.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("d2moddin")]
+        [global::System.Configuration.DefaultSettingValueAttribute("mongodb://10.0.1.2")]
+        public string MongoURL {
+            get {
+                return ((string)(this["MongoURL"]));
+            }
+            set {
+                this["MongoURL"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("test")]
         public string MongoDB {
             get {
                 return ((string)(this["MongoDB"]));

@@ -1,20 +1,61 @@
 ﻿using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Net.WebSockets;
 using D2MPMaster.LiveData;
 using D2MPMaster.Lobbies;
 using D2MPMaster.Model;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using WebSocketSharp;
+using WebSocketSharp.Net;
 using WebSocketSharp.Server;
+using WebSocketContext = WebSocketSharp.Net.WebSockets.WebSocketContext;
 
 namespace D2MPMaster.Browser
 {
-    class BrowserManager : WebSocketService
+    class BrowserService : WebSocketService
+    {
+        protected override void OnClose(CloseEventArgs e)
+        {
+            Program.Browser.ID = ID;
+            Program.Browser.Context = Context;
+            Program.Browser.OnClose(ID, Context, e);
+            base.OnClose(e);
+        }
+
+        protected override void OnError(ErrorEventArgs e)
+        {
+            Program.Browser.ID = ID;
+            Program.Browser.Context = Context;
+            Program.Browser.OnError(ID, Context, e);
+            base.OnError(e);
+        }
+
+        protected override void OnMessage(MessageEventArgs e)
+        {
+            Program.Browser.ID = ID;
+            Program.Browser.Context = Context;
+            Program.Browser.OnMessage(ID, Context, e);
+            base.OnMessage(e);
+        }
+
+        protected override void OnOpen()
+        {
+            Program.Browser.ID = ID;
+            Program.Browser.Context = Context;
+            Program.Browser.OnOpen(ID, Context);
+            base.OnOpen();
+        }
+
+    }
+    class BrowserManager
     {
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         private Dictionary<string, BrowserClient> Clients = new Dictionary<string, BrowserClient>();
-        public Dictionary<string, BrowserClient> UserClients = new Dictionary<string, BrowserClient>(); 
+        public Dictionary<string, BrowserClient> UserClients = new Dictionary<string, BrowserClient>();
+
+        public string ID;
+        public WebSocketContext Context;
 
         public BrowserManager()
         {
@@ -27,13 +68,13 @@ namespace D2MPMaster.Browser
             var updates = new JArray();
             foreach (var lobby in lobbies)
             {
-                lobby.Update("publicLobbies", fields);
+                updates.Add(lobby.Update("publicLobbies", fields));
             }
             var upd = new JObject();
             upd["msg"] = "colupd";
             upd["ops"] = updates;
             var msg = upd.ToString(Formatting.None);
-            Sessions.Broadcast(msg);
+            Broadcast(msg);
         }
 
         public void TransmitLobbiesChange(object s, NotifyCollectionChangedEventArgs e)
@@ -97,37 +138,33 @@ namespace D2MPMaster.Browser
             //Generate message
             var upd = new JObject();
             upd["msg"] = "colupd";
-            upd["ops"] = new JArray {lob.Add("lobbies")};
+            upd["ops"] = new JArray {DiffGenerator.RemoveAll("lobbies"), lob.Add("lobbies") };
             client.Send(upd.ToString(Formatting.None));
         }
 
-        protected override void OnMessage(MessageEventArgs e)
+        public void OnMessage(string ID, WebSocketContext Context, MessageEventArgs e)
         {
             var client = Clients[ID];
             client.HandleMessage(e.Data, Context, ID);
-            base.OnMessage(e);
         }
 
-        protected override void OnClose(CloseEventArgs e)
+        public void OnClose(string ID, WebSocketContext Context, CloseEventArgs e)
         {
             log.Debug(string.Format("Client disconnect #{0}", ID));
             Clients[ID].OnClose(e, ID);
-            //Sessions.CloseSession(ID);
-            base.OnClose(e);
         }
 
-        protected override void OnOpen()
+        public void OnOpen(string ID, WebSocketContext Context)
         {
             var client = new BrowserClient(Context.WebSocket, ID);
             Clients[ID] = client;
+            Program.LobbyManager.TransmitPublicLobbySnapshot(client);
             log.Debug(string.Format("Client connected #{1}: {0}.", ID, Context.Host));
-            base.OnOpen();
         }
 
-        protected override void OnError(ErrorEventArgs e)
+        public void OnError(string ID, WebSocketContext Context, ErrorEventArgs e)
         {
-            Log.Error(e.Message);
-            base.OnError(e);
+            log.Error(e.Message);
         }
 
         /// <summary>
@@ -143,10 +180,14 @@ namespace D2MPMaster.Browser
                 client.RegisterSocket(browserClient.baseWebsocket, browserClient.baseSession);
                 Clients[browserClient.baseSession] = client;
                 browserClient.Obsolete();
+                if (client.lobby != null)
+                {
+                    TransmitLobbySnapshot(user.services.steam.steamid, client.lobby);
+                }
             }
             else
             {
-                UserClients[user.services.steam.steamid] = browserClient;
+                UserClients.Add(user.services.steam.steamid, browserClient);
             }
         }
 

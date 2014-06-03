@@ -30,12 +30,14 @@ namespace D2MPMaster
             log.Info("Initializing database...");
             Mongo.Setup();
 
-            var wssv = SocketServer = new WebSocketServer(Settings.Default.URI);
-            wssv.AddWebSocketService<BrowserManager>("/browser");
-            wssv.AddWebSocketService<ServerManager>("/server");
-            wssv.Start();
-
             LobbyManager = new LobbyManager();
+            Browser = new BrowserManager();
+
+            var wssv = SocketServer = new WebSocketServer(Settings.Default.URI);
+            wssv.AddWebSocketService<BrowserService>("/browser");
+            //wssv.AddWebSocketService<ServerManager>("/server");
+            //wssv.AddWebSocketService<ClientManager>("/client");
+            wssv.Start();
 
             log.Info("Server running!");
 

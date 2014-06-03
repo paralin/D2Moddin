@@ -32,7 +32,7 @@ namespace D2MPMaster.Lobbies
         public bool devMode { get; set; }
         public bool enableGG { get; set; }
         public GameState state { get; set; }
-        public int region { get; set; }
+        public ServerRegion region { get; set; }
         public bool deleted { get; set; }
         public int status { get; set; }
 
