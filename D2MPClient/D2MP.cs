@@ -165,7 +165,6 @@ namespace d2mp
 
                 {
                     string[] dirs = Directory.GetDirectories(d2mpDir);
-                    var mods = new List<ClientMod>();
                     int i = 0;
                     foreach (string dir in dirs)
                     {
@@ -420,6 +419,7 @@ namespace d2mp
                 return;
             }
             isInstalling = true;
+            icon.DisplayBubble("Attempting to download "+op.Mod.name+"...");
 
             log.Info("Server requested that we install mod " + op.Mod.name + " from download " + op.url);
 

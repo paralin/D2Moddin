@@ -150,11 +150,28 @@ namespace D2MPMaster.Browser
                             RespondError(jdata, "You did not specify a mod.");
                             return;
                         }
+                        //Find the mod
+                        var mod = Mongo.Mods.FindOneAs<Mod>(Query.EQ("_id", req.mod));
+                        if (mod == null)
+                        {
+                            RespondError(jdata, "Can't find the mod, you probably don't have access.");
+                            return;
+                        }
+                        //Find the client
+                        var client = Program.Client.ClientUID[user.Id];
+                        if (client == null || client.Mods.FirstOrDefault(m => m.name == mod.name && m.version == mod.version) == null)
+                        {
+                            var obj = new JObject();
+                            obj["msg"] = "modneeded";
+                            obj["name"] = mod.name;
+                            Send(obj.ToString(Formatting.None));
+                            return;
+                        }
                         //Check if they are in a lobby
                         CheckLobby();
                         if (lobby != null)
                             RespondError(jdata, "You are already in a lobby.");
-                        lobby = LobbyManager.CreateLobby(user, req);
+                        lobby = LobbyManager.CreateLobby(user, mod, req.name);
                         break;
                     }
                     case "switchteam":
@@ -304,6 +321,74 @@ namespace D2MPMaster.Browser
                         Program.LobbyManager.SetRegion(lobby, req.region);
                         break;
                     }
+                    case "joinlobby":
+                    {
+                        if (user == null)
+                        {
+                            RespondError(jdata, "You are not logged in yet.");
+                            return;
+                        }
+                        if (lobby != null)
+                        {
+                            RespondError(jdata, "You are already in a lobby.");
+                            return;
+                        }
+                        var req = jdata["req"].ToObject<JoinLobby>();
+                        //Find lobby
+                        var lob = Program.LobbyManager.PublicLobbies.FirstOrDefault(m => m.id == req.LobbyID);
+                        if (lob == null)
+                        {
+                            RespondError(jdata, "Can't find that lobby.");
+                            return;
+                        }
+                        if (lob.TeamCount(lob.dire) >= 5 && lob.TeamCount(lob.radiant) >= 5)
+                        {
+                            RespondError(jdata, "That lobby is full.");
+                            return;
+                        }
+                        //Find the mod
+                        var mod = Mongo.Mods.FindOneAs<Mod>(Query.EQ("_id", lob.mod));
+                        if (mod == null)
+                        {
+                            RespondError(jdata, "Can't find the mod, you probably don't have access.");
+                            return;
+                        }
+                        //Find the client
+                        var client = Program.Client.ClientUID[user.Id];
+                        if (client == null || client.Mods.FirstOrDefault(m=>m.name == mod.name && m.version == mod.version) == null)
+                        {
+                            var obj = new JObject();
+                            obj["msg"] = "modneeded";
+                            obj["name"] = mod.name;
+                            Send(obj.ToString(Formatting.None));
+                            return;
+                        }
+                        Program.LobbyManager.JoinLobby(lob, user, this);
+                        break;
+                    }
+                    case "installmod":
+                    {
+                        if (user == null)
+                        {
+                            SendInstallRes(false, "You are not logged in yet.");
+                            return;
+                        }
+                        var client = Program.Client.ClientUID[user.Id];
+                        if (client == null)
+                        {
+                            SendInstallRes(false, "You have not launched the manager yet.");
+                            return;
+                        }
+                        var req = jdata["req"].ToObject<InstallMod>();
+                        var mod = Mongo.Mods.FindOneAs<Mod>(Query.EQ("name", req.mod));
+                        if (mod == null)
+                        {
+                            SendInstallRes(false, "Can't find that mod in the database.");
+                            return;
+                        }
+                        client.InstallMod(mod);
+                        break;
+                    }
                     default:
                         log.Debug(string.Format("Unknown command: {0}...", command.Substring(0, 10)));
                         return;
@@ -360,6 +445,15 @@ namespace D2MPMaster.Browser
                 if (sock == null) continue;
                 sock.Send(msg);
             }
+        }
+
+        public void SendInstallRes(bool worked, string msg)
+        {
+            var upd = new JObject();
+            upd["msg"] = "installres";
+            upd["success"] = worked;
+            upd["message"] = msg;
+            Send(upd.ToString(Formatting.None));
         }
     }
 }

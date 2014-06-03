@@ -3,6 +3,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using ClientCommon.Data;
 using ClientCommon.Methods;
+using D2MPMaster.Browser;
 using D2MPMaster.Model;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -19,6 +20,7 @@ namespace D2MPMaster.Client
         private bool _init;
         public Init InitData;
         public string UID;
+        public string SteamID;
 
         public WebSocket Socket;
         public bool Inited {
@@ -50,6 +52,7 @@ namespace D2MPMaster.Client
         {
             var msg = JObject.FromObject(new InstallMod() {Mod = mod.ToClientMod(), url = Program.S3.GenerateModURL(mod)}).ToString(Formatting.None);
             Socket.Send(msg);
+            log.Debug(UID+" -> InstallMod "+mod.name);
         }
 
         public void LaunchDota()
@@ -78,6 +81,13 @@ namespace D2MPMaster.Client
                         var msg = jdata.ToObject<OnInstalledMod>();
                         Mods.Add(msg.Mod);
                         log.Debug("Client installed " + msg.Mod.name + ".");
+                        if(Program.Browser.UserClients.ContainsKey(SteamID)){
+                            Program.Browser.UserClients[SteamID].SendInstallRes(true, "The mod has been installed.");
+                        }
+                        else
+                        {
+                            log.Debug("No browser to send the install result to! "+UID);
+                        }
                         break;
                     }
                     case Init.Msg:

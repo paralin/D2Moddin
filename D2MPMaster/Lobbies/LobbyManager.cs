@@ -145,27 +145,40 @@ namespace D2MPMaster.Lobbies
             }
         }
 
+        public void JoinLobby(Lobby lobby, User user, BrowserClient client)
+        {
+            if (lobby==null || user == null) return;
+            var direCount = lobby.TeamCount(lobby.dire);
+            var radCount = lobby.TeamCount(lobby.radiant);
+            if (direCount >= 5 && radCount >= 5) return;
+            if (direCount < radCount || direCount == radCount)
+            {
+                lobby.AddPlayer(lobby.dire, Player.FromUser(user));
+            }
+            else
+            {
+                lobby.AddPlayer(lobby.radiant, Player.FromUser(user));
+            }
+            client.lobby = lobby;
+            Program.Browser.TransmitLobbySnapshot(user.services.steam.steamid, lobby);
+            TransmitLobbyUpdate(lobby, new []{"radiant", "dire"});
+        }
+
         /// <summary>
         /// Create a new lobby.
         /// </summary>
-        /// <param name="user">Creator user</param>
-        /// <param name="req">Create request</param>
+        /// <param name="user">User creating the lobby.</param>
+        /// <param name="mod">Mod.</param>
+        /// <param name="name">Name of the lobby.</param>
         /// <returns></returns>
-        public static Lobby CreateLobby(User user, CreateLobby req)
+        public static Lobby CreateLobby(User user, Mod mod, string name)
         {
             //Filter lobby name to alphanumeric only
-            string name = Regex.Replace(req.name, "^[\\w \\.\"'[]\\{\\}\\(\\)]+", "");
+            name = Regex.Replace(name, "^[\\w \\.\"'[]\\{\\}\\(\\)]+", "");
             //Constrain lobby name length to 40 characters
             if (name.Length > 40)
             {
                 name = name.Substring(0, 40);
-            }
-            //Find the mod
-            var mod = Mods.Mods.ByID(req.mod);
-            if (mod == null)
-            {
-                log.Error("Can't find mod "+req.mod+".");
-                return null;
             }
 
             var lob = new Lobby()
@@ -180,7 +193,7 @@ namespace D2MPMaster.Lobbies
                             enableGG = true,
                             hasPassword = false,
                             id = Utils.RandomString(17),
-                            mod = req.mod,
+                            mod = mod.Id,
                             region=0,
                             name = name,
                             isPublic = true,

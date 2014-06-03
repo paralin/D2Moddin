@@ -15,7 +15,7 @@ namespace D2MPMaster.Client
     {
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         Dictionary<string, ModClient> Clients = new Dictionary<string, ModClient>(); 
-        Dictionary<string, ModClient> ClientUID = new Dictionary<string, ModClient>();
+        public Dictionary<string, ModClient> ClientUID = new Dictionary<string, ModClient>();
  
         public void OnOpen(string ID, WebSocketContext Context)
         {
@@ -56,6 +56,7 @@ namespace D2MPMaster.Client
                 return;
             }
             modClient.UID = user.Id;
+            modClient.SteamID = user.services.steam.steamid;
             ClientUID.Add(user.Id, modClient);
             Mongo.Clients.Remove(Query.EQ("_id", user.Id));
             Mongo.Clients.Insert(new ClientRecord()
