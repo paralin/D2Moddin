@@ -6,16 +6,16 @@
       <Value Profile="(Default)">4000</Value>
     </Setting>
     <Setting Name="MongoURL" Type="System.String" Scope="User">
-      <Value Profile="(Default)">mongodb://10.0.1.2</Value>
+      <Value Profile="(Default)">mongodb://localhost</Value>
     </Setting>
     <Setting Name="MongoDB" Type="System.String" Scope="User">
-      <Value Profile="(Default)">test</Value>
+      <Value Profile="(Default)">d2moddin</Value>
     </Setting>
     <Setting Name="AWSKey" Type="System.String" Scope="User">
-      <Value Profile="(Default)">AKIAJ4QROL3BSAMJTI7Q</Value>
+      <Value Profile="(Default)">AKIAJETYC7KSUXEAMT3Q</Value>
     </Setting>
     <Setting Name="AWSSecret" Type="System.String" Scope="User">
-      <Value Profile="(Default)">410lWAfLqXpGD66eoqhzeau0T3Sjwc2wqCem7e9c</Value>
+      <Value Profile="(Default)">gA+RbVdsM9rG/ZQ4NUEBOei5KA+afmUrEwaxNpQG</Value>
     </Setting>
     <Setting Name="Bucket" Type="System.String" Scope="User">
       <Value Profile="(Default)">d2mpclient</Value>
@@ -24,7 +24,7 @@
       <Value Profile="(Default)">[{"name":"d2fixups","version":"0.2","bundle":"serv_d2fixups.zip"},{"name":"metamod","version":"0.3.4","bundle":"metamod.zip"},{"name":"lobby","version":"1.3","bundle":"lobby.zip"},{"name":"dst","version":"0.1","bundle":"dst.zip"},{"name":"reflex","version":"0.03.07","bundle":"serv_reflex.zip"}]</Value>
     </Setting>
     <Setting Name="PostURL" Type="System.String" Scope="User">
-      <Value Profile="(Default)">http://ddp.d2modd.in:4001/gdataapi/matchres</Value>
+      <Value Profile="(Default)">http://ddp2.d2modd.in:4001/gdataapi/matchres</Value>
     </Setting>
     <Setting Name="InfoPort" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">4003</Value>

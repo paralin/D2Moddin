@@ -37,7 +37,7 @@ namespace D2MPMaster.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("mongodb://10.0.1.2")]
+        [global::System.Configuration.DefaultSettingValueAttribute("mongodb://localhost")]
         public string MongoURL {
             get {
                 return ((string)(this["MongoURL"]));
@@ -49,7 +49,7 @@ namespace D2MPMaster.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("test")]
+        [global::System.Configuration.DefaultSettingValueAttribute("d2moddin")]
         public string MongoDB {
             get {
                 return ((string)(this["MongoDB"]));
@@ -61,7 +61,7 @@ namespace D2MPMaster.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("AKIAJ4QROL3BSAMJTI7Q")]
+        [global::System.Configuration.DefaultSettingValueAttribute("AKIAJETYC7KSUXEAMT3Q")]
         public string AWSKey {
             get {
                 return ((string)(this["AWSKey"]));
@@ -73,7 +73,7 @@ namespace D2MPMaster.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("410lWAfLqXpGD66eoqhzeau0T3Sjwc2wqCem7e9c")]
+        [global::System.Configuration.DefaultSettingValueAttribute("gA+RbVdsM9rG/ZQ4NUEBOei5KA+afmUrEwaxNpQG")]
         public string AWSSecret {
             get {
                 return ((string)(this["AWSSecret"]));
@@ -109,7 +109,7 @@ namespace D2MPMaster.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("http://ddp.d2modd.in:4001/gdataapi/matchres")]
+        [global::System.Configuration.DefaultSettingValueAttribute("http://ddp2.d2modd.in:4001/gdataapi/matchres")]
         public string PostURL {
             get {
                 return ((string)(this["PostURL"]));
