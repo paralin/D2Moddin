@@ -1,4 +1,5 @@
-﻿using MongoDB.Bson;
+﻿using ClientCommon.Data;
+using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
 namespace D2MPMaster.Model
@@ -31,5 +32,14 @@ namespace D2MPMaster.Model
         public string fetch { get; set; }
         public string user { get; set; }
         public bool isPublic { get; set; }
+
+        public ClientMod ToClientMod()
+        {
+            return new ClientMod()
+                   {
+                       name = name,
+                       version = version
+                   };
+        }
     }
 }

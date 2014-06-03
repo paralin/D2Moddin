@@ -25,38 +25,217 @@ namespace d2mpserver.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("ws://localhost:4000/")]
-        public string URI {
+        [global::System.Configuration.DefaultSettingValueAttribute("ws://107.170.178.246:3006/")]
+        public string serverIP {
             get {
-                return ((string)(this["URI"]));
+                return ((string)(this["serverIP"]));
             }
             set {
-                this["URI"] = value;
+                this["serverIP"] = value;
             }
         }
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("mongodb://root:3s3msqKx7qDTpQNyfWem@candidate.20.mongolayer.com:10131,candidate.2" +
-            "1.mongolayer.com:10131")]
-        public string MongoURL {
+        [global::System.Configuration.DefaultSettingValueAttribute("10")]
+        public int serverCount {
             get {
-                return ((string)(this["MongoURL"]));
+                return ((int)(this["serverCount"]));
             }
             set {
-                this["MongoURL"] = value;
+                this["serverCount"] = value;
             }
         }
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("d2moddin")]
-        public string MongoDB {
+        [global::System.Configuration.DefaultSettingValueAttribute("{{exeloc}}\\dotaserver\\")]
+        public string workingDir {
             get {
-                return ((string)(this["MongoDB"]));
+                return ((string)(this["workingDir"]));
             }
             set {
-                this["MongoDB"] = value;
+                this["workingDir"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("https://s3-us-west-2.amazonaws.com/d2mpclient/steamcmd.exe")]
+        public string steamcmd {
+            get {
+                return ((string)(this["steamcmd"]));
+            }
+            set {
+                this["steamcmd"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("d2modding")]
+        public string SteamCMDLogin {
+            get {
+                return ((string)(this["SteamCMDLogin"]));
+            }
+            set {
+                this["SteamCMDLogin"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("Quantum1337")]
+        public string SteamCMDPass {
+            get {
+                return ((string)(this["SteamCMDPass"]));
+            }
+            set {
+                this["SteamCMDPass"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("https://s3-us-west-2.amazonaws.com/d2mpclient/srcds.exe")]
+        public string srcds {
+            get {
+                return ((string)(this["srcds"]));
+            }
+            set {
+                this["srcds"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("kwxmMKDcuVjQNutZOwZy")]
+        public string connectPassword {
+            get {
+                return ((string)(this["connectPassword"]));
+            }
+            set {
+                this["connectPassword"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string devArgs {
+            get {
+                return ((string)(this["devArgs"]));
+            }
+            set {
+                this["devArgs"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool disableUpdate {
+            get {
+                return ((bool)(this["disableUpdate"]));
+            }
+            set {
+                this["disableUpdate"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool headlessSRCDS {
+            get {
+                return ((bool)(this["headlessSRCDS"]));
+            }
+            set {
+                this["headlessSRCDS"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool steamVerify {
+            get {
+                return ((bool)(this["steamVerify"]));
+            }
+            set {
+                this["steamVerify"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("-console -condebug -game dota -nocrashdialog")]
+        public string args {
+            get {
+                return ((string)(this["args"]));
+            }
+            set {
+                this["args"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("28000")]
+        public int portRangeStart {
+            get {
+                return ((int)(this["portRangeStart"]));
+            }
+            set {
+                this["portRangeStart"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("29000")]
+        public int portRangeEnd {
+            get {
+                return ((int)(this["portRangeEnd"]));
+            }
+            set {
+                this["portRangeEnd"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("Unnamed Server")]
+        public string serverName {
+            get {
+                return ((string)(this["serverName"]));
+            }
+            set {
+                this["serverName"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("UNKNOWN")]
+        public global::d2mpserver.ServerRegion serverRegion {
+            get {
+                return ((global::d2mpserver.ServerRegion)(this["serverRegion"]));
+            }
+            set {
+                this["serverRegion"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string publicAddr {
+            get {
+                return ((string)(this["publicAddr"]));
+            }
+            set {
+                this["publicAddr"] = value;
             }
         }
     }

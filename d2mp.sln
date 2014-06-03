@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "D2MPServer", "d2mpserver\D2
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "D2MPMaster", "D2MPMaster\D2MPMaster.csproj", "{0BEA526E-8F9A-4963-B1AC-CB13E92774FF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClientCommon", "ClientCommon\ClientCommon.csproj", "{DCF78698-62E1-461F-86AE-69A4E8DC5D16}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -61,6 +63,16 @@ Global
 		{0BEA526E-8F9A-4963-B1AC-CB13E92774FF}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{0BEA526E-8F9A-4963-B1AC-CB13E92774FF}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{0BEA526E-8F9A-4963-B1AC-CB13E92774FF}.Release|Win32.ActiveCfg = Release|Any CPU
+		{DCF78698-62E1-461F-86AE-69A4E8DC5D16}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DCF78698-62E1-461F-86AE-69A4E8DC5D16}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DCF78698-62E1-461F-86AE-69A4E8DC5D16}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{DCF78698-62E1-461F-86AE-69A4E8DC5D16}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{DCF78698-62E1-461F-86AE-69A4E8DC5D16}.Debug|Win32.ActiveCfg = Debug|Any CPU
+		{DCF78698-62E1-461F-86AE-69A4E8DC5D16}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DCF78698-62E1-461F-86AE-69A4E8DC5D16}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DCF78698-62E1-461F-86AE-69A4E8DC5D16}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{DCF78698-62E1-461F-86AE-69A4E8DC5D16}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{DCF78698-62E1-461F-86AE-69A4E8DC5D16}.Release|Win32.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

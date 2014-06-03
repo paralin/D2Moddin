@@ -58,5 +58,41 @@ namespace D2MPMaster.Properties {
                 this["MongoDB"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("AKIAJ4QROL3BSAMJTI7Q")]
+        public string AWSKey {
+            get {
+                return ((string)(this["AWSKey"]));
+            }
+            set {
+                this["AWSKey"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("410lWAfLqXpGD66eoqhzeau0T3Sjwc2wqCem7e9c")]
+        public string AWSSecret {
+            get {
+                return ((string)(this["AWSSecret"]));
+            }
+            set {
+                this["AWSSecret"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("d2mpclient")]
+        public string Bucket {
+            get {
+                return ((string)(this["Bucket"]));
+            }
+            set {
+                this["Bucket"] = value;
+            }
+        }
     }
 }

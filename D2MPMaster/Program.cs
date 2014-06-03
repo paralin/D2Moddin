@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Threading;
 using D2MPMaster.Browser;
+using D2MPMaster.Client;
 using D2MPMaster.Database;
 using D2MPMaster.Lobbies;
 using D2MPMaster.Properties;
+using D2MPMaster.Storage;
 using log4net.Config;
 using WebSocketSharp.Server;
 
@@ -18,6 +20,8 @@ namespace D2MPMaster
         public static ServerManager Server;
         public static LobbyManager LobbyManager;
         public static WebSocketServer SocketServer;
+        public static ClientManager Client;
+        public static S3Manager S3;
         public static volatile bool shutdown;
 
         public static void Main(string[] args)
@@ -30,13 +34,17 @@ namespace D2MPMaster
             log.Info("Initializing database...");
             Mongo.Setup();
 
+            log.Info("Initializing Amazon S3...");
+            S3 = new S3Manager();
+
             LobbyManager = new LobbyManager();
             Browser = new BrowserManager();
+            Client = new ClientManager();
 
             var wssv = SocketServer = new WebSocketServer(Settings.Default.URI);
             wssv.AddWebSocketService<BrowserService>("/browser");
             //wssv.AddWebSocketService<ServerManager>("/server");
-            //wssv.AddWebSocketService<ClientManager>("/client");
+            wssv.AddWebSocketService<ClientService>("/client");
             wssv.Start();
 
             log.Info("Server running!");

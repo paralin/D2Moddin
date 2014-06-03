@@ -11,5 +11,14 @@
     <Setting Name="MongoDB" Type="System.String" Scope="User">
       <Value Profile="(Default)">test</Value>
     </Setting>
+    <Setting Name="AWSKey" Type="System.String" Scope="User">
+      <Value Profile="(Default)">AKIAJ4QROL3BSAMJTI7Q</Value>
+    </Setting>
+    <Setting Name="AWSSecret" Type="System.String" Scope="User">
+      <Value Profile="(Default)">410lWAfLqXpGD66eoqhzeau0T3Sjwc2wqCem7e9c</Value>
+    </Setting>
+    <Setting Name="Bucket" Type="System.String" Scope="User">
+      <Value Profile="(Default)">d2mpclient</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

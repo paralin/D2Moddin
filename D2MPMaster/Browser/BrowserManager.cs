@@ -17,32 +17,24 @@ namespace D2MPMaster.Browser
     {
         protected override void OnClose(CloseEventArgs e)
         {
-            Program.Browser.ID = ID;
-            Program.Browser.Context = Context;
             Program.Browser.OnClose(ID, Context, e);
             base.OnClose(e);
         }
 
         protected override void OnError(ErrorEventArgs e)
         {
-            Program.Browser.ID = ID;
-            Program.Browser.Context = Context;
             Program.Browser.OnError(ID, Context, e);
             base.OnError(e);
         }
 
         protected override void OnMessage(MessageEventArgs e)
         {
-            Program.Browser.ID = ID;
-            Program.Browser.Context = Context;
             Program.Browser.OnMessage(ID, Context, e);
             base.OnMessage(e);
         }
 
         protected override void OnOpen()
         {
-            Program.Browser.ID = ID;
-            Program.Browser.Context = Context;
             Program.Browser.OnOpen(ID, Context);
             base.OnOpen();
         }
@@ -53,9 +45,6 @@ namespace D2MPMaster.Browser
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         private Dictionary<string, BrowserClient> Clients = new Dictionary<string, BrowserClient>();
         public Dictionary<string, BrowserClient> UserClients = new Dictionary<string, BrowserClient>();
-
-        public string ID;
-        public WebSocketContext Context;
 
         public BrowserManager()
         {

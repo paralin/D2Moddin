@@ -32,6 +32,10 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="AWSSDK, Version=2.1.1.0, Culture=neutral, PublicKeyToken=9f476d3089b52be3, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\AWSSDK.2.1.1.0\lib\net45\AWSSDK.dll</HintPath>
+    </Reference>
     <Reference Include="log4net">
       <HintPath>..\packages\log4net.2.0.3\lib\net40-full\log4net.dll</HintPath>
     </Reference>
@@ -67,6 +71,8 @@
     <Compile Include="Browser\Methods\KickPlayer.cs" />
     <Compile Include="Browser\Methods\SetOption.cs" />
     <Compile Include="Browser\Methods\SwitchTeam.cs" />
+    <Compile Include="Client\ClientManager.cs" />
+    <Compile Include="Client\ModClient.cs" />
     <Compile Include="Database\Mongo.cs" />
     <Compile Include="Enums.cs" />
     <Compile Include="LiveData\DiffGenerator.cs" />
@@ -85,6 +91,7 @@
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
     <Compile Include="Server\ServerManager.cs" />
+    <Compile Include="Storage\S3Manager.cs" />
     <Compile Include="Tests\Tests.cs" />
     <Compile Include="Utils.cs" />
   </ItemGroup>
@@ -97,6 +104,12 @@
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ClientCommon\ClientCommon.csproj">
+      <Project>{dcf78698-62e1-461f-86ae-69a4e8dc5d16}</Project>
+      <Name>ClientCommon</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
