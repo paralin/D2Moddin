@@ -213,7 +213,7 @@ namespace d2mpserver
 
         private void ServerThread(object state)
         {
-            Thread.Sleep(100);
+            Thread.Sleep(Settings.Default.ReadyDelay*1000);
             if (OnReady != null)
                 OnReady(this, EventArgs.Empty);
             serverProc.WaitForExit();

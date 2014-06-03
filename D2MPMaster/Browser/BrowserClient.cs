@@ -41,7 +41,7 @@ namespace D2MPMaster.Browser
             baseWebsocket = socket;
         }
 
-#region Variables
+        #region Variables
         private WebSocket socket;
         private string lastMsg = "";
         private DateTime lastMsgTime = DateTime.UtcNow;
@@ -64,8 +64,8 @@ namespace D2MPMaster.Browser
         }
         public User user = null;
         public Lobby lobby = null;
-#endregion
-#region Helpers
+        #endregion
+        #region Helpers
         public void CheckLobby()
         {
             if (lobby != null && lobby.deleted) lobby = null;
@@ -80,9 +80,9 @@ namespace D2MPMaster.Browser
             socket.Send(resp.ToString(Formatting.None));
         }
 
-#endregion
+        #endregion
 
-#region Message Handling
+        #region Message Handling
         public void HandleMessage(string data, WebSocketContext context, string sessionID)
         {
             try
@@ -94,7 +94,7 @@ namespace D2MPMaster.Browser
                 var command = id.Value<string>();
                 switch (command)
                 {
-#region Authentication
+                    #region Authentication
                     case "deauth":
                         authed = false;
                         user = null;
@@ -135,322 +135,327 @@ namespace D2MPMaster.Browser
                         break;
                     #endregion
                     case "createlobby":
-                    {
-                        if (user == null)
                         {
-                            RespondError(jdata, "You are not logged in!");
-                            return;
+                            if (user == null)
+                            {
+                                RespondError(jdata, "You are not logged in!");
+                                return;
+                            }
+                            //Parse the create lobby request
+                            var req = jdata["req"].ToObject<CreateLobby>();
+                            if (req.name == null)
+                            {
+                                req.name = user.profile.name + "'s Lobby";
+                            }
+                            if (req.mod == null)
+                            {
+                                RespondError(jdata, "You did not specify a mod.");
+                                return;
+                            }
+                            //Find the mod
+                            var mod = Mongo.Mods.FindOneAs<Mod>(Query.EQ("_id", req.mod));
+                            if (mod == null)
+                            {
+                                RespondError(jdata, "Can't find the mod, you probably don't have access.");
+                                return;
+                            }
+                            //Find the client
+                            ModClient client = null;
+                            if (Program.Client.ClientUID.ContainsKey(user.Id))
+                            {
+                                client = Program.Client.ClientUID[user.Id];
+                            }
+                            if (client == null || client.Mods.FirstOrDefault(m => m.name == mod.name && m.version == mod.version) == null)
+                            {
+                                var obj = new JObject();
+                                obj["msg"] = "modneeded";
+                                obj["name"] = mod.name;
+                                Send(obj.ToString(Formatting.None));
+                                return;
+                            }
+                            //Check if they are in a lobby
+                            CheckLobby();
+                            if (lobby != null)
+                                RespondError(jdata, "You are already in a lobby.");
+                            lobby = LobbyManager.CreateLobby(user, mod, req.name);
+                            break;
                         }
-                        //Parse the create lobby request
-                        var req = jdata["req"].ToObject<CreateLobby>();
-                        if (req.name == null)
-                        {
-                            req.name = user.profile.name + "'s Lobby";
-                        }
-                        if (req.mod == null)
-                        {
-                            RespondError(jdata, "You did not specify a mod.");
-                            return;
-                        }
-                        //Find the mod
-                        var mod = Mongo.Mods.FindOneAs<Mod>(Query.EQ("_id", req.mod));
-                        if (mod == null)
-                        {
-                            RespondError(jdata, "Can't find the mod, you probably don't have access.");
-                            return;
-                        }
-                        //Find the client
-                        ModClient client = null;
-                        if (Program.Client.ClientUID.ContainsKey(user.Id))
-                        {
-                            client = Program.Client.ClientUID[user.Id];
-                        }
-                        if (client == null || client.Mods.FirstOrDefault(m => m.name == mod.name && m.version == mod.version) == null)
-                        {
-                            var obj = new JObject();
-                            obj["msg"] = "modneeded";
-                            obj["name"] = mod.name;
-                            Send(obj.ToString(Formatting.None));
-                            return;
-                        }
-                        //Check if they are in a lobby
-                        CheckLobby();
-                        if (lobby != null)
-                            RespondError(jdata, "You are already in a lobby.");
-                        lobby = LobbyManager.CreateLobby(user, mod, req.name);
-                        break;
-                    }
                     case "switchteam":
-                    {
-                        if (user == null)
                         {
-                            RespondError(jdata, "You are not logged in.");
-                            return;
+                            if (user == null)
+                            {
+                                RespondError(jdata, "You are not logged in.");
+                                return;
+                            }
+                            if (lobby == null)
+                            {
+                                RespondError(jdata, "You are not in a lobby.");
+                                return;
+                            }
+                            //Parse the switch team request
+                            var req = jdata["req"].ToObject<SwitchTeam>();
+                            var goodguys = req.team == "radiant";
+                            if ((goodguys && lobby.TeamCount(lobby.radiant) >= 5) ||
+                                (!goodguys && lobby.TeamCount(lobby.dire) >= 5))
+                            {
+                                RespondError(jdata, "That team is full.");
+                                return;
+                            }
+                            Program.LobbyManager.RemoveFromTeam(lobby, user.services.steam.steamid);
+                            lobby.AddPlayer(goodguys ? lobby.radiant : lobby.dire, Player.FromUser(user));
+                            Program.LobbyManager.TransmitLobbyUpdate(lobby, new[] { "radiant", "dire" });
+                            if (lobby.status == 0 && lobby.isPublic)
+                            {
+                                Program.Browser.TransmitPublicLobbiesUpdate(new List<Lobby> { lobby }, new[] { "radiant", "dire" });
+                            }
+                            break;
                         }
-                        if (lobby == null)
-                        {
-                            RespondError(jdata, "You are not in a lobby.");
-                            return;
-                        }
-                        //Parse the switch team request
-                        var req = jdata["req"].ToObject<SwitchTeam>();
-                        var goodguys = req.team == "radiant";
-                        if ((goodguys && lobby.TeamCount(lobby.radiant) >= 5) ||
-                            (!goodguys && lobby.TeamCount(lobby.dire) >= 5))
-                        {
-                            RespondError(jdata, "That team is full.");
-                            return;
-                        }
-                        Program.LobbyManager.RemoveFromTeam(lobby, user.services.steam.steamid);
-                        lobby.AddPlayer(goodguys ? lobby.radiant : lobby.dire, Player.FromUser(user));
-                        Program.LobbyManager.TransmitLobbyUpdate(lobby, new []{"radiant", "dire"});
-                        if (lobby.status == 0 && lobby.isPublic)
-                        {
-                            Program.Browser.TransmitPublicLobbiesUpdate(new List<Lobby> { lobby }, new[] { "radiant", "dire" });
-                        }
-                        break;
-                    }
                     case "leavelobby":
-                    {
-                        if (user == null)
                         {
-                            RespondError(jdata, "You are not logged in.");
-                            return;
+                            if (user == null)
+                            {
+                                RespondError(jdata, "You are not logged in.");
+                                return;
+                            }
+                            if (lobby == null)
+                            {
+                                RespondError(jdata, "You are not in a lobby.");
+                            }
+                            Program.LobbyManager.LeaveLobby(this);
+                            break;
                         }
-                        if (lobby == null)
-                        {
-                            RespondError(jdata, "You are not in a lobby.");
-                        }
-                        Program.LobbyManager.LeaveLobby(this);
-                        break;
-                    }
                     case "chatmsg":
-                    {
-                        if (user == null)
                         {
-                            RespondError(jdata, "You are not logged in (can't chat).");
-                            return;
+                            if (user == null)
+                            {
+                                RespondError(jdata, "You are not logged in (can't chat).");
+                                return;
+                            }
+                            if (lobby == null)
+                            {
+                                RespondError(jdata, "You are not in a lobby (can't chat).");
+                                return;
+                            }
+                            var req = jdata["req"].ToObject<ChatMessage>();
+                            var msg = req.message;
+                            if (msg == null) return;
+                            msg = Regex.Replace(msg, "^[\\w \\.\"'[]\\{\\}\\(\\)]+", "");
+                            if (msg == lastMsg)
+                            {
+                                RespondError(jdata, "You cannot send the same message twice in a row.");
+                                return;
+                            }
+                            var now = DateTime.UtcNow;
+                            TimeSpan span = now - lastMsgTime;
+                            if (span.TotalSeconds < 2)
+                            {
+                                RespondError(jdata, "You must wait 2 seconds between each message.");
+                                return;
+                            }
+                            lastMsg = msg;
+                            lastMsgTime = now;
+                            Program.LobbyManager.ChatMessage(lobby, msg, user.profile.name);
+                            break;
                         }
-                        if (lobby == null)
-                        {
-                            RespondError(jdata, "You are not in a lobby (can't chat).");
-                            return;
-                        }
-                        var req = jdata["req"].ToObject<ChatMessage>();
-                        var msg = req.message;
-                        if (msg == null) return;
-                        msg = Regex.Replace(msg, "^[\\w \\.\"'[]\\{\\}\\(\\)]+", "");
-                        if (msg == lastMsg)
-                        {
-                            RespondError(jdata, "You cannot send the same message twice in a row.");
-                            return;
-                        }
-                        var now = DateTime.UtcNow;
-                        TimeSpan span = now - lastMsgTime;
-                        if (span.TotalSeconds < 2)
-                        {
-                            RespondError(jdata, "You must wait 2 seconds between each message.");
-                            return;
-                        }
-                        lastMsg = msg;
-                        lastMsgTime = now;
-                        Program.LobbyManager.ChatMessage(lobby, msg, user.profile.name);
-                        break;
-                    }
                     case "kickplayer":
-                    {
-                        if (user == null)
                         {
-                            RespondError(jdata, "You are not logged in (can't kick).");
-                            return;
+                            if (user == null)
+                            {
+                                RespondError(jdata, "You are not logged in (can't kick).");
+                                return;
+                            }
+                            if (lobby == null)
+                            {
+                                RespondError(jdata, "You are not in a lobby (can't kick).");
+                                return;
+                            }
+                            if (lobby.creatorid != user.Id)
+                            {
+                                RespondError(jdata, "You are not the lobby host.");
+                                return;
+                            }
+                            var req = jdata["req"].ToObject<KickPlayer>();
+                            Program.LobbyManager.BanFromLobby(lobby, req.steam);
+                            break;
                         }
-                        if (lobby == null)
-                        {
-                            RespondError(jdata, "You are not in a lobby (can't kick).");
-                            return;
-                        }
-                        if (lobby.creatorid != user.Id)
-                        {
-                            RespondError(jdata, "You are not the lobby host.");
-                            return;
-                        }
-                        var req = jdata["req"].ToObject<KickPlayer>();
-                        Program.LobbyManager.BanFromLobby(lobby, req.steam);
-                        break;
-                    }
                     case "setname":
-                    {
-                        if (user == null)
                         {
-                            RespondError(jdata, "You are not logged in (can't kick).");
-                            return;
-                        }
-                        if (lobby == null)
-                        {
-                            RespondError(jdata, "You are not in a lobby (can't kick).");
-                            return;
-                        }
-                        if (lobby.creatorid != user.Id)
-                        {
-                            RespondError(jdata, "You are not the lobby host.");
-                            return;
-                        }
+                            if (user == null)
+                            {
+                                RespondError(jdata, "You are not logged in (can't kick).");
+                                return;
+                            }
+                            if (lobby == null)
+                            {
+                                RespondError(jdata, "You are not in a lobby (can't kick).");
+                                return;
+                            }
+                            if (lobby.creatorid != user.Id)
+                            {
+                                RespondError(jdata, "You are not the lobby host.");
+                                return;
+                            }
 
-                        var req = jdata["req"].ToObject<SetName>();
-                        var err = req.Validate();
-                        if (err != null)
-                        {
-                            RespondError(jdata, err);
-                            return;
+                            var req = jdata["req"].ToObject<SetName>();
+                            var err = req.Validate();
+                            if (err != null)
+                            {
+                                RespondError(jdata, err);
+                                return;
+                            }
+                            Program.LobbyManager.SetTitle(lobby, req.name);
+                            break;
                         }
-                        Program.LobbyManager.SetTitle(lobby, req.name);
-                        break;
-                    }
                     case "setregion":
-                    {
-                        if (user == null)
                         {
-                            RespondError(jdata, "You are not logged in (can't kick).");
-                            return;
+                            if (user == null)
+                            {
+                                RespondError(jdata, "You are not logged in (can't kick).");
+                                return;
+                            }
+                            if (lobby == null)
+                            {
+                                RespondError(jdata, "You are not in a lobby (can't kick).");
+                                return;
+                            }
+                            if (lobby.creatorid != user.Id)
+                            {
+                                RespondError(jdata, "You are not the lobby host.");
+                                return;
+                            }
+                            var req = jdata["req"].ToObject<SetRegion>();
+                            Program.LobbyManager.SetRegion(lobby, req.region);
+                            break;
                         }
-                        if (lobby == null)
-                        {
-                            RespondError(jdata, "You are not in a lobby (can't kick).");
-                            return;
-                        }
-                        if (lobby.creatorid != user.Id)
-                        {
-                            RespondError(jdata, "You are not the lobby host.");
-                            return;
-                        }
-                        var req = jdata["req"].ToObject<SetRegion>();
-                        Program.LobbyManager.SetRegion(lobby, req.region);
-                        break;
-                    }
                     case "startqueue":
-                    {
-                        if (user == null)
                         {
-                            RespondError(jdata, "You are not logged in yet.");
+                            if (user == null)
+                            {
+                                RespondError(jdata, "You are not logged in yet.");
+                                return;
+                            }
+                            if (lobby == null)
+                            {
+                                RespondError(jdata, "You are not in a lobby.");
+                                return;
+                            }
+                            if (lobby.creatorid != user.Id)
+                            {
+                                RespondError(jdata, "You are not the lobby host.");
+                                return;
+                            }
+                            if (lobby.status != LobbyStatus.Start)
+                            {
+                                RespondError(jdata, "You are already queuing/playing.");
+                                return;
+                            }
+                            if (lobby.requiresFullLobby &&
+                                (lobby.TeamCount(lobby.dire) + lobby.TeamCount(lobby.radiant) < 10))
+                            {
+                                RespondError(jdata, "Your lobby must be full to start.");
+                                return;
+                            }
+                            Program.LobbyManager.StartQueue(lobby);
                             return;
                         }
-                        if (lobby == null)
-                        {
-                            RespondError(jdata, "You are not in a lobby.");
-                            return;
-                        }
-                        if (lobby.creatorid != user.Id)
-                        {
-                            RespondError(jdata, "You are not the lobby host.");
-                            return;
-                        }
-                        if (lobby.status != LobbyStatus.Start)
-                        {
-                            RespondError(jdata, "You are already queuing/playing.");
-                            return;
-                        }
-                        if (lobby.requiresFullLobby &&
-                            (lobby.TeamCount(lobby.dire) + lobby.TeamCount(lobby.radiant) < 10))
-                        {
-                            RespondError(jdata, "Your lobby must be full to start.");
-                            return;
-                        }
-                        Program.LobbyManager.StartQueue(lobby);
-                        return;
-                    }
                     case "stopqueue":
-                    {
-                        if (user == null)
                         {
-                            RespondError(jdata, "You are not logged in yet.");
+                            if (user == null)
+                            {
+                                RespondError(jdata, "You are not logged in yet.");
+                                return;
+                            }
+                            if (lobby == null)
+                            {
+                                RespondError(jdata, "You are not in a lobby.");
+                                return;
+                            }
+                            if (lobby.creatorid != user.Id)
+                            {
+                                RespondError(jdata, "You are not the lobby host.");
+                                return;
+                            }
+                            if (lobby.status != LobbyStatus.Queue)
+                            {
+                                RespondError(jdata, "You are not queueing.");
+                                return;
+                            }
+                            Program.LobbyManager.CancelQueue(lobby);
                             return;
                         }
-                        if (lobby == null)
-                        {
-                            RespondError(jdata, "You are not in a lobby.");
-                            return;
-                        }
-                        if (lobby.creatorid != user.Id)
-                        {
-                            RespondError(jdata, "You are not the lobby host.");
-                            return;
-                        }
-                        if (lobby.status != LobbyStatus.Queue)
-                        {
-                            RespondError(jdata, "You are not queueing.");
-                            return;
-                        }
-                        Program.LobbyManager.CancelQueue(lobby);
-                        return;
-                    }
                     case "joinlobby":
-                    {
-                        if (user == null)
                         {
-                            RespondError(jdata, "You are not logged in yet.");
-                            return;
+                            if (user == null)
+                            {
+                                RespondError(jdata, "You are not logged in yet.");
+                                return;
+                            }
+                            if (lobby != null)
+                            {
+                                RespondError(jdata, "You are already in a lobby.");
+                                return;
+                            }
+                            var req = jdata["req"].ToObject<JoinLobby>();
+                            //Find lobby
+                            var lob = Program.LobbyManager.PublicLobbies.FirstOrDefault(m => m.id == req.LobbyID);
+                            if (lob == null)
+                            {
+                                RespondError(jdata, "Can't find that lobby.");
+                                return;
+                            }
+                            if (lob.TeamCount(lob.dire) >= 5 && lob.TeamCount(lob.radiant) >= 5)
+                            {
+                                RespondError(jdata, "That lobby is full.");
+                                return;
+                            }
+                            //Find the mod
+                            var mod = Mongo.Mods.FindOneAs<Mod>(Query.EQ("_id", lob.mod));
+                            if (mod == null)
+                            {
+                                RespondError(jdata, "Can't find the mod, you probably don't have access.");
+                                return;
+                            }
+                            //Find the client
+                            ModClient client = null;
+                            if (Program.Client.ClientUID.ContainsKey(user.Id))
+                            {
+                                client = Program.Client.ClientUID[user.Id];
+                            }
+                            if (client == null || client.Mods.FirstOrDefault(m => m.name == mod.name && m.version == mod.version) == null)
+                            {
+                                var obj = new JObject();
+                                obj["msg"] = "modneeded";
+                                obj["name"] = mod.name;
+                                Send(obj.ToString(Formatting.None));
+                                return;
+                            }
+
+                            Program.LobbyManager.JoinLobby(lob, user, this);
+                            break;
                         }
-                        if (lobby != null)
-                        {
-                            RespondError(jdata, "You are already in a lobby.");
-                            return;
-                        }
-                        var req = jdata["req"].ToObject<JoinLobby>();
-                        //Find lobby
-                        var lob = Program.LobbyManager.PublicLobbies.FirstOrDefault(m => m.id == req.LobbyID);
-                        if (lob == null)
-                        {
-                            RespondError(jdata, "Can't find that lobby.");
-                            return;
-                        }
-                        if (lob.TeamCount(lob.dire) >= 5 && lob.TeamCount(lob.radiant) >= 5)
-                        {
-                            RespondError(jdata, "That lobby is full.");
-                            return;
-                        }
-                        //Find the mod
-                        var mod = Mongo.Mods.FindOneAs<Mod>(Query.EQ("_id", lob.mod));
-                        if (mod == null)
-                        {
-                            RespondError(jdata, "Can't find the mod, you probably don't have access.");
-                            return;
-                        }
-                        //Find the client
-                        var client = Program.Client.ClientUID[user.Id];
-                        if (client == null || client.Mods.FirstOrDefault(m=>m.name == mod.name && m.version == mod.version) == null)
-                        {
-                            var obj = new JObject();
-                            obj["msg"] = "modneeded";
-                            obj["name"] = mod.name;
-                            Send(obj.ToString(Formatting.None));
-                            return;
-                        }
-                        Program.LobbyManager.JoinLobby(lob, user, this);
-                        break;
-                    }
                     case "installmod":
-                    {
-                        if (user == null)
                         {
-                            SendInstallRes(false, "You are not logged in yet.");
-                            return;
+                            if (user == null)
+                            {
+                                SendInstallRes(false, "You are not logged in yet.");
+                                return;
+                            }
+                            var client = Program.Client.ClientUID[user.Id];
+                            if (client == null)
+                            {
+                                SendInstallRes(false, "You have not launched the manager yet.");
+                                return;
+                            }
+                            var req = jdata["req"].ToObject<InstallMod>();
+                            var mod = Mongo.Mods.FindOneAs<Mod>(Query.EQ("name", req.mod));
+                            if (mod == null)
+                            {
+                                SendInstallRes(false, "Can't find that mod in the database.");
+                                return;
+                            }
+                            client.InstallMod(mod);
+                            break;
                         }
-                        var client = Program.Client.ClientUID[user.Id];
-                        if (client == null)
-                        {
-                            SendInstallRes(false, "You have not launched the manager yet.");
-                            return;
-                        }
-                        var req = jdata["req"].ToObject<InstallMod>();
-                        var mod = Mongo.Mods.FindOneAs<Mod>(Query.EQ("name", req.mod));
-                        if (mod == null)
-                        {
-                            SendInstallRes(false, "Can't find that mod in the database.");
-                            return;
-                        }
-                        client.InstallMod(mod);
-                        break;
-                    }
                     default:
                         log.Debug(string.Format("Unknown command: {0}...", command.Substring(0, 10)));
                         return;
@@ -461,7 +466,7 @@ namespace D2MPMaster.Browser
                 log.Error(ex.ToString());
             } //Handle all malformed JSON / no ID field / other troll data
         }
-#endregion
+        #endregion
 
         public void OnClose(CloseEventArgs closeEventArgs, string sessionID)
         {
@@ -469,7 +474,7 @@ namespace D2MPMaster.Browser
             if (sockets.Count == 0)
             {
                 Program.Browser.DeregisterClient(this, baseSession);
-                if(user != null && lobby != null)
+                if (user != null && lobby != null)
                     Program.LobbyManager.LeaveLobby(this);
             }
         }
@@ -490,7 +495,7 @@ namespace D2MPMaster.Browser
         {
             var upd = new JObject();
             upd["msg"] = "colupd";
-            upd["ops"] = new JArray {DiffGenerator.RemoveAll("lobbies")};
+            upd["ops"] = new JArray { DiffGenerator.RemoveAll("lobbies") };
             var msg = upd.ToString(Formatting.None);
             if (webSocket != null)
                 webSocket.Send(upd.ToString(Formatting.None));

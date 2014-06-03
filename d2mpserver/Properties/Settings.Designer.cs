@@ -25,7 +25,7 @@ namespace d2mpserver.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("ws://localhost:4000/server")]
+        [global::System.Configuration.DefaultSettingValueAttribute("ws://144.76.76.107:4000/server")]
         public string serverIP {
             get {
                 return ((string)(this["serverIP"]));
@@ -229,13 +229,13 @@ namespace d2mpserver.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string publicAddr {
+        [global::System.Configuration.DefaultSettingValueAttribute("8")]
+        public int ReadyDelay {
             get {
-                return ((string)(this["publicAddr"]));
+                return ((int)(this["ReadyDelay"]));
             }
             set {
-                this["publicAddr"] = value;
+                this["ReadyDelay"] = value;
             }
         }
     }

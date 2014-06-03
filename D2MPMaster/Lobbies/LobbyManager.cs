@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using D2MPMaster.Browser;
 using D2MPMaster.Browser.Methods;
+using D2MPMaster.Client;
 using D2MPMaster.Database;
 using D2MPMaster.LiveData;
 using D2MPMaster.Model;
@@ -205,8 +206,11 @@ namespace D2MPMaster.Lobbies
             Program.Browser.TransmitLobbySnapshot(user.services.steam.steamid, lobby);
             TransmitLobbyUpdate(lobby, new []{"radiant", "dire"});
             var mod = Mods.Mods.ByID(lobby.mod);
-            if(mod != null)
-                Program.Client.ClientUID[user.Id].SetMod(mod);
+            if (mod != null && Program.Client.ClientUID.ContainsKey(user.Id))
+            {
+                var mclient = Program.Client.ClientUID[user.Id];
+                mclient.SetMod(mod);
+            }
         }
 
         /// <summary>

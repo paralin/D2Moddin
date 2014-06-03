@@ -3,7 +3,7 @@
   <Profiles />
   <Settings>
     <Setting Name="serverIP" Type="System.String" Scope="User">
-      <Value Profile="(Default)">ws://localhost:4000/server</Value>
+      <Value Profile="(Default)">ws://144.76.76.107:4000/server</Value>
     </Setting>
     <Setting Name="serverCount" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">10</Value>
@@ -53,8 +53,8 @@
     <Setting Name="serverRegion" Type="d2mpserver.ServerRegion" Scope="User">
       <Value Profile="(Default)">UNKNOWN</Value>
     </Setting>
-    <Setting Name="publicAddr" Type="System.String" Scope="User">
-      <Value Profile="(Default)" />
+    <Setting Name="ReadyDelay" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">8</Value>
     </Setting>
   </Settings>
 </SettingsFile>
