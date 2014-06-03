@@ -94,5 +94,29 @@ namespace D2MPMaster.Properties {
                 this["Bucket"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute(@"[{""name"":""d2fixups"",""version"":""0.2"",""bundle"":""serv_d2fixups.zip""},{""name"":""metamod"",""version"":""0.3.4"",""bundle"":""metamod.zip""},{""name"":""lobby"",""version"":""1.3"",""bundle"":""lobby.zip""},{""name"":""dst"",""version"":""0.1"",""bundle"":""dst.zip""},{""name"":""reflex"",""version"":""0.03.07"",""bundle"":""serv_reflex.zip""}]")]
+        public string ServerAddons {
+            get {
+                return ((string)(this["ServerAddons"]));
+            }
+            set {
+                this["ServerAddons"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("http://ddp.d2modd.in:4001/gdataapi/matchres")]
+        public string PostURL {
+            get {
+                return ((string)(this["PostURL"]));
+            }
+            set {
+                this["PostURL"] = value;
+            }
+        }
     }
 }

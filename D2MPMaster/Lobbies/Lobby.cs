@@ -34,7 +34,7 @@ namespace D2MPMaster.Lobbies
         public GameState state { get; set; }
         public ServerRegion region { get; set; }
         public bool deleted { get; set; }
-        public int status { get; set; }
+        public LobbyStatus status { get; set; }
 
         public int TeamCount(Player[] team)
         {

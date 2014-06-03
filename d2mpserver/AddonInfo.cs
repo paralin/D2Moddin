@@ -21,12 +21,12 @@ namespace d2mpserver
             {
                 string version = match.Groups.Cast<Group>().ToList().Skip(3).Aggregate("", (current, part) => current + part.Value);
                 log.Debug(modName + "=" + version);
-                return modName + "=" + version;
+                return version;
             }
             else
             {
                 log.Error("No version info for addon: " + modName);
-                return modName + "=?";
+                return "?";
             }
         }
     }

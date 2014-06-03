@@ -5,6 +5,10 @@ using System.Net;
 using System.Net.Mime;
 using System.Runtime.Remoting.Channels;
 using System.Threading;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Serialization;
+using ServerCommon.Methods;
 using WebSocketSharp;
 using d2mpserver.Properties;
 
@@ -49,7 +53,7 @@ namespace d2mpserver
 
         private void PerformAddonOps(object state)
         {
-            string[] command = (string[])state;
+            var command = (string[])state;
 
             if (command[1] != "")
             {
@@ -107,17 +111,8 @@ namespace d2mpserver
                         string rconPass = command[5];
                         string[] commands = command[6].Split('&');
                         var serv = manager.LaunchServer(id, port, dev, mod, rconPass, commands);
-                        serv.OnReady += (sender, args) =>
-                        {
-                            socket.SendAsync("serverLaunched|" + id, b => { });
-                            log.Debug("server finished launching " + id);
-                        };
-                        serv.OnShutdown += (sender, args) =>
-                        {
-                            socket.SendAsync("onShutdown|" + id,
-                            b => { });
-                            log.Debug("server shut down on its own: " + id);
-                        };
+                        serv.OnReady += (sender, args) => socket.Send(JObject.FromObject(new OnServerLaunched() { id = id }).ToString(Formatting.None));
+                        serv.OnShutdown += (sender, args) => socket.Send(JObject.FromObject(new OnServerShutdown() {id = id}).ToString(Formatting.None));
                         break;
                     }
                 case "setMaxLobbies":
@@ -157,7 +152,7 @@ namespace d2mpserver
                     Environment.Exit(0);
                     break;
                 case "outOfDate":
-                    log.Info("Server is out of date (current version is " + ServerUpdater.version + "), updating...");
+                    log.Info("Server is out of date (current version is " + Init.Version + "), updating...");
                     if (!Settings.Default.disableUpdate)
                     {
                         var url = command[1];
@@ -177,7 +172,7 @@ namespace d2mpserver
         private void InstallAddon(string addon)
         {
             log.Debug("Attempting to install " + addon);
-            var parts = addon.Split('=');
+            var parts = addon.Split('>');
             //get path to addon
             log.Debug("Clearing addon directory...");
             var path = Path.Combine(ServerManager.addonsPath, parts[0]);
@@ -249,13 +244,17 @@ namespace d2mpserver
 
         public void SendInit()
         {
-            var msg = "init|" + Settings.Default.connectPassword + "|" + Settings.Default.serverCount + "|" + GetAddonVersionsString() + "|" + ServerUpdater.version + "|" + Settings.Default.portRangeStart + "-" + Settings.Default.portRangeEnd+"|"+(int)Settings.Default.serverRegion+"|"+Settings.Default.serverName.Replace('|', ' ')+"|"+(Settings.Default.publicAddr);
-            socket.Send(msg);
-        }
-
-        private string GetAddonVersionsString()
-        {
-            return manager.GetAddonVersions();
+            var data = new Init()
+                       {
+                           addons = manager.GetAddonVersions(),
+                           region = (ServerCommon.ServerRegion)((int)Settings.Default.serverRegion),
+                           name = Settings.Default.serverName,
+                           portRangeStart = Settings.Default.portRangeStart,
+                           portRangeEnd = Settings.Default.portRangeEnd,
+                           serverCount = Settings.Default.serverCount
+                       };
+            var json = JObject.FromObject(data);
+            socket.Send(json.ToString(Formatting.None));
         }
 
         public bool Connect()

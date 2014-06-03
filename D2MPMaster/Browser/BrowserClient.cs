@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using D2MPMaster.Browser.Methods;
+using D2MPMaster.Client;
 using D2MPMaster.Database;
 using D2MPMaster.LiveData;
 using D2MPMaster.Lobbies;
 using D2MPMaster.Model;
+using d2mpserver;
 using MongoDB.Driver.Builders;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -158,7 +160,11 @@ namespace D2MPMaster.Browser
                             return;
                         }
                         //Find the client
-                        var client = Program.Client.ClientUID[user.Id];
+                        ModClient client = null;
+                        if (Program.Client.ClientUID.ContainsKey(user.Id))
+                        {
+                            client = Program.Client.ClientUID[user.Id];
+                        }
                         if (client == null || client.Mods.FirstOrDefault(m => m.name == mod.name && m.version == mod.version) == null)
                         {
                             var obj = new JObject();
@@ -320,6 +326,62 @@ namespace D2MPMaster.Browser
                         var req = jdata["req"].ToObject<SetRegion>();
                         Program.LobbyManager.SetRegion(lobby, req.region);
                         break;
+                    }
+                    case "startqueue":
+                    {
+                        if (user == null)
+                        {
+                            RespondError(jdata, "You are not logged in yet.");
+                            return;
+                        }
+                        if (lobby == null)
+                        {
+                            RespondError(jdata, "You are not in a lobby.");
+                            return;
+                        }
+                        if (lobby.creatorid != user.Id)
+                        {
+                            RespondError(jdata, "You are not the lobby host.");
+                            return;
+                        }
+                        if (lobby.status != LobbyStatus.Start)
+                        {
+                            RespondError(jdata, "You are already queuing/playing.");
+                            return;
+                        }
+                        if (lobby.requiresFullLobby &&
+                            (lobby.TeamCount(lobby.dire) + lobby.TeamCount(lobby.radiant) < 10))
+                        {
+                            RespondError(jdata, "Your lobby must be full to start.");
+                            return;
+                        }
+                        Program.LobbyManager.StartQueue(lobby);
+                        return;
+                    }
+                    case "stopqueue":
+                    {
+                        if (user == null)
+                        {
+                            RespondError(jdata, "You are not logged in yet.");
+                            return;
+                        }
+                        if (lobby == null)
+                        {
+                            RespondError(jdata, "You are not in a lobby.");
+                            return;
+                        }
+                        if (lobby.creatorid != user.Id)
+                        {
+                            RespondError(jdata, "You are not the lobby host.");
+                            return;
+                        }
+                        if (lobby.status != LobbyStatus.Queue)
+                        {
+                            RespondError(jdata, "You are not queueing.");
+                            return;
+                        }
+                        Program.LobbyManager.CancelQueue(lobby);
+                        return;
                     }
                     case "joinlobby":
                     {

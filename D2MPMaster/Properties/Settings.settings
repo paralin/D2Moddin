@@ -20,5 +20,11 @@
     <Setting Name="Bucket" Type="System.String" Scope="User">
       <Value Profile="(Default)">d2mpclient</Value>
     </Setting>
+    <Setting Name="ServerAddons" Type="System.String" Scope="User">
+      <Value Profile="(Default)">[{"name":"d2fixups","version":"0.2","bundle":"serv_d2fixups.zip"},{"name":"metamod","version":"0.3.4","bundle":"metamod.zip"},{"name":"lobby","version":"1.3","bundle":"lobby.zip"},{"name":"dst","version":"0.1","bundle":"dst.zip"},{"name":"reflex","version":"0.03.07","bundle":"serv_reflex.zip"}]</Value>
+    </Setting>
+    <Setting Name="PostURL" Type="System.String" Scope="User">
+      <Value Profile="(Default)">http://ddp.d2modd.in:4001/gdataapi/matchres</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

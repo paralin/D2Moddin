@@ -5,6 +5,7 @@ using D2MPMaster.Client;
 using D2MPMaster.Database;
 using D2MPMaster.Lobbies;
 using D2MPMaster.Properties;
+using D2MPMaster.Server;
 using D2MPMaster.Storage;
 using log4net.Config;
 using WebSocketSharp.Server;
@@ -31,6 +32,8 @@ namespace D2MPMaster
             Console.Title = string.Format("[{0}] D2MP Master", version);
             log.Info("Master server starting v."+version+".");
 
+            ServerAddons.Init();
+
             log.Info("Initializing database...");
             Mongo.Setup();
 
@@ -40,10 +43,11 @@ namespace D2MPMaster
             LobbyManager = new LobbyManager();
             Browser = new BrowserManager();
             Client = new ClientManager();
+            Server = new ServerManager();
 
             var wssv = SocketServer = new WebSocketServer(Settings.Default.URI);
             wssv.AddWebSocketService<BrowserService>("/browser");
-            //wssv.AddWebSocketService<ServerManager>("/server");
+            wssv.AddWebSocketService<ServerService>("/server");
             wssv.AddWebSocketService<ClientService>("/client");
             wssv.Start();
 

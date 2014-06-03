@@ -50,4 +50,12 @@ namespace d2mpserver
         CallGG=17,
         CancelGG=18
     }
+
+    public enum LobbyStatus : int
+    {
+        Start=0,
+        Queue=1,
+        Configure=2,
+        Play=3
+    }
 }

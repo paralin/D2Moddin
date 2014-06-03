@@ -11,6 +11,7 @@ using System.Security.Policy;
 using System.Text;
 using System.Threading;
 using d2mpserver.Properties;
+using ServerCommon.Data;
 
 namespace d2mpserver
 {
@@ -175,9 +176,13 @@ namespace d2mpserver
             File.Copy(Path.Combine(ourPath, "gameinfo.txt"), combine, true);
         }
 
-        public string GetAddonVersions()
+        public ServerAddon[] GetAddonVersions()
         {
-            return String.Join(",", Directory.GetDirectories(addonsPath).Select(AddonInfo.DetectVersion).ToArray());
+            var directories = Directory.GetDirectories(addonsPath);
+            return directories.Select(directory => new ServerAddon()
+            {
+                name = Path.GetFileName(directory), version = AddonInfo.DetectVersion(directory)
+            }).ToArray();
         }
     }
 

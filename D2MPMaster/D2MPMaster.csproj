@@ -92,7 +92,10 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
-    <Compile Include="Server\ServerManager.cs" />
+    <Compile Include="Server\GameInstance.cs" />
+    <Compile Include="Server\ServerAddons.cs" />
+    <Compile Include="Server\ServerInstance.cs" />
+    <Compile Include="Server\ServerService.cs" />
     <Compile Include="Storage\S3Manager.cs" />
     <Compile Include="Tests\Tests.cs" />
     <Compile Include="Utils.cs" />
@@ -111,6 +114,10 @@
     <ProjectReference Include="..\ClientCommon\ClientCommon.csproj">
       <Project>{dcf78698-62e1-461f-86ae-69a4e8dc5d16}</Project>
       <Name>ClientCommon</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\ServerCommon\ServerCommon.csproj">
+      <Project>{8fcea0db-79c2-4262-877d-14b924f3b025}</Project>
+      <Name>ServerCommon</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup />

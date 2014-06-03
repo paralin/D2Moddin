@@ -1,20 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reflection;
-using System.Text;
 using System.Threading;
-using d2mpserver.Properties;
+using ServerCommon.Methods;
 
 namespace d2mpserver
 {
     public class ServerUpdater
     {
-        public static string version = "1.4.0";
         private static string fromUrl;
 
         public static void UpdateFromURL(string url)
@@ -43,7 +40,7 @@ namespace d2mpserver
             {
                 Directory.CreateDirectory(logDir);
             }
-            var logDirV = Path.Combine(logDir, ServerUpdater.version);
+            var logDirV = Path.Combine(logDir, Init.Version);
             if (!Directory.Exists(logDirV))
             {
                 Directory.CreateDirectory(logDirV);

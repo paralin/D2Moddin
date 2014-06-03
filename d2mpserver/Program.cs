@@ -6,6 +6,7 @@ using System.Threading;
 using System.Runtime.InteropServices;
 using d2mpserver.Properties;
 using log4net.Config;
+using ServerCommon.Methods;
 
 namespace d2mpserver
 {
@@ -54,12 +55,12 @@ namespace d2mpserver
             XmlConfigurator.Configure();
             System.Net.ServicePointManager.ServerCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true;
             
-            log.Info("D2MP server version "+ServerUpdater.version+" starting...");
+            log.Info("D2MP server version "+Init.Version+" starting...");
             log.Debug("Connection address: " + Settings.Default.serverIP);
             var configPath = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.PerUserRoaming).FilePath;
             log.Info("Server config path: "+configPath);
 
-            Console.Title = string.Format("[{0}] D2MP Server", ServerUpdater.version);
+            Console.Title = string.Format("[{0}] D2MP Server", Init.Version);
 
             manager = new ServerManager();
             if (!manager.SetupEnvironment())

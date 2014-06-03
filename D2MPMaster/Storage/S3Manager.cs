@@ -19,14 +19,18 @@ namespace D2MPMaster.Storage
             Client = new AmazonS3Client(Settings.Default.AWSKey, Settings.Default.AWSSecret, RegionEndpoint.USEast1);
         }
 
-        public string GenerateModURL(Mod mod)
+        public string GenerateBundleURL(string bundle)
         {
             return Client.GetPreSignedURL(new GetPreSignedUrlRequest
-                      {
-                          Expires = DateTime.Now + TimeSpan.FromMinutes(30),
-                          BucketName = Settings.Default.Bucket,
-                          Key = mod.bundle
-                      });
+            {
+                Expires = DateTime.Now + TimeSpan.FromMinutes(30),
+                BucketName = Settings.Default.Bucket,
+                Key = bundle
+            });
+        }
+        public string GenerateModURL(Mod mod)
+        {
+            return GenerateBundleURL(mod.bundle);
         }
     }
 }
