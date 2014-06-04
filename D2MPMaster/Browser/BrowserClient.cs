@@ -528,7 +528,8 @@ namespace D2MPMaster.Browser
 
         public void OnClose(CloseEventArgs closeEventArgs, string sessionID)
         {
-            sockets.Remove(sessionID);
+            WebSocket value;
+            sockets.TryRemove(sessionID, out value);
             if (sockets.Count == 0)
             {
                 Program.Browser.DeregisterClient(this, baseSession);
