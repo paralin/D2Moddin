@@ -148,12 +148,12 @@ namespace D2MPMaster.Browser
             var client = new BrowserClient(Context.WebSocket, ID);
             Clients[ID] = client;
             Program.LobbyManager.TransmitPublicLobbySnapshot(client);
-            log.Debug(string.Format("Client connected #{1}: {0}.", ID, Context.Host));
+            log.Debug(string.Format("Client connected #{1}: {0}.", ID, Context.UserEndPoint));
         }
 
         public void OnError(string ID, WebSocketContext Context, ErrorEventArgs e)
         {
-            log.Error(e.Message);
+            //log.Error(e.Message);
         }
 
         /// <summary>

@@ -44,7 +44,7 @@ namespace D2MPMaster.Server
         {
             ID = id;
             Socket = creationContext.WebSocket;
-            Address = creationContext.Host.Replace("localhost", "127.0.0.1");
+            Address = creationContext.UserEndPoint.ToString();
         }
 
         public void OnClose(object o, string id)
