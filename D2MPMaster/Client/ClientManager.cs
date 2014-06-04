@@ -53,6 +53,7 @@ namespace D2MPMaster.Client
             {
                 if(values.Count > 0)
                     log.Debug("Can't find user for "+values[0]+".");
+				modClient.Shutdown();
                 return;
             }
             modClient.UID = user.Id;

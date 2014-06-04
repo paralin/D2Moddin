@@ -58,6 +58,7 @@ namespace D2MPMaster
             wssv.AddWebSocketService<ServerService>("/server");
             wssv.AddWebSocketService<ClientService>("/client");
             wssv.Start();
+			wssv.Log.SetOutput(new Action<WebSocketSharp.LogData, string>((WebSocketSharp.LogData data, string msg)=>{}));
 
             log.Info("Server running!");
 

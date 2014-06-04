@@ -259,6 +259,7 @@ namespace D2MPMaster.Lobbies
             Program.LobbyManager.PlayingLobbies.Add(lob);
             Program.Browser.TransmitLobbySnapshot(user.services.steam.steamid, lob);
             Program.Client.ClientUID[user.Id].SetMod(mod);
+			log.InfoFormat("Lobby created, User: #{0}, Name: #{1}", user.profile.name, name);
             return lob;
         }
 
@@ -325,7 +326,7 @@ namespace D2MPMaster.Lobbies
         {
             if (PlayingLobbies.Contains(instance.lobby))
             {
-                log.Debug("Lobby finished (server shutdown) "+instance.lobby.id);
+				log.Info("Lobby finished "+instance.lobby.id);
                 CloseLobby(instance.lobby);
                 CalculateQueue();
             }
@@ -334,13 +335,13 @@ namespace D2MPMaster.Lobbies
         public void OnServerReady(GameInstance instance)
         {
             if (PlayingLobbies.Contains(instance.lobby))
-            {
-                log.Debug("Server ready "+instance.lobby.id);
+			{
                 var lobby = instance.lobby;
                 lobby.serverIP = instance.Server.Address.Split(':')[0]+":"+instance.port;
                 lobby.status = LobbyStatus.Play;
                 TransmitLobbyUpdate(lobby, new []{"serverIP", "status"});
                 SendConnectDota(lobby);
+				log.Info("Server ready "+instance.lobby.id+" "+instance.lobby.serverIP);
             }
         }
 

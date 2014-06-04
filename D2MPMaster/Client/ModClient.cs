@@ -116,7 +116,12 @@ namespace D2MPMaster.Client
 
         public void ConnectDota(string serverIp)
         {
-            Socket.Send(JObject.FromObject(new ConnectDota(){ip=serverIp,msg="Game is ready."}).ToString(Formatting.None));
+            Socket.Send(JObject.FromObject(new ConnectDota(){ip=serverIp}).ToString(Formatting.None));
         }
+
+		public void Shutdown()
+		{
+			Socket.Send(JObject.FromObject(new ClientCommon.Methods.Shutdown()).ToString());
+		}
     }
 }
