@@ -53,9 +53,10 @@ namespace D2MPMaster.Browser
         {
             while (sockets != null && sockets.Count > 0)
             {
-                if (MessageQueue.Count > 0)
+                string msg = null;
+                MessageQueue.TryDequeue(out msg);
+                if (msg != null)
                 {
-                    var msg = MessageQueue.Dequeue();
                     foreach (var socket in sockets.Values)
                     {
                         socket.Send(msg);
