@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using Amazon.DataPipeline.Model;
 using D2MPMaster.Database;
@@ -60,9 +61,10 @@ namespace D2MPMaster.Client
             modClient.SteamID = user.services.steam.steamid;
 			if(ClientUID.ContainsKey(user.Id))
 			{
-				ClientUID.Remove(user.Id);
+			    ModClient client;
+                ClientUID.TryRemove(user.Id, out client);
 			}
-            ClientUID.Add(user.Id, modClient);
+            ClientUID[user.Id] = modClient;
             Mongo.Clients.Remove(Query.EQ("_id", user.Id));
             Mongo.Clients.Insert(new ClientRecord()
                                  {
@@ -73,7 +75,8 @@ namespace D2MPMaster.Client
 
         public void DeregisterClient(ModClient modClient)
         {
-            ClientUID.Remove(modClient.UID);
+            ModClient client;
+            ClientUID.TryRemove(modClient.UID, out client);
             Mongo.Clients.Remove(Query.EQ("_id", modClient.UID));
         }
     }

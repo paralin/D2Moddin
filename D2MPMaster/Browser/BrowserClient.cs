@@ -2,7 +2,6 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Sockets;
 using System.Text.RegularExpressions;
 using System.Threading;
 using D2MPMaster.Browser.Methods;
@@ -189,7 +188,7 @@ namespace D2MPMaster.Browser
                                 return;
                             }
                             //Find the mod
-                            var mod = Mongo.Mods.FindOneAs<Mod>(Query.EQ("_id", req.mod));
+                            var mod = Mods.Mods.ByID(req.mod);
                             if (mod == null)
                             {
                                 RespondError(jdata, "Can't find the mod, you probably don't have access.");
@@ -445,7 +444,7 @@ namespace D2MPMaster.Browser
                                 return;
                             }
                             //Find the mod
-                            var mod = Mongo.Mods.FindOneAs<Mod>(Query.EQ("_id", lob.mod));
+                            var mod = Mods.Mods.ByID(lob.mod);
                             if (mod == null)
                             {
                                 RespondError(jdata, "Can't find the mod, you probably don't have access.");
@@ -484,7 +483,7 @@ namespace D2MPMaster.Browser
                                 return;
                             }
                             var req = jdata["req"].ToObject<InstallMod>();
-                            var mod = Mongo.Mods.FindOneAs<Mod>(Query.EQ("name", req.mod));
+                            var mod = Mods.Mods.ByID(req.mod);
                             if (mod == null)
                             {
                                 SendInstallRes(false, "Can't find that mod in the database.");

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Net.WebSockets;
+using System.Threading.Tasks;
 using D2MPMaster.LiveData;
 using D2MPMaster.Lobbies;
 using D2MPMaster.Model;
@@ -57,53 +58,50 @@ namespace D2MPMaster.Browser
 
         public void TransmitPublicLobbiesUpdate(List<Lobby> lobbies, string[] fields)
         {
-            lock (transmitLock)
+            //lock (transmitLock)
+            //{
+            var updates = new JArray();
+            foreach (var lobby in lobbies)
             {
-                var updates = new JArray();
-                foreach (var lobby in lobbies)
-                {
-                    updates.Add(lobby.Update("publicLobbies", fields));
-                }
-                var upd = new JObject();
-                upd["msg"] = "colupd";
-                upd["ops"] = updates;
-                var msg = upd.ToString(Formatting.None);
-                Broadcast(msg);
+                updates.Add(lobby.Update("publicLobbies", fields));
             }
+            var upd = new JObject();
+            upd["msg"] = "colupd";
+            upd["ops"] = updates;
+            var msg = upd.ToString(Formatting.None);
+            Broadcast(msg);
+            //}
         }
 
         public void TransmitLobbiesChange(object s, NotifyCollectionChangedEventArgs e)
         {
-            lock (transmitLock)
+            var updates = new JArray();
+            if (e.Action == NotifyCollectionChangedAction.Reset)
             {
-                var updates = new JArray();
-                if (e.Action == NotifyCollectionChangedAction.Reset)
-                {
-                    updates.Add(DiffGenerator.RemoveAll("publicLobbies"));
-                }
-                else
-                {
-                    if (e.NewItems != null)
-                        foreach (var lobby in e.NewItems)
+                updates.Add(DiffGenerator.RemoveAll("publicLobbies"));
+            }
+            else
+            {
+                if (e.NewItems != null)
+                    foreach (var lobby in e.NewItems)
+                    {
+                        switch (e.Action)
                         {
-                            switch (e.Action)
-                            {
-                                case NotifyCollectionChangedAction.Add:
-                                    updates.Add(lobby.Add("publicLobbies"));
-                                    break;
-                            }
+                            case NotifyCollectionChangedAction.Add:
+                                updates.Add(lobby.Add("publicLobbies"));
+                                break;
                         }
-                    if (e.OldItems != null)
-                        foreach (var lobby in e.OldItems)
+                    }
+                if (e.OldItems != null)
+                    foreach (var lobby in e.OldItems)
+                    {
+                        switch (e.Action)
                         {
-                            switch (e.Action)
-                            {
-                                case NotifyCollectionChangedAction.Remove:
-                                    updates.Add(lobby.Remove("publicLobbies"));
-                                    break;
-                            }
+                            case NotifyCollectionChangedAction.Remove:
+                                updates.Add(lobby.Remove("publicLobbies"));
+                                break;
                         }
-                }
+                    }
                 var upd = new JObject();
                 upd["msg"] = "colupd";
                 upd["ops"] = updates;
@@ -146,10 +144,8 @@ namespace D2MPMaster.Browser
         public void OnMessage(string ID, WebSocketContext Context, MessageEventArgs e)
         {
             var client = Clients[ID];
-			//if (client.proccommand) return;
-			//client.proccommand = true;
-            client.HandleMessage(e.Data, Context, ID);
-			//client.proccommand = false;
+            var handleTask = new Task(() => client.HandleMessage(e.Data, Context, ID));
+            handleTask.Start();
         }
 
         public void OnClose(string ID, WebSocketContext Context, CloseEventArgs e)

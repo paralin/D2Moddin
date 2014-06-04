@@ -1,6 +1,5 @@
 ﻿
 using System;
-using System.Net;
 using System.Threading;
 using D2MPMaster.Browser;
 using D2MPMaster.Client;
@@ -10,7 +9,6 @@ using D2MPMaster.Properties;
 using D2MPMaster.Server;
 using D2MPMaster.Storage;
 using log4net.Config;
-using MongoDB.Driver.Linq;
 using WebSocketSharp.Server;
 
 namespace D2MPMaster
@@ -58,7 +56,7 @@ namespace D2MPMaster
             wssv.AddWebSocketService<ServerService>("/server");
             wssv.AddWebSocketService<ClientService>("/client");
             wssv.Start();
-			wssv.Log.SetOutput((data, msg)=>{});
+            wssv.Log.Output = (data, msg)=>{};
 
             log.Info("Server running!");
 

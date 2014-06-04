@@ -4,13 +4,10 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text.RegularExpressions;
-using Amazon.CloudFront.Model;
-using D2MPMaster.Database;
 using D2MPMaster.Lobbies;
 using D2MPMaster.Properties;
 using d2mpserver;
 using Newtonsoft.Json.Linq;
-using NUnit.Framework;
 using ServerCommon.Data;
 using ServerCommon.Methods;
 using WebSocketSharp;
@@ -159,10 +156,10 @@ namespace D2MPMaster.Server
             };
             cmds.AddRange(from plyr in lobby.radiant
                 where plyr != null
-                select "add_radiant_player " + plyr.steam + " \"Player\"");
+                select string.Format("add_radiant_player \"{0}\" \"{1}\"", plyr.steam, Regex.Replace(plyr.name, "[^a-zA-Z0-9 -]", "")));
             cmds.AddRange(from plyr in lobby.dire
                 where plyr != null
-                select "add_dire_player " + plyr.steam + " \"Player\"");
+                select string.Format("add_dire_player \"{0}\" \"{1}\"", plyr.steam, Regex.Replace(plyr.name, "[^a-zA-Z0-9 -]", "")));
             return cmds.ToArray();
         }
     }
