@@ -51,11 +51,11 @@ namespace D2MPMaster
             Client = new ClientManager();
             Server = new ServerManager();
 
-            var server = new WebSocketServer(Settings.Default.URI);
+            var server = new WebSocketServer(4000, "0.0.0.0");
             server.Start(socket =>
                          {
                              string ID = Utils.RandomString(10);
-                             ISocketHandler handler = null;
+                             ISocketHandler handler;
                              switch (Regex.Replace(socket.ConnectionInfo.Path.ToLower(), "[^a-zA-Z]", ""))
                              {
                                  case "browser":
