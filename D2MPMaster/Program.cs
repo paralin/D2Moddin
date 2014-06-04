@@ -69,7 +69,6 @@ namespace D2MPMaster
                                      break;
                                  default:
                                      log.Info("No handler for URI: "+socket.ConnectionInfo.Path);
-                                     socket.Close();
                                      return;
                              }
                              socket.OnOpen = () => handler.OnOpen(ID, socket);
