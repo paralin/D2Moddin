@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
@@ -27,14 +28,14 @@ namespace D2MPMaster.Lobbies
         /// <summary>
         /// Lobbies that should be visible in the list.
         /// </summary>
-        public ObservableCollection<Lobby> PublicLobbies = new ObservableCollection<Lobby>();
+        public ConcurrentObservableCollection<Lobby> PublicLobbies = new ConcurrentObservableCollection<Lobby>(new List<Lobby>());
 
         /// <summary>
         /// Lobbies that should have full updates sent out JUST to users in them.
         /// </summary>
-        public ObservableCollection<Lobby> PlayingLobbies = new ObservableCollection<Lobby>();
+        public ConcurrentObservableCollection<Lobby> PlayingLobbies = new ConcurrentObservableCollection<Lobby>(new List<Lobby>());
 
-        public List<Lobby> LobbyQueue = new List<Lobby>(20);
+        public List<Lobby> LobbyQueue = new List<Lobby>();
 
         /// <summary>
         /// See if a user is already in a lobby.

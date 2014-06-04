@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Net.WebSockets;
 using D2MPMaster.LiveData;
@@ -43,8 +44,10 @@ namespace D2MPMaster.Browser
     class BrowserManager
     {
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
-        private Dictionary<string, BrowserClient> Clients = new Dictionary<string, BrowserClient>();
-        public Dictionary<string, BrowserClient> UserClients = new Dictionary<string, BrowserClient>();
+        private ConcurrentDictionary<string, BrowserClient> Clients = new ConcurrentDictionary<string, BrowserClient>();
+        public ConcurrentDictionary<string, BrowserClient> UserClients = new ConcurrentDictionary<string, BrowserClient>();
+
+        private object transmitLock = new object();
 
         public BrowserManager()
         {
@@ -54,53 +57,59 @@ namespace D2MPMaster.Browser
 
         public void TransmitPublicLobbiesUpdate(List<Lobby> lobbies, string[] fields)
         {
-            var updates = new JArray();
-            foreach (var lobby in lobbies)
+            lock (transmitLock)
             {
-                updates.Add(lobby.Update("publicLobbies", fields));
+                var updates = new JArray();
+                foreach (var lobby in lobbies)
+                {
+                    updates.Add(lobby.Update("publicLobbies", fields));
+                }
+                var upd = new JObject();
+                upd["msg"] = "colupd";
+                upd["ops"] = updates;
+                var msg = upd.ToString(Formatting.None);
+                Broadcast(msg);
             }
-            var upd = new JObject();
-            upd["msg"] = "colupd";
-            upd["ops"] = updates;
-            var msg = upd.ToString(Formatting.None);
-            Broadcast(msg);
         }
 
         public void TransmitLobbiesChange(object s, NotifyCollectionChangedEventArgs e)
         {
-            var updates = new JArray();
-            if (e.Action == NotifyCollectionChangedAction.Reset)
+            lock (transmitLock)
             {
-                updates.Add(DiffGenerator.RemoveAll("publicLobbies"));
-            }
-            else
-            {
-                if(e.NewItems != null)
-                foreach (var lobby in e.NewItems)
+                var updates = new JArray();
+                if (e.Action == NotifyCollectionChangedAction.Reset)
                 {
-                    switch (e.Action)
-                    {
-                        case NotifyCollectionChangedAction.Add:
-                            updates.Add(lobby.Add("publicLobbies"));
-                            break;
-                    }
+                    updates.Add(DiffGenerator.RemoveAll("publicLobbies"));
                 }
-                if(e.OldItems != null)
-                foreach (var lobby in e.OldItems)
+                else
                 {
-                    switch (e.Action)
-                    {
-                        case NotifyCollectionChangedAction.Remove:
-                            updates.Add(lobby.Remove("publicLobbies"));
-                            break;
-                    }
+                    if (e.NewItems != null)
+                        foreach (var lobby in e.NewItems)
+                        {
+                            switch (e.Action)
+                            {
+                                case NotifyCollectionChangedAction.Add:
+                                    updates.Add(lobby.Add("publicLobbies"));
+                                    break;
+                            }
+                        }
+                    if (e.OldItems != null)
+                        foreach (var lobby in e.OldItems)
+                        {
+                            switch (e.Action)
+                            {
+                                case NotifyCollectionChangedAction.Remove:
+                                    updates.Add(lobby.Remove("publicLobbies"));
+                                    break;
+                            }
+                        }
                 }
+                var upd = new JObject();
+                upd["msg"] = "colupd";
+                upd["ops"] = updates;
+                var msg = upd.ToString(Formatting.None);
+                Broadcast(msg);
             }
-            var upd = new JObject();
-            upd["msg"] = "colupd";
-            upd["ops"] = updates;
-            var msg = upd.ToString(Formatting.None);
-            Broadcast(msg);
         }
 
         public void Broadcast(string msg)
@@ -113,12 +122,15 @@ namespace D2MPMaster.Browser
 
         public void TransmitLobbyUpdate(string steamid, Lobby lobby, string[] fields)
         {
-            var client = UserClients[steamid];
-            //Generate message
-            var upd = new JObject();
-            upd["msg"] = "colupd";
-            upd["ops"] = new JArray {lobby.Update("lobbies", fields)};
-            client.Send(upd.ToString(Formatting.None));
+            lock (transmitLock)
+            {
+                var client = UserClients[steamid];
+                //Generate message
+                var upd = new JObject();
+                upd["msg"] = "colupd";
+                upd["ops"] = new JArray {lobby.Update("lobbies", fields)};
+                client.Send(upd.ToString(Formatting.None));
+            }
         }
 
         public void TransmitLobbySnapshot(string steamid, Lobby lob)
@@ -179,7 +191,7 @@ namespace D2MPMaster.Browser
             }
             else
             {
-                UserClients.Add(user.services.steam.steamid, browserClient);
+                UserClients[user.services.steam.steamid] = browserClient;
             }
         }
 

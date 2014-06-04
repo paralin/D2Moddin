@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -27,7 +28,7 @@ namespace D2MPMaster.Server
         public string Address;
         public WebSocket Socket;
         public int portCounter;
-        public Dictionary<int, GameInstance> Instances = new Dictionary<int, GameInstance>(); 
+        public ConcurrentDictionary<int, GameInstance> Instances = new ConcurrentDictionary<int, GameInstance>(); 
         public bool Inited {
             get { return _init; }
             set
@@ -144,7 +145,7 @@ namespace D2MPMaster.Server
                           (lobby.devMode ? bool.TrueString : bool.FalseString) + "|" + Mods.Mods.ByID(lobby.mod).name +
                           "|" + instance.RconPass + "|" + string.Join("&", GenerateCommands(lobby));
             Socket.Send(command);
-            Instances.Add(instance.ID, instance);
+            Instances[instance.ID] = instance;
             return instance;
         }
 

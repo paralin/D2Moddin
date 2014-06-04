@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -50,4 +52,31 @@ namespace D2MPMaster
             return arr;
         }
     }
+
+      public class ConcurrentObservableCollection<t> : ObservableCollection<t>
+      {
+        // Override the event so this class can access it
+        public override event NotifyCollectionChangedEventHandler CollectionChanged;
+ 
+        public ConcurrentObservableCollection(IEnumerable<t> collection) : base(collection) { }
+        public ConcurrentObservableCollection(List<t> collection) : base(collection) { }
+
+          protected override void OnCollectionChanged(NotifyCollectionChangedEventArgs e)
+          {
+              // Be nice - use BlockReentrancy like MSDN said
+              using (BlockReentrancy())
+              {
+                  var eventHandler = CollectionChanged;
+                  if (eventHandler != null)
+                  {
+                      Delegate[] delegates = eventHandler.GetInvocationList();
+                      // Walk thru invocation list
+                      foreach (NotifyCollectionChangedEventHandler handler in delegates)
+                      {
+                          handler(this, e);
+                      }
+                  }
+              }
+          }
+      }
 }
