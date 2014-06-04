@@ -97,7 +97,9 @@ namespace D2MPMaster.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute(@"[{""name"":""d2fixups"",""version"":""0.2"",""bundle"":""serv_d2fixups.zip""},{""name"":""metamod"",""version"":""0.3.4"",""bundle"":""metamod.zip""},{""name"":""lobby"",""version"":""1.3"",""bundle"":""lobby.zip""},{""name"":""dst"",""version"":""0.1"",""bundle"":""dst.zip""},{""name"":""reflex"",""version"":""0.03.07"",""bundle"":""serv_reflex.zip""}]")]
+        [global::System.Configuration.DefaultSettingValueAttribute("[{\"name\":\"d2fixups\",\"version\":\"0.2\",\"bundle\":\"serv_d2fixups.zip\"},{\"name\":\"metamo" +
+            "d\",\"version\":\"0.3.4\",\"bundle\":\"metamod.zip\"},{\"name\":\"lobby\",\"version\":\"1.3\",\"bu" +
+            "ndle\":\"lobby.zip\"},{\"name\":\"dst\",\"version\":\"0.1\",\"bundle\":\"dst.zip\"}]")]
         public string ServerAddons {
             get {
                 return ((string)(this["ServerAddons"]));

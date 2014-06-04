@@ -35,10 +35,15 @@ namespace D2MPMaster
             Console.Title = string.Format("[{0}] D2MP Master", version);
             log.Info("Master server starting v."+version+".");
 
-            ServerAddons.Init();
-
             log.Info("Initializing database...");
             Mongo.Setup();
+
+            log.Info("Caching mods...");
+            Mods.Mods.Cache();
+            log.Info(Mods.Mods.ModCache.Count+" mods cached.");
+
+            log.Info("Generating server addon list...");
+            ServerAddons.Init(Mods.Mods.ModCache.Values);
 
             log.Info("Initializing Amazon S3...");
             S3 = new S3Manager();

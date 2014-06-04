@@ -14,6 +14,7 @@ namespace D2MPMaster.Mods
     /// </summary>
     public static class Mods
     {
+        public static Dictionary<string, Mod> ModCache = new Dictionary<string, Mod>(); 
         public static Mod ByName(string name)
         {
             return Mongo.Mods.FindOneAs<Mod>(Query.EQ("name", name));
@@ -21,7 +22,20 @@ namespace D2MPMaster.Mods
 
         public static Mod ByID(string id)
         {
-            return Mongo.Mods.FindOneAs<Mod>(Query.EQ("_id", id));
+            Mod mod = null;
+            if (ModCache.ContainsKey(id))
+                mod = ModCache[id];
+            return mod;
+        }
+
+        public static void Cache()
+        {
+            var mods = Mongo.Mods.FindAllAs<Mod>();
+            ModCache.Clear();
+            foreach (var mod in mods)
+            {
+                ModCache[mod.Id] = mod;
+            }
         }
     }
 }
