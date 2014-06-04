@@ -174,9 +174,9 @@ namespace D2MPMaster.Lobbies
         {
             if (client.lobby == null || client.user == null) return;
             var lob = client.lobby;
-            if (lob == null || lob.status > LobbyStatus.Queue) return;
             client.lobby = null;
             client.SendClearLobby(null);
+            if (lob.status > LobbyStatus.Queue) return;
             //Find the player
             var team = RemoveFromTeam(lob, client.user.services.steam.steamid);
             lob.status = LobbyStatus.Start;
@@ -365,6 +365,16 @@ namespace D2MPMaster.Lobbies
             }
             foreach (var client in lobby.dire.Where(plyr => plyr != null).Select(plyr => Program.Client.ClientUID.Values.FirstOrDefault(m => m.SteamID == plyr.steam)).Where(client => client != null))
             {
+                client.ConnectDota(lobby.serverIP);
+            }
+        }
+
+        public void LaunchAndConnect(Lobby lobby, string steamid)
+        {
+            var client = Program.Client.ClientUID.Values.FirstOrDefault(m => m.SteamID == steamid);
+            if (client != null)
+            {
+                client.LaunchDota();
                 client.ConnectDota(lobby.serverIP);
             }
         }

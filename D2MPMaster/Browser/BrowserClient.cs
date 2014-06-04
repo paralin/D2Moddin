@@ -31,6 +31,7 @@ namespace D2MPMaster.Browser
         public Dictionary<string, WebSocket> sockets = new Dictionary<string, WebSocket>();
         public string baseSession;
         public WebSocket baseWebsocket;
+        public volatile bool proccommand = false;
         private string _id;
 
         public BrowserClient(WebSocket socket, string sessionID)
@@ -42,7 +43,6 @@ namespace D2MPMaster.Browser
         }
 
         #region Variables
-        private WebSocket socket;
         private string lastMsg = "";
         private DateTime lastMsgTime = DateTime.UtcNow;
         private bool _authed;
@@ -77,7 +77,7 @@ namespace D2MPMaster.Browser
             resp["msg"] = "error";
             resp["reason"] = msg;
             resp["req"] = req["id"];
-            socket.Send(resp.ToString(Formatting.None));
+            Send(resp.ToString(Formatting.None));
         }
 
         #endregion
@@ -220,6 +220,7 @@ namespace D2MPMaster.Browser
                             if (lobby == null)
                             {
                                 RespondError(jdata, "You are not in a lobby.");
+                                return;
                             }
                             Program.LobbyManager.LeaveLobby(this);
                             break;
@@ -456,6 +457,26 @@ namespace D2MPMaster.Browser
                             client.InstallMod(mod);
                             break;
                         }
+                    case "connectgame":
+                    {
+                        if (user == null)
+                        {
+                            RespondError(jdata, "You are not logged in yet.");
+                            return;
+                        }
+                        if (lobby == null)
+                        {
+                            RespondError(jdata, "You are not in a lobby.");
+                            return;
+                        }
+                        if (lobby.status != LobbyStatus.Play)
+                        {
+                            RespondError(jdata, "Your lobby isn't ready to play yet.");
+                            return;
+                        }
+                        Program.LobbyManager.LaunchAndConnect(lobby, user.services.steam.steamid);
+                        break;
+                    }
                     default:
                         log.Debug(string.Format("Unknown command: {0}...", command.Substring(0, 10)));
                         return;
