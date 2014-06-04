@@ -51,7 +51,7 @@ namespace D2MPMaster
             Client = new ClientManager();
             Server = new ServerManager();
 
-            var server = new WebSocketServer(4000, "0.0.0.0");
+            var server = new WebSocketServer(4000, "ws://0.0.0.0");
             server.Start(socket =>
                          {
                              string ID = Utils.RandomString(10);
