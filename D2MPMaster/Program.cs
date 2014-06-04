@@ -56,9 +56,12 @@ namespace D2MPMaster
 
             log.Info("Server running!");
 
+            Console.CancelKeyPress += delegate
+                                      {
+                                          shutdown = true;
+                                      };
             while (!shutdown)
             {
-                if (Console.KeyAvailable) shutdown = true;
                 Thread.Sleep(100);
             }
 

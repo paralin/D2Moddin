@@ -182,10 +182,16 @@ namespace D2MPMaster.Browser
 
         public void DeregisterClient(BrowserClient browserClient, string baseSession)
         {
-            Clients.Remove(baseSession);
-            if (browserClient.user != null)
+            try
             {
-                UserClients.Remove(browserClient.user.services.steam.steamid);
+                Clients.Remove(baseSession);
+                if (browserClient.user != null)
+                {
+                    UserClients.Remove(browserClient.user.services.steam.steamid);
+                }
+            }
+            catch
+            {
             }
         }
 
