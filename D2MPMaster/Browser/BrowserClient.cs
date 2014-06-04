@@ -318,12 +318,12 @@ namespace D2MPMaster.Browser
                         {
                             if (user == null)
                             {
-                                RespondError(jdata, "You are not logged in (can't kick).");
+                                RespondError(jdata, "You are not logged in (can't set name).");
                                 return;
                             }
                             if (lobby == null)
                             {
-                                RespondError(jdata, "You are not in a lobby (can't kick).");
+                                RespondError(jdata, "You are not in a lobby (can't set name).");
                                 return;
                             }
                             if (lobby.creatorid != user.Id)
@@ -346,12 +346,12 @@ namespace D2MPMaster.Browser
                         {
                             if (user == null)
                             {
-                                RespondError(jdata, "You are not logged in (can't kick).");
+                                RespondError(jdata, "You are not logged in (can't set region).");
                                 return;
                             }
                             if (lobby == null)
                             {
-                                RespondError(jdata, "You are not in a lobby (can't kick).");
+                                RespondError(jdata, "You are not in a lobby (can't set region).");
                                 return;
                             }
                             if (lobby.creatorid != user.Id)
