@@ -53,12 +53,12 @@ namespace D2MPMaster
             Client = new ClientManager();
             Server = new ServerManager();
 
-            var wssv = SocketServer = new WebSocketServer(Settings.Default.URI);
+            var wssv = SocketServer = new WebSocketServer(Settings.Default.URI, false);
             wssv.AddWebSocketService<BrowserService>("/browser");
             wssv.AddWebSocketService<ServerService>("/server");
             wssv.AddWebSocketService<ClientService>("/client");
             wssv.Start();
-			wssv.Log.SetOutput(new Action<WebSocketSharp.LogData, string>((WebSocketSharp.LogData data, string msg)=>{}));
+			wssv.Log.SetOutput((data, msg)=>{});
 
             log.Info("Server running!");
 
