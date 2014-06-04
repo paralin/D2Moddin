@@ -170,6 +170,13 @@ namespace D2MPMaster.Browser
                                 RespondError(jdata, "You are not logged in!");
                                 return;
                             }
+                            //Check if they are in a lobby
+                            CheckLobby();
+                            if (lobby != null)
+                            {
+                                RespondError(jdata, "You are already in a lobby.");
+                                return; //omfg
+                            }
                             //Parse the create lobby request
                             var req = jdata["req"].ToObject<CreateLobby>();
                             if (req.name == null)
@@ -203,10 +210,7 @@ namespace D2MPMaster.Browser
                                 Send(obj.ToString(Formatting.None));
                                 return;
                             }
-                            //Check if they are in a lobby
-                            CheckLobby();
-                            if (lobby != null)
-                                RespondError(jdata, "You are already in a lobby.");
+
                             lobby = LobbyManager.CreateLobby(user, mod, req.name);
                             break;
                         }
