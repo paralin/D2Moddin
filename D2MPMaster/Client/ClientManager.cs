@@ -21,7 +21,7 @@ namespace D2MPMaster.Client
 
         public ClientManager()
         {
-            server = new WebSocketServer(Settings.Default.SockPort, "browser");
+            server = new WebSocketServer(Settings.Default.SockPort, "/browser");
             server.Start(socket =>
             {
                 string ID = Utils.RandomString(10);
