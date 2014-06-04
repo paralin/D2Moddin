@@ -31,15 +31,15 @@ namespace D2MPMaster.Browser
         public Dictionary<string, WebSocket> sockets = new Dictionary<string, WebSocket>();
         public string baseSession;
         public WebSocket baseWebsocket;
-        public volatile bool proccommand = false;
-        private string _id;
+		//public volatile bool proccommand = false;
+        private string _id
 
         public BrowserClient(WebSocket socket, string sessionID)
         {
-            this.socket = socket;
             sockets.Add(sessionID, socket);
             baseSession = sessionID;
             baseWebsocket = socket;
+
         }
 
         #region Variables

@@ -134,10 +134,10 @@ namespace D2MPMaster.Browser
         public void OnMessage(string ID, WebSocketContext Context, MessageEventArgs e)
         {
             var client = Clients[ID];
-            if (client.proccommand) return;
-            client.proccommand = true;
+			//if (client.proccommand) return;
+			//client.proccommand = true;
             client.HandleMessage(e.Data, Context, ID);
-            client.proccommand = false;
+			//client.proccommand = false;
         }
 
         public void OnClose(string ID, WebSocketContext Context, CloseEventArgs e)
