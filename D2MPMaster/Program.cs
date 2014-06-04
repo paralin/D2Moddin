@@ -1,5 +1,6 @@
 ﻿
 using System;
+using System.Text.RegularExpressions;
 using System.Threading;
 using D2MPMaster.Browser;
 using D2MPMaster.Client;
@@ -55,16 +56,16 @@ namespace D2MPMaster
                          {
                              string ID = Utils.RandomString(10);
                              ISocketHandler handler = null;
-                             switch (socket.ConnectionInfo.Path)
+                             switch (Regex.Replace(socket.ConnectionInfo.Path.ToLower(), "[^a-zA-Z]", ""))
                              {
                                  case "browser":
-                                     handler = (ISocketHandler)Browser;
+                                     handler = Browser;
                                      break;
                                  case "client":
-                                     handler = (ISocketHandler) Client;
+                                     handler = Client;
                                      break;
                                  case "server":
-                                     handler = (ISocketHandler) Server;
+                                     handler = Server;
                                      break;
                                  default:
                                      log.Info("No handler for URI: "+socket.ConnectionInfo.Path);
