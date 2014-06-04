@@ -2,8 +2,8 @@
 <SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="D2MPMaster.Properties" GeneratedClassName="Settings">
   <Profiles />
   <Settings>
-    <Setting Name="BrowserPort" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">4020</Value>
+    <Setting Name="BrowserURI" Type="System.String" Scope="User">
+      <Value Profile="(Default)">ws://0.0.0.0:4000/browser</Value>
     </Setting>
     <Setting Name="MongoURL" Type="System.String" Scope="User">
       <Value Profile="(Default)">mongodb://localhost</Value>
@@ -29,11 +29,11 @@
     <Setting Name="InfoPort" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">4003</Value>
     </Setting>
-    <Setting Name="ClientPort" Type="System.String" Scope="User">
-      <Value Profile="(Default)">4010</Value>
+    <Setting Name="ClientURI" Type="System.String" Scope="User">
+      <Value Profile="(Default)">ws://0.0.0.0:4000/client</Value>
     </Setting>
-    <Setting Name="ServerPort" Type="System.String" Scope="User">
-      <Value Profile="(Default)">4030</Value>
+    <Setting Name="ServerURI" Type="System.String" Scope="User">
+      <Value Profile="(Default)">ws://0.0.0.0:4000/server</Value>
     </Setting>
   </Settings>
 </SettingsFile>

@@ -25,13 +25,13 @@ namespace D2MPMaster.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("4020")]
-        public int BrowserPort {
+        [global::System.Configuration.DefaultSettingValueAttribute("ws://0.0.0.0:4000/browser")]
+        public string BrowserURI {
             get {
-                return ((int)(this["BrowserPort"]));
+                return ((string)(this["BrowserURI"]));
             }
             set {
-                this["BrowserPort"] = value;
+                this["BrowserURI"] = value;
             }
         }
         
@@ -135,25 +135,25 @@ namespace D2MPMaster.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("4010")]
-        public string ClientPort {
+        [global::System.Configuration.DefaultSettingValueAttribute("ws://0.0.0.0:4000/client")]
+        public string ClientURI {
             get {
-                return ((string)(this["ClientPort"]));
+                return ((string)(this["ClientURI"]));
             }
             set {
-                this["ClientPort"] = value;
+                this["ClientURI"] = value;
             }
         }
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("4030")]
-        public string ServerPort {
+        [global::System.Configuration.DefaultSettingValueAttribute("ws://0.0.0.0:4000/server")]
+        public string ServerURI {
             get {
-                return ((string)(this["ServerPort"]));
+                return ((string)(this["ServerURI"]));
             }
             set {
-                this["ServerPort"] = value;
+                this["ServerURI"] = value;
             }
         }
     }

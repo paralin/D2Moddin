@@ -24,7 +24,7 @@ namespace D2MPMaster.Browser
 
         public BrowserManager()
         {
-            server = new WebSocketServer("ws://0.0.0.0:"+Settings.Default.BrowserPort);
+            server = new WebSocketServer(Settings.Default.BrowserURI);
             server.Start(socket =>
                          {
                              string ID = Utils.RandomString(10);
