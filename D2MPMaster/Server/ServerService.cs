@@ -20,7 +20,7 @@ namespace D2MPMaster
 
         public ServerManager()
         {
-            server = new WebSocketServer(Settings.Default.SockPort, "/server");
+            server = new WebSocketServer("ws://0.0.0.0:" + Settings.Default.ServerPort);
             server.Start(socket =>
             {
                 string ID = Utils.RandomString(10);

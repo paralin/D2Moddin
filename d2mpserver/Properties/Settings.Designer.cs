@@ -25,7 +25,7 @@ namespace d2mpserver.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("ws://144.76.76.107:4000/server")]
+        [global::System.Configuration.DefaultSettingValueAttribute("ws://ddp2.d2modd.in:4030")]
         public string serverIP {
             get {
                 return ((string)(this["serverIP"]));

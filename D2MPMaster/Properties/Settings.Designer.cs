@@ -25,13 +25,13 @@ namespace D2MPMaster.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("4000")]
-        public int SockPort {
+        [global::System.Configuration.DefaultSettingValueAttribute("4020")]
+        public int BrowserPort {
             get {
-                return ((int)(this["SockPort"]));
+                return ((int)(this["BrowserPort"]));
             }
             set {
-                this["SockPort"] = value;
+                this["BrowserPort"] = value;
             }
         }
         
@@ -130,6 +130,30 @@ namespace D2MPMaster.Properties {
             }
             set {
                 this["InfoPort"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("4010")]
+        public string ClientPort {
+            get {
+                return ((string)(this["ClientPort"]));
+            }
+            set {
+                this["ClientPort"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("4030")]
+        public string ServerPort {
+            get {
+                return ((string)(this["ServerPort"]));
+            }
+            set {
+                this["ServerPort"] = value;
             }
         }
     }

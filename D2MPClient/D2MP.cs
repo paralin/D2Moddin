@@ -41,7 +41,7 @@ namespace d2mp
 {
     public class D2MP
     {
-        private static string server = "ws://ddp2.d2modd.in:4000/client";
+        private static string server = "ws://ddp2.d2modd.in:4010/client";
         private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
         private static WebSocket ws;
         private static string addonsDir;

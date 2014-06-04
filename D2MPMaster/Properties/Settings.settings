@@ -2,8 +2,8 @@
 <SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="D2MPMaster.Properties" GeneratedClassName="Settings">
   <Profiles />
   <Settings>
-    <Setting Name="SockPort" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">4000</Value>
+    <Setting Name="BrowserPort" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">4020</Value>
     </Setting>
     <Setting Name="MongoURL" Type="System.String" Scope="User">
       <Value Profile="(Default)">mongodb://localhost</Value>
@@ -28,6 +28,12 @@
     </Setting>
     <Setting Name="InfoPort" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">4003</Value>
+    </Setting>
+    <Setting Name="ClientPort" Type="System.String" Scope="User">
+      <Value Profile="(Default)">4010</Value>
+    </Setting>
+    <Setting Name="ServerPort" Type="System.String" Scope="User">
+      <Value Profile="(Default)">4030</Value>
     </Setting>
   </Settings>
 </SettingsFile>
