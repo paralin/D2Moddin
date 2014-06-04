@@ -11,18 +11,10 @@ using D2MPMaster.LiveData;
 using D2MPMaster.Lobbies;
 using D2MPMaster.Model;
 using d2mpserver;
+using Fleck;
 using MongoDB.Driver.Builders;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using WebSocketSharp;
-using WebSocket = WebSocketSharp.WebSocket;
-/*
- * {
- *   id: "method|subscribe",
- *   
- * }
- */
-using WebSocketContext = WebSocketSharp.Net.WebSockets.WebSocketContext;
 
 
 namespace D2MPMaster.Browser
@@ -30,16 +22,16 @@ namespace D2MPMaster.Browser
     public class BrowserClient
     {
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
-        public ConcurrentDictionary<string, WebSocket> sockets = new ConcurrentDictionary<string, WebSocket>();
+        public ConcurrentDictionary<string, IWebSocketConnection> sockets = new ConcurrentDictionary<string, IWebSocketConnection>();
         public string baseSession;
-        public WebSocket baseWebsocket;
+        public IWebSocketConnection baseWebsocket;
 		//public volatile bool proccommand = false;
         private string _id;
         private Thread SendQueue;
         public ConcurrentQueue<string> MessageQueue = new ConcurrentQueue<string>();
         private object msgLock = new object();
 
-        public BrowserClient(WebSocket socket, string sessionID)
+        public BrowserClient(IWebSocketConnection socket, string sessionID)
         {
             sockets[sessionID] = socket;
             baseSession = sessionID;
@@ -106,7 +98,7 @@ namespace D2MPMaster.Browser
         #endregion
 
         #region Message Handling
-        public void HandleMessage(string data, WebSocketContext context, string sessionID)
+        public void HandleMessage(string data, IWebSocketConnection context, string sessionID)
         {
             lock (msgLock)
             {
@@ -124,14 +116,14 @@ namespace D2MPMaster.Browser
                         case "deauth":
                             authed = false;
                             user = null;
-                            context.WebSocket.Send("{\"msg\": \"auth\", \"status\": false}");
+                            context.Send("{\"msg\": \"auth\", \"status\": false}");
                             break;
                         case "auth":
                             //Parse the UID
                             var uid = jdata["uid"].Value<string>();
                             if (authed && uid == user.Id)
                             {
-                                context.WebSocket.Send("{\"msg\": \"auth\", \"status\": true}");
+                                context.Send("{\"msg\": \"auth\", \"status\": true}");
                                 return;
                             }
                             //Parse the resume key
@@ -149,14 +141,14 @@ namespace D2MPMaster.Browser
                                 log.Debug(string.Format("Authentication {0} -> {1} ", uid, key));
                                 user = usr;
                                 authed = true;
-                                context.WebSocket.Send("{\"msg\": \"auth\", \"status\": true}");
+                                context.Send("{\"msg\": \"auth\", \"status\": true}");
                             }
                             else
                             {
                                 log.Debug(string.Format("Authentication failed, {0} token {1}", uid, key));
                                 authed = false;
                                 user = null;
-                                context.WebSocket.Send("{\"msg\": \"auth\", \"status\": false}");
+                                context.Send("{\"msg\": \"auth\", \"status\": false}");
                             }
                             break;
 
@@ -525,9 +517,9 @@ namespace D2MPMaster.Browser
         }
         #endregion
 
-        public void OnClose(CloseEventArgs closeEventArgs, string sessionID)
+        public void OnClose(IWebSocketConnection closeEventArgs, string sessionID)
         {
-            WebSocket value;
+            IWebSocketConnection value;
             sockets.TryRemove(sessionID, out value);
             if (sockets.Count == 0)
             {
@@ -537,7 +529,7 @@ namespace D2MPMaster.Browser
             }
         }
 
-        public void RegisterSocket(WebSocket webSocket, string session)
+        public void RegisterSocket(IWebSocketConnection webSocket, string session)
         {
             sockets[session] = webSocket;
         }
@@ -549,7 +541,7 @@ namespace D2MPMaster.Browser
             baseWebsocket = null;
         }
 
-        public void SendClearLobby(WebSocket webSocket)
+        public void SendClearLobby(IWebSocketConnection webSocket)
         {
             var upd = new JObject();
             upd["msg"] = "colupd";

@@ -8,9 +8,8 @@ using D2MPMaster.Lobbies;
 using D2MPMaster.Properties;
 using D2MPMaster.Server;
 using D2MPMaster.Storage;
+using Fleck;
 using log4net.Config;
-using WebSocketSharp.Server;
-
 namespace D2MPMaster
 {
     class Program
@@ -51,13 +50,6 @@ namespace D2MPMaster
             Client = new ClientManager();
             Server = new ServerManager();
 
-            var wssv = SocketServer = new WebSocketServer(Settings.Default.URI, false);
-            wssv.AddWebSocketService<BrowserService>("/browser");
-            wssv.AddWebSocketService<ServerService>("/server");
-            wssv.AddWebSocketService<ClientService>("/client");
-            wssv.Start();
-            wssv.Log.Output = (data, msg)=>{};
-
             log.Info("Server running!");
 
             Console.CancelKeyPress += delegate
@@ -69,10 +61,10 @@ namespace D2MPMaster
                 Thread.Sleep(100);
             }
 
-            wssv.Stop();
             
             log.Info("Done, shutting down...");
 
+            Client = null;
             Browser = null;
             Server = null;
             LobbyManager = null;

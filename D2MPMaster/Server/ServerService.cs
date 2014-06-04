@@ -1,15 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using D2MPMaster.Client;
-using D2MPMaster.LiveData;
+using System.Threading.Tasks;
 using D2MPMaster.Lobbies;
+using D2MPMaster.Properties;
 using D2MPMaster.Server;
 using d2mpserver;
-using MongoDB.Driver;
-using WebSocketSharp;
-using WebSocketSharp.Net.WebSockets;
-using WebSocketSharp.Server;
+using Fleck;
 
 namespace D2MPMaster
 {
@@ -19,32 +16,40 @@ namespace D2MPMaster
         Dictionary<string, ServerInstance> Servers = new Dictionary<string, ServerInstance>();
         public Dictionary<string, ServerInstance> ActiveServers = new Dictionary<string, ServerInstance>();
         public int IDCounter = (new Random().Next(0, 1000));
+        private WebSocketServer server;
 
         public ServerManager()
         {
+            server = new WebSocketServer(Settings.Default.SockPort, "server");
+            server.Start(socket =>
+            {
+                string ID = Utils.RandomString(10);
+                socket.OnOpen = () => OnOpen(ID, socket);
+                socket.OnClose = () => OnClose(ID, socket);
+                socket.OnMessage = message => OnMessage(ID, socket, message);
+            });
+        }
+
+        public void OnMessage(string ID, IWebSocketConnection socket, string message)
+        {
+            var client = Servers[ID];
+            var handleTask = new Task(() => client.HandleMessage(message, socket, ID));
+            handleTask.Start();
+        }
+
+        public void OnClose(string ID, IWebSocketConnection socket)
+        {
+            log.Debug(string.Format("Client disconnect #{0}", ID));
+            Servers[ID].OnClose(socket, ID);
+        }
+
+        public void OnOpen(string ID, IWebSocketConnection socket)
+        {
+            var client = new ServerInstance(socket, ID);
+            Servers[ID] = client;
+            log.Debug(string.Format("Client connected #{1}: {0}.", ID, socket.ConnectionInfo.ClientIpAddress));
         }
         
-        public void OnOpen(string ID, WebSocketContext Context)
-        {
-            var server = new ServerInstance(Context, ID);
-            Servers[ID] = server;
-            log.Debug(string.Format("Server connected #{1}: {0}.", ID, Context.Host));
-        }
-
-        public void OnClose(string ID, WebSocketContext Context, CloseEventArgs e)
-        {
-            log.Debug(string.Format("Server disconnect #{0}", ID));
-            Servers[ID].OnClose(e, ID);
-            Servers.Remove(ID);
-            ActiveServers.Remove(ID);
-        }
-
-        public void OnMessage(string ID, WebSocketContext Context, MessageEventArgs e)
-        {
-            var server = Servers[ID];
-            server.HandleMessage(e.Data, Context, ID);
-        }
-
         public void RegisterServer(ServerInstance serverInstance)
         {
             ActiveServers.Add(serverInstance.ID, serverInstance);
@@ -67,39 +72,6 @@ namespace D2MPMaster
             return ActiveServers.Values.FirstOrDefault(
                 m => m.Instances.Count < m.InitData.serverCount &&
                      (int) m.InitData.region == (int) region);
-        }
-    }
-    class ServerService : WebSocketService
-    {
-        private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
-
-        public ServerService()
-        {
-        }
-
-        protected override void OnMessage(MessageEventArgs e)
-        {
-            Program.Server.OnMessage(ID, Context, e);
-            base.OnMessage(e);
-        }
-
-        protected override void OnClose(CloseEventArgs e)
-        {
-            Program.Server.OnClose(ID, Context, e);
-            base.OnClose(e);
-        }
-
-        protected override void OnOpen()
-        {
-            log.Debug(string.Format("Server connected {0}.", Context.Host));
-            Program.Server.OnOpen(ID, Context);
-            base.OnOpen();
-        }
-
-        protected override void OnError(ErrorEventArgs e)
-        {
-            Log.Error(e.Message);
-            base.OnError(e);
         }
     }
 }

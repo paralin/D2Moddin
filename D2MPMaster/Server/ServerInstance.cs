@@ -7,11 +7,10 @@ using System.Text.RegularExpressions;
 using D2MPMaster.Lobbies;
 using D2MPMaster.Properties;
 using d2mpserver;
+using Fleck;
 using Newtonsoft.Json.Linq;
 using ServerCommon.Data;
 using ServerCommon.Methods;
-using WebSocketSharp;
-using WebSocketSharp.Net.WebSockets;
 
 namespace D2MPMaster.Server
 {
@@ -23,7 +22,7 @@ namespace D2MPMaster.Server
         private bool _init;
         public Init InitData;
         public string Address;
-        public WebSocket Socket;
+        public IWebSocketConnection Socket;
         public int portCounter;
         public ConcurrentDictionary<int, GameInstance> Instances = new ConcurrentDictionary<int, GameInstance>(); 
         public bool Inited {
@@ -38,11 +37,11 @@ namespace D2MPMaster.Server
             }
         }
 
-        public ServerInstance(WebSocketContext creationContext, string id)
+        public ServerInstance(IWebSocketConnection sock, string id)
         {
             ID = id;
-            Socket = creationContext.WebSocket;
-            Address = creationContext.UserEndPoint.ToString();
+            Socket = sock;
+            Address = sock.ConnectionInfo.ClientIpAddress;
         }
 
         public void OnClose(object o, string id)
@@ -56,7 +55,7 @@ namespace D2MPMaster.Server
             Inited = false;
         }
 
-        public void HandleMessage(string data, WebSocketContext context, string ID)
+        public void HandleMessage(string data, IWebSocketConnection sock, string ID)
         {
             try
             {

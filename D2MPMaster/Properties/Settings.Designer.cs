@@ -26,12 +26,12 @@ namespace D2MPMaster.Properties {
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("4000")]
-        public int URI {
+        public int SockPort {
             get {
-                return ((int)(this["URI"]));
+                return ((int)(this["SockPort"]));
             }
             set {
-                this["URI"] = value;
+                this["SockPort"] = value;
             }
         }
         

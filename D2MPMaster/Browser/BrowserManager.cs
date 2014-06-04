@@ -6,54 +6,38 @@ using System.Threading.Tasks;
 using D2MPMaster.LiveData;
 using D2MPMaster.Lobbies;
 using D2MPMaster.Model;
+using D2MPMaster.Properties;
+using Fleck;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using WebSocketSharp;
-using WebSocketSharp.Net;
-using WebSocketSharp.Server;
-using WebSocketContext = WebSocketSharp.Net.WebSockets.WebSocketContext;
 
 namespace D2MPMaster.Browser
 {
-    class BrowserService : WebSocketService
-    {
-        protected override void OnClose(CloseEventArgs e)
-        {
-            Program.Browser.OnClose(ID, Context, e);
-            base.OnClose(e);
-        }
-
-        protected override void OnError(ErrorEventArgs e)
-        {
-            Program.Browser.OnError(ID, Context, e);
-            base.OnError(e);
-        }
-
-        protected override void OnMessage(MessageEventArgs e)
-        {
-            Program.Browser.OnMessage(ID, Context, e);
-            base.OnMessage(e);
-        }
-
-        protected override void OnOpen()
-        {
-            Program.Browser.OnOpen(ID, Context);
-            base.OnOpen();
-        }
-
-    }
     class BrowserManager
     {
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         private ConcurrentDictionary<string, BrowserClient> Clients = new ConcurrentDictionary<string, BrowserClient>();
         public ConcurrentDictionary<string, BrowserClient> UserClients = new ConcurrentDictionary<string, BrowserClient>();
+        private WebSocketServer server;
 
         private object transmitLock = new object();
 
         public BrowserManager()
         {
-            Program.Browser = this;
+            server = new WebSocketServer(Settings.Default.SockPort, "browser");
+            server.Start(socket =>
+                         {
+                             string ID = Utils.RandomString(10);
+                             socket.OnOpen = () => OnOpen(ID, socket);
+                             socket.OnClose = () => OnClose(ID, socket);
+                             socket.OnMessage = message => OnMessage(ID, socket, message);
+                         });
             Program.LobbyManager.PublicLobbies.CollectionChanged += TransmitLobbiesChange;
+        }
+
+        public void Stop()
+        {
+            server.Dispose();
         }
 
         public void TransmitPublicLobbiesUpdate(List<Lobby> lobbies, string[] fields)
@@ -70,7 +54,6 @@ namespace D2MPMaster.Browser
             upd["ops"] = updates;
             var msg = upd.ToString(Formatting.None);
             Broadcast(msg);
-            //}
         }
 
         public void TransmitLobbiesChange(object s, NotifyCollectionChangedEventArgs e)
@@ -141,30 +124,25 @@ namespace D2MPMaster.Browser
             client.Send(upd.ToString(Formatting.None));
         }
 
-        public void OnMessage(string ID, WebSocketContext Context, MessageEventArgs e)
+        public void OnMessage(string ID, IWebSocketConnection socket, string message)
         {
             var client = Clients[ID];
-            var handleTask = new Task(() => client.HandleMessage(e.Data, Context, ID));
+            var handleTask = new Task(() => client.HandleMessage(message, socket, ID));
             handleTask.Start();
         }
 
-        public void OnClose(string ID, WebSocketContext Context, CloseEventArgs e)
+        public void OnClose(string ID, IWebSocketConnection socket)
         {
-            log.Debug(string.Format("Client disconnect #{0}", ID));
-            Clients[ID].OnClose(e, ID);
+            log.Debug(string.Format("Browser disconnect #{0}", ID));
+            Clients[ID].OnClose(socket, ID);
         }
 
-        public void OnOpen(string ID, WebSocketContext Context)
+        public void OnOpen(string ID, IWebSocketConnection socket)
         {
-            var client = new BrowserClient(Context.WebSocket, ID);
+            var client = new BrowserClient(socket, ID);
             Clients[ID] = client;
             Program.LobbyManager.TransmitPublicLobbySnapshot(client);
-            log.Debug(string.Format("Client connected #{1}: {0}.", ID, Context.UserEndPoint));
-        }
-
-        public void OnError(string ID, WebSocketContext Context, ErrorEventArgs e)
-        {
-            //log.Error(e.Message);
+            log.Debug(string.Format("Browser connected #{1}: {0}.", ID, socket.ConnectionInfo.ClientIpAddress));
         }
 
         /// <summary>

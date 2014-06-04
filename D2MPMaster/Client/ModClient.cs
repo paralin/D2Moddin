@@ -3,13 +3,11 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using ClientCommon.Data;
 using ClientCommon.Methods;
-using D2MPMaster.Browser;
 using D2MPMaster.Model;
+using Fleck;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Version = ClientCommon.Version;
-using WebSocket = WebSocketSharp.WebSocket;
-using WebSocketContext = WebSocketSharp.Net.WebSockets.WebSocketContext;
 
 namespace D2MPMaster.Client
 {
@@ -22,7 +20,7 @@ namespace D2MPMaster.Client
         public string UID;
         public string SteamID;
 
-        public WebSocket Socket;
+        public IWebSocketConnection Socket;
         public bool Inited {
             get { return _init; }
             set
@@ -35,9 +33,9 @@ namespace D2MPMaster.Client
             }
         }
 
-        public ModClient(WebSocketContext creationContext)
+        public ModClient(IWebSocketConnection sock, string id)
         {
-            Socket = creationContext.WebSocket;
+            Socket = sock;
         }
 
         public void OnClose(object o, string id)
@@ -66,7 +64,7 @@ namespace D2MPMaster.Client
             Socket.Send(msg);
         }
 
-        public void HandleMessage(string data, WebSocketContext context, string ID)
+        public void HandleMessage(string data, IWebSocketConnection context, string ID)
         {
             try
             {
@@ -98,7 +96,7 @@ namespace D2MPMaster.Client
                         if (msg.Version != Version.ClientVersion)
                         {
                             log.Debug("Old version, sending shutdown message.");
-                            context.WebSocket.Send(JObject.FromObject(new Shutdown()).ToString(Formatting.None));
+                            context.Send(JObject.FromObject(new Shutdown()).ToString(Formatting.None));
                             return;
                         }
                         foreach (var mod in msg.Mods.Where(mod => mod.name != null && mod.version != null)) Mods.Add(mod);

@@ -1,13 +1,13 @@
 ﻿using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using Amazon.DataPipeline.Model;
+using System.Threading.Tasks;
+using D2MPMaster.Browser;
 using D2MPMaster.Database;
 using D2MPMaster.Model;
+using D2MPMaster.Properties;
+using Fleck;
 using MongoDB.Bson;
-using WebSocketSharp;
-using WebSocketSharp.Net.WebSockets;
-using WebSocketSharp.Server;
 using Query = MongoDB.Driver.Builders.Query;
 
 namespace D2MPMaster.Client
@@ -17,30 +17,41 @@ namespace D2MPMaster.Client
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         Dictionary<string, ModClient> Clients = new Dictionary<string, ModClient>(); 
 		public ConcurrentDictionary<string, ModClient> ClientUID = new ConcurrentDictionary<string, ModClient>();
- 
-        public void OnOpen(string ID, WebSocketContext Context)
+        private WebSocketServer server;
+
+        public ClientManager()
         {
-            var client = new ModClient(Context);
-            Clients[ID] = client;
-            log.Debug(string.Format("Mod client connected #{1}: {0}.", ID, Context.Host));
+            server = new WebSocketServer(Settings.Default.SockPort, "browser");
+            server.Start(socket =>
+            {
+                string ID = Utils.RandomString(10);
+                socket.OnOpen = () => OnOpen(ID, socket);
+                socket.OnClose = () => OnClose(ID, socket);
+                socket.OnMessage = message => OnMessage(ID, socket, message);
+            });
         }
 
-        public void OnClose(string ID, WebSocketContext Context, CloseEventArgs e)
-        {
-            log.Debug(string.Format("Client disconnect #{0}", ID));
-            Clients[ID].OnClose(e, ID);
-        }
-
-        public void OnMessage(string ID, WebSocketContext Context, MessageEventArgs e)
+        public void OnMessage(string ID, IWebSocketConnection socket, string message)
         {
             var client = Clients[ID];
-            client.HandleMessage(e.Data, Context, ID);
+            var handleTask = new Task(() => client.HandleMessage(message, socket, ID));
+            handleTask.Start();
         }
 
-        public void OnError(string ID, WebSocketContext Context, ErrorEventArgs e)
+        public void OnClose(string ID, IWebSocketConnection socket)
         {
-            log.Error(e.Message);
+            log.Debug(string.Format("Client disconnect #{0}", ID));
+            Clients[ID].OnClose(socket, ID);
         }
+
+        public void OnOpen(string ID, IWebSocketConnection socket)
+        {
+            var client = new ModClient(socket, ID);
+            Clients[ID] = client;
+            log.Debug(string.Format("Client connected #{1}: {0}.", ID, socket.ConnectionInfo.ClientIpAddress));
+        }
+
+        #region client
 
         public void RegisterClient(ModClient modClient)
         {
@@ -79,33 +90,6 @@ namespace D2MPMaster.Client
             ClientUID.TryRemove(modClient.UID, out client);
             Mongo.Clients.Remove(Query.EQ("_id", modClient.UID));
         }
-    }
-
-    class ClientService : WebSocketService
-    {
-        protected override void OnClose(CloseEventArgs e)
-        {
-            Program.Client.OnClose(ID, Context, e);
-            base.OnClose(e);
-        }
-
-        protected override void OnError(ErrorEventArgs e)
-        {
-            Program.Client.OnError(ID, Context, e);
-            base.OnError(e);
-        }
-
-        protected override void OnMessage(MessageEventArgs e)
-        {
-            Program.Client.OnMessage(ID, Context, e);
-            base.OnMessage(e);
-        }
-
-        protected override void OnOpen()
-        {
-            Program.Client.OnOpen(ID, Context);
-            base.OnOpen();
-        }
-
+        #endregion
     }
 }
