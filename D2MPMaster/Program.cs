@@ -50,6 +50,32 @@ namespace D2MPMaster
             Client = new ClientManager();
             Server = new ServerManager();
 
+            var server = new WebSocketServer(Settings.Default.URI);
+            server.Start(socket =>
+                         {
+                             string ID = Utils.RandomString(10);
+                             ISocketHandler handler = null;
+                             switch (socket.ConnectionInfo.Path)
+                             {
+                                 case "browser":
+                                     handler = (ISocketHandler)Browser;
+                                     break;
+                                 case "client":
+                                     handler = (ISocketHandler) Client;
+                                     break;
+                                 case "server":
+                                     handler = (ISocketHandler) Server;
+                                     break;
+                                 default:
+                                     log.Info("No handler for URI: "+socket.ConnectionInfo.Path);
+                                     socket.Close();
+                                     return;
+                             }
+                             socket.OnOpen = () => handler.OnOpen(ID, socket);
+                             socket.OnClose = () => handler.OnClose(ID, socket);
+                             socket.OnMessage = message => handler.OnMessage(ID, socket, message);
+                         });
+
             log.Info("Server running!");
 
             Console.CancelKeyPress += delegate

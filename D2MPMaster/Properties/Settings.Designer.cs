@@ -25,13 +25,13 @@ namespace D2MPMaster.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("ws://0.0.0.0:4000/browser")]
-        public string BrowserURI {
+        [global::System.Configuration.DefaultSettingValueAttribute("ws://0.0.0.0:4000")]
+        public string URI {
             get {
-                return ((string)(this["BrowserURI"]));
+                return ((string)(this["URI"]));
             }
             set {
-                this["BrowserURI"] = value;
+                this["URI"] = value;
             }
         }
         
@@ -130,30 +130,6 @@ namespace D2MPMaster.Properties {
             }
             set {
                 this["InfoPort"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("ws://0.0.0.0:4000/client")]
-        public string ClientURI {
-            get {
-                return ((string)(this["ClientURI"]));
-            }
-            set {
-                this["ClientURI"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("ws://0.0.0.0:4000/server")]
-        public string ServerURI {
-            get {
-                return ((string)(this["ServerURI"]));
-            }
-            set {
-                this["ServerURI"] = value;
             }
         }
     }

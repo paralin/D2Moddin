@@ -12,23 +12,14 @@ using Query = MongoDB.Driver.Builders.Query;
 
 namespace D2MPMaster.Client
 {
-    public class ClientManager
+    public class ClientManager : ISocketHandler
     {
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         Dictionary<string, ModClient> Clients = new Dictionary<string, ModClient>(); 
 		public ConcurrentDictionary<string, ModClient> ClientUID = new ConcurrentDictionary<string, ModClient>();
-        private WebSocketServer server;
 
         public ClientManager()
         {
-            server = new WebSocketServer(Settings.Default.ClientURI);
-            server.Start(socket =>
-            {
-                string ID = Utils.RandomString(10);
-                socket.OnOpen = () => OnOpen(ID, socket);
-                socket.OnClose = () => OnClose(ID, socket);
-                socket.OnMessage = message => OnMessage(ID, socket, message);
-            });
         }
 
         public void OnMessage(string ID, IWebSocketConnection socket, string message)

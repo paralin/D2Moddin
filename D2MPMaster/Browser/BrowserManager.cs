@@ -13,7 +13,7 @@ using Newtonsoft.Json.Linq;
 
 namespace D2MPMaster.Browser
 {
-    class BrowserManager
+    class BrowserManager : ISocketHandler
     {
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         private ConcurrentDictionary<string, BrowserClient> Clients = new ConcurrentDictionary<string, BrowserClient>();
@@ -24,14 +24,6 @@ namespace D2MPMaster.Browser
 
         public BrowserManager()
         {
-            server = new WebSocketServer(Settings.Default.BrowserURI);
-            server.Start(socket =>
-                         {
-                             string ID = Utils.RandomString(10);
-                             socket.OnOpen = () => OnOpen(ID, socket);
-                             socket.OnClose = () => OnClose(ID, socket);
-                             socket.OnMessage = message => OnMessage(ID, socket, message);
-                         });
             Program.LobbyManager.PublicLobbies.CollectionChanged += TransmitLobbiesChange;
         }
 

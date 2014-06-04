@@ -5,6 +5,7 @@ using System.Collections.Specialized;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Fleck;
 
 namespace D2MPMaster
 {
@@ -52,31 +53,37 @@ namespace D2MPMaster
             return arr;
         }
     }
+    public interface ISocketHandler
+    {
+        void OnMessage(string ID, IWebSocketConnection socket, string message);
+        void OnClose(string ID, IWebSocketConnection socket);
+        void OnOpen(string ID, IWebSocketConnection socket);
+    }
 
-      public class ConcurrentObservableCollection<t> : ObservableCollection<t>
-      {
+    public class ConcurrentObservableCollection<t> : ObservableCollection<t>
+    {
         // Override the event so this class can access it
         public override event NotifyCollectionChangedEventHandler CollectionChanged;
- 
+
         public ConcurrentObservableCollection(IEnumerable<t> collection) : base(collection) { }
         public ConcurrentObservableCollection(List<t> collection) : base(collection) { }
 
-          protected override void OnCollectionChanged(NotifyCollectionChangedEventArgs e)
-          {
-              // Be nice - use BlockReentrancy like MSDN said
-              using (BlockReentrancy())
-              {
-                  var eventHandler = CollectionChanged;
-                  if (eventHandler != null)
-                  {
-                      Delegate[] delegates = eventHandler.GetInvocationList();
-                      // Walk thru invocation list
-                      foreach (NotifyCollectionChangedEventHandler handler in delegates)
-                      {
-                          handler(this, e);
-                      }
-                  }
-              }
-          }
-      }
+        protected override void OnCollectionChanged(NotifyCollectionChangedEventArgs e)
+        {
+            // Be nice - use BlockReentrancy like MSDN said
+            using (BlockReentrancy())
+            {
+                var eventHandler = CollectionChanged;
+                if (eventHandler != null)
+                {
+                    Delegate[] delegates = eventHandler.GetInvocationList();
+                    // Walk thru invocation list
+                    foreach (NotifyCollectionChangedEventHandler handler in delegates)
+                    {
+                        handler(this, e);
+                    }
+                }
+            }
+        }
+    }
 }

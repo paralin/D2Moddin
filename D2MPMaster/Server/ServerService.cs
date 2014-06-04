@@ -10,7 +10,7 @@ using Fleck;
 
 namespace D2MPMaster
 {
-    class ServerManager
+    class ServerManager : ISocketHandler
     {
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         Dictionary<string, ServerInstance> Servers = new Dictionary<string, ServerInstance>();
@@ -20,14 +20,6 @@ namespace D2MPMaster
 
         public ServerManager()
         {
-            server = new WebSocketServer(Settings.Default.ServerURI);
-            server.Start(socket =>
-            {
-                string ID = Utils.RandomString(10);
-                socket.OnOpen = () => OnOpen(ID, socket);
-                socket.OnClose = () => OnClose(ID, socket);
-                socket.OnMessage = message => OnMessage(ID, socket, message);
-            });
         }
 
         public void OnMessage(string ID, IWebSocketConnection socket, string message)
