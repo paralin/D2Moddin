@@ -118,7 +118,6 @@
     <Compile Include="Server\ServerAddons.cs" />
     <Compile Include="Server\ServerController.cs" />
     <Compile Include="Server\ServerService.cs" />
-    <Compile Include="SocketConfig.cs" />
     <Compile Include="Storage\S3Manager.cs" />
     <Compile Include="Utils.cs" />
   </ItemGroup>
