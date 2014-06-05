@@ -179,7 +179,6 @@ namespace D2MPMaster.Lobbies
                 GameInstance instance = server.StartInstance(lobby);
                 lobby.status = LobbyStatus.Configure;
                 TransmitLobbyUpdate(lobby, new []{"status"});
-                SendLaunchDota(lobby);
                 LobbyQueue.Remove(lobby);
             }
         }
@@ -196,6 +195,7 @@ namespace D2MPMaster.Lobbies
                 lobby.status = LobbyStatus.Queue;
                 PublicLobbies.Remove(lobby);
                 TransmitLobbyUpdate(lobby, new[]{"status"});
+                SendLaunchDota(lobby);
                 CalculateQueue();
             }
         }
