@@ -41,7 +41,25 @@ namespace D2MPMaster.Browser
 
         //User and lobby
         public User user = null;
-        public Lobby lobby = null;
+        private Lobby _lobby = null;
+        public Lobby lobby
+        {
+            get { return _lobby; }
+            set
+            {
+                _lobby = value; if (value != null)
+                {
+                    this.AsyncSendTo(m => m.user != null && m.user.Id == user.Id, ClearPublicLobbies(),
+                        req => { });
+                }
+                else
+                {
+                    this.AsyncSendTo(m => m.user != null && m.user.Id == user.Id, PublicLobbySnapshot(),
+                        req => { });
+                }
+            }
+        }
+
         #endregion
 
         #region Helpers
@@ -101,6 +119,7 @@ namespace D2MPMaster.Browser
                             //log.Debug(string.Format("Authentication {0} -> {1} ", uid, key));
                             user = usr;
                             this.SendJson("{\"msg\": \"auth\", \"status\": true}", "auth");
+                            this.Send(PublicLobbySnapshot());
                         }
                         else
                         {
@@ -145,8 +164,8 @@ namespace D2MPMaster.Browser
                                 return;
                             }
                             //Find the client
-                            var clients = ClientsController.Find(m=>m.UID==user.Id);
-                            if (!clients.Any(m => m.Mods.Any(c=>c.name == mod.name && c.version == mod.version)))
+                            var clients = ClientsController.Find(m => m.UID == user.Id);
+                            if (!clients.Any(m => m.Mods.Any(c => c.name == mod.name && c.version == mod.version)))
                             {
                                 var obj = new JObject();
                                 obj["msg"] = "modneeded";
@@ -432,7 +451,7 @@ namespace D2MPMaster.Browser
                                 return;
                             }
 
-                            ClientsController.SendTo(m=>m.UID==user.Id, ClientController.InstallMod(mod));
+                            ClientsController.SendTo(m => m.UID == user.Id, ClientController.InstallMod(mod));
                             break;
                         }
                     case "connectgame":
@@ -495,7 +514,29 @@ namespace D2MPMaster.Browser
         {
             var upd = new JObject();
             upd["msg"] = "colupd";
-            upd["ops"] = new JArray { DiffGenerator.RemoveAll("lobbies"), lobby1.Add("lobbies"), DiffGenerator.RemoveAll("publicLobbies") };
+            upd["ops"] = new JArray { DiffGenerator.RemoveAll("lobbies"), lobby1.Add("lobbies") };
+            return new TextArgs(upd.ToString(Formatting.None), "lobby");
+        }
+
+        public static ITextArgs PublicLobbySnapshot()
+        {
+            var upd = new JObject();
+            var ops = new JArray { DiffGenerator.RemoveAll("publicLobbies") };
+            foreach (var lobby in LobbyManager.PublicLobbies)
+            {
+                ops.Add(lobby.Add("publicLobbies"));
+            }
+            upd["msg"] = "colupd";
+            upd["ops"] = ops;
+            return new TextArgs(upd.ToString(Formatting.None), "lobby");
+        }
+
+        public static ITextArgs ClearPublicLobbies()
+        {
+            var upd = new JObject();
+            var ops = new JArray { DiffGenerator.RemoveAll("publicLobbies") };
+            upd["msg"] = "colupd";
+            upd["ops"] = ops;
             return new TextArgs(upd.ToString(Formatting.None), "lobby");
         }
 

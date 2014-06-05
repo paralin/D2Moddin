@@ -106,18 +106,18 @@ namespace D2MPMaster.Lobbies
         {
             while (!shutdown)
             {
+                Thread.Sleep(500);
                 var upd = new JObject();
                 var updates = new JArray();
                 while (PublicLobbyUpdateQueue.Count > 0)
                 {
                     updates.Add(PublicLobbyUpdateQueue.Dequeue());
                 }
+                if (updates.Count == 0) continue;
                 upd["msg"] = "colupd";
                 upd["ops"] = updates;
                 var msg = upd.ToString(Formatting.None);
-                //Browsers.SendTo(m => m.lobby == null, new TextArgs(msg, "lobby"));
                 Browsers.AsyncSendTo(m=>m.user!=null&&m.lobby==null,new TextArgs(msg, "lobby"), ar => { });
-                Thread.Sleep(500);
             }
         }
 
