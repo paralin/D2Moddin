@@ -44,17 +44,15 @@ namespace D2MPMaster
             S3 = new S3Manager();
 
             log.Info("Initializing xsockets...");
-            var configs = new List<IConfigurationSetting>();
 
             Console.CancelKeyPress += delegate
             {
                 shutdown = true;
             };
 
-            configs.Add(new ConfigurationSetting("ws://0.0.0.0:4000"));
             using (var server = Composable.GetExport<IXSocketServerContainer>())
             {
-                server.StartServers(configurationSettings:configs);
+                server.StartServers(useLoopback:false);
                 log.Info("Server running!");
                 while (!shutdown)
                 {

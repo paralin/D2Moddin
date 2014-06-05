@@ -160,6 +160,13 @@
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PostBuildEvent>DEL /Q /F $(TargetDir)*.pdb
+DEL /Q /F $(TargetDir)*.log
+DEL /Q /F $(TargetDir)*.xml
+DEL /Q /F $(TargetDir)*.pid
+DEL /Q /F $(TargetDir)*.vshost.*</PostBuildEvent>
+  </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

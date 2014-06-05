@@ -31,6 +31,10 @@ namespace D2MPMaster.Client
         public ClientController()
         {
             this.OnClose += DeregisterClient;
+            this.OnOpen += (sender, args) =>
+                           {
+                               log.Debug("Client connected.");
+                           };
         }
 
         void DeregisterClient(object se, OnClientDisconnectArgs e)

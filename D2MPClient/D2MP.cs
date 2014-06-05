@@ -42,7 +42,7 @@ namespace d2mp
 {
     public class D2MP
     {
-        private static string server = "ws://ddp2.d2modd.in:4000/Client";
+        private static string server = "ws://ddp2.d2modd.in:4000/ClientController";
         private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
         private static string addonsDir;
         private static string d2mpDir;
@@ -303,9 +303,23 @@ namespace d2mp
                                           icon.DisplayBubble("Disconnected, attempting to reconnect...");
                                           hasConnected = false;
                                       }
-                                      client.Open();
+                                      try
+                                      {
+                                          client.Open();
+                                      }
+                                      catch (Exception ex)
+                                      {
+                                          icon.DisplayBubble("Can't connect to the lobby server!");
+                                      }
                                   };
-                client.Open();
+                try
+                {
+                    client.Open();
+                }
+                catch (Exception ex)
+                {
+                    icon.DisplayBubble("Can't connect to the lobby server!");
+                }
                 while (!shutDown)
                 {
                     Thread.Sleep(100);

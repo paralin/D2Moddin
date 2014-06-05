@@ -32,6 +32,10 @@ namespace D2MPMaster.Browser
         {
             this.OnClose += OnClosed;
             ID = Utils.RandomString(10);
+            this.OnOpen += (sender, args) =>
+                           {
+                               log.Debug("Browser connected.");
+                           };
         }
 
         #region Variables
@@ -45,9 +49,9 @@ namespace D2MPMaster.Browser
         #endregion
 
         #region Helpers
-        public void CheckLobby()
+        public static void CheckLobby(BrowserController controller)
         {
-            if (lobby != null && lobby.deleted) lobby = null;
+            if (controller.lobby != null && controller.lobby.deleted) controller.lobby = null;
         }
 
         public void RespondError(JObject req, string msg)
@@ -120,7 +124,7 @@ namespace D2MPMaster.Browser
                                 return;
                             }
                             //Check if they are in a lobby
-                            CheckLobby();
+                            //CheckLobby();
                             if (lobby != null)
                             {
                                 RespondError(jdata, "You are already in a lobby.");
