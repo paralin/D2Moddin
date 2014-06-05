@@ -174,7 +174,7 @@ namespace D2MPMaster.Lobbies
                 req => { });
             if (PublicLobbies.Contains(lobby))
             {
-                var updates = new JArray {lobby.Update("lobby", fields)};
+                var updates = new JArray {lobby.Update("publicLobbies", fields)};
                 upd = new JObject();
                 upd["msg"] = "colupd";
                 upd["ops"] = updates;
