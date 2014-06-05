@@ -81,7 +81,8 @@ namespace D2MPMaster.Lobbies
             upd["msg"] = "colupd";
             upd["ops"] = updates;
             var msg = upd.ToString(Formatting.None);
-            Browsers.SendTo(m => m.lobby == null, new TextArgs(msg, "lobby"));
+            //Browsers.SendTo(m => m.lobby == null, new TextArgs(msg, "lobby"));
+            Browsers.AsyncSendToAll(new TextArgs(msg, "lobby"), ar => { });
         }
 
         /// <summary>
@@ -177,7 +178,7 @@ namespace D2MPMaster.Lobbies
                 upd["msg"] = "colupd";
                 upd["ops"] = updates;
                 var msg = upd.ToString(Formatting.None);
-                Browsers.SendTo(m => m.user != null && m.lobby == null, new TextArgs(msg, "lobby"));
+                Browsers.AsyncSendTo(m => m.user != null && m.lobby == null, new TextArgs(msg, "lobby"), ar => { });
             }
         }
 
