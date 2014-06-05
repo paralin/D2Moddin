@@ -32,10 +32,6 @@ namespace D2MPMaster.Browser
         {
             this.OnClose += OnClosed;
             ID = Utils.RandomString(10);
-            this.OnOpen += (sender, args) =>
-                           {
-                               log.Debug("Browser connected.");
-                           };
         }
 
         #region Variables
@@ -102,13 +98,13 @@ namespace D2MPMaster.Browser
                         }
                         if (tokenfound && usr.status.online)
                         {
-                            log.Debug(string.Format("Authentication {0} -> {1} ", uid, key));
+                            //log.Debug(string.Format("Authentication {0} -> {1} ", uid, key));
                             user = usr;
                             this.SendJson("{\"msg\": \"auth\", \"status\": true}", "auth");
                         }
                         else
                         {
-                            log.Debug(string.Format("Authentication failed, {0} token {1}", uid, key));
+                            //log.Debug(string.Format("Authentication failed, {0} token {1}", uid, key));
                             user = null;
                             this.SendJson("{\"msg\": \"auth\", \"status\": false}", "auth");
                         }
@@ -499,7 +495,7 @@ namespace D2MPMaster.Browser
         {
             var upd = new JObject();
             upd["msg"] = "colupd";
-            upd["ops"] = new JArray { DiffGenerator.RemoveAll("lobbies"), lobby1.Add("lobbies") };
+            upd["ops"] = new JArray { DiffGenerator.RemoveAll("lobbies"), lobby1.Add("lobbies"), DiffGenerator.RemoveAll("publicLobbies") };
             return new TextArgs(upd.ToString(Formatting.None), "lobby");
         }
 

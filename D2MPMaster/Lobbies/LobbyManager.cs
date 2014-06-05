@@ -1,14 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
 using D2MPMaster.Browser;
 using D2MPMaster.Client;
 using D2MPMaster.LiveData;
 using D2MPMaster.Model;
 using D2MPMaster.Server;
 using d2mpserver;
+using MongoDB.Driver.Builders;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using XSockets.Core.Common.Globals;
@@ -24,7 +27,7 @@ namespace D2MPMaster.Lobbies
     /// Manages the lifecycle of lobbies and the list.
     /// </summary>
     [XSocketMetadata("LobbyManager", Constants.GenericTextBufferSize, PluginRange.Internal)]
-    public class LobbyManager : XSocketController
+    public class LobbyManager : XSocketController, IDisposable
     {
         private static readonly ClientController ClientsController = new ClientController();
         private static readonly BrowserController Browsers = new BrowserController();
@@ -33,26 +36,45 @@ namespace D2MPMaster.Lobbies
         /// <summary>
         /// Lobbies that should be visible in the list.
         /// </summary>
-        public static ConcurrentObservableCollection<Lobby> PublicLobbies = new ConcurrentObservableCollection<Lobby>(new List<Lobby>());
+        public static ObservableCollection<Lobby> PublicLobbies = new ObservableCollection<Lobby>();
 
         /// <summary>
         /// Lobbies that should have full updates sent out JUST to users in them.
         /// </summary>
-        public static ConcurrentObservableCollection<Lobby> PlayingLobbies = new ConcurrentObservableCollection<Lobby>(new List<Lobby>());
+        public static ObservableCollection<Lobby> PlayingLobbies = new ObservableCollection<Lobby>();
+
+        public static volatile bool Registered = false;
 
         public static List<Lobby> LobbyQueue = new List<Lobby>();
 
+        public static Queue<JObject> PublicLobbyUpdateQueue = new Queue<JObject>();
+        public static Thread LobbyUpdateThread;
+
+        public static volatile bool shutdown = false;
+
         public LobbyManager()
         {
-            PublicLobbies.CollectionChanged += TransmitLobbiesChange;
+            if (!Registered)
+            {
+                LobbyUpdateThread = new Thread(LobbyUpdateProc);
+                LobbyUpdateThread.Start();
+                PublicLobbies.CollectionChanged += TransmitLobbiesChange;
+                Registered = true;
+            }
+        }
+
+        public void Dispose()
+        {
+            shutdown = true;
+            Registered = false;
         }
 
         public void TransmitLobbiesChange(object s, NotifyCollectionChangedEventArgs e)
         {
-            var updates = new JArray();
+            if (shutdown) return;
             if (e.Action == NotifyCollectionChangedAction.Reset)
             {
-                updates.Add(DiffGenerator.RemoveAll("publicLobbies"));
+                PublicLobbyUpdateQueue.Enqueue(DiffGenerator.RemoveAll("publicLobbies"));
             }
             else
             {
@@ -62,7 +84,7 @@ namespace D2MPMaster.Lobbies
                         switch (e.Action)
                         {
                             case NotifyCollectionChangedAction.Add:
-                                updates.Add(lobby.Add("publicLobbies"));
+                                PublicLobbyUpdateQueue.Enqueue(lobby.Add("publicLobbies"));
                                 break;
                         }
                     }
@@ -72,17 +94,31 @@ namespace D2MPMaster.Lobbies
                         switch (e.Action)
                         {
                             case NotifyCollectionChangedAction.Remove:
-                                updates.Add(lobby.Remove("publicLobbies"));
+                                PublicLobbyUpdateQueue.Enqueue(lobby.Remove("publicLobbies"));
                                 break;
                         }
                     }
             }
-            var upd = new JObject();
-            upd["msg"] = "colupd";
-            upd["ops"] = updates;
-            var msg = upd.ToString(Formatting.None);
-            //Browsers.SendTo(m => m.lobby == null, new TextArgs(msg, "lobby"));
-            Browsers.AsyncSendToAll(new TextArgs(msg, "lobby"), ar => { });
+
+        }
+
+        public void LobbyUpdateProc()
+        {
+            while (!shutdown)
+            {
+                var upd = new JObject();
+                var updates = new JArray();
+                while (PublicLobbyUpdateQueue.Count > 0)
+                {
+                    updates.Add(PublicLobbyUpdateQueue.Dequeue());
+                }
+                upd["msg"] = "colupd";
+                upd["ops"] = updates;
+                var msg = upd.ToString(Formatting.None);
+                //Browsers.SendTo(m => m.lobby == null, new TextArgs(msg, "lobby"));
+                Browsers.AsyncSendTo(m=>m.user!=null&&m.lobby==null,new TextArgs(msg, "lobby"), ar => { });
+                Thread.Sleep(500);
+            }
         }
 
         /// <summary>
@@ -174,12 +210,7 @@ namespace D2MPMaster.Lobbies
                 req => { });
             if (PublicLobbies.Contains(lobby))
             {
-                var updates = new JArray {lobby.Update("publicLobbies", fields)};
-                upd = new JObject();
-                upd["msg"] = "colupd";
-                upd["ops"] = updates;
-                var msg = upd.ToString(Formatting.None);
-                Browsers.AsyncSendTo(m => m.user != null, new TextArgs(msg, "lobby"), ar => { });
+                PublicLobbyUpdateQueue.Enqueue(lobby.Update("publicLobbies", fields));
             }
         }
 
