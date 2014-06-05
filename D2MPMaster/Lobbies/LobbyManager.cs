@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Text.RegularExpressions;
 using D2MPMaster.Browser;
@@ -40,6 +41,48 @@ namespace D2MPMaster.Lobbies
         public static ConcurrentObservableCollection<Lobby> PlayingLobbies = new ConcurrentObservableCollection<Lobby>(new List<Lobby>());
 
         public static List<Lobby> LobbyQueue = new List<Lobby>();
+
+        public LobbyManager()
+        {
+            PublicLobbies.CollectionChanged += TransmitLobbiesChange;
+        }
+
+        public void TransmitLobbiesChange(object s, NotifyCollectionChangedEventArgs e)
+        {
+            var updates = new JArray();
+            if (e.Action == NotifyCollectionChangedAction.Reset)
+            {
+                updates.Add(DiffGenerator.RemoveAll("publicLobbies"));
+            }
+            else
+            {
+                if (e.NewItems != null)
+                    foreach (var lobby in e.NewItems)
+                    {
+                        switch (e.Action)
+                        {
+                            case NotifyCollectionChangedAction.Add:
+                                updates.Add(lobby.Add("publicLobbies"));
+                                break;
+                        }
+                    }
+                if (e.OldItems != null)
+                    foreach (var lobby in e.OldItems)
+                    {
+                        switch (e.Action)
+                        {
+                            case NotifyCollectionChangedAction.Remove:
+                                updates.Add(lobby.Remove("publicLobbies"));
+                                break;
+                        }
+                    }
+            }
+            var upd = new JObject();
+            upd["msg"] = "colupd";
+            upd["ops"] = updates;
+            var msg = upd.ToString(Formatting.None);
+            Browsers.SendTo(m => m.lobby == null, new TextArgs(msg, "lobby"));
+        }
 
         /// <summary>
         /// See if a user is already in a lobby.
