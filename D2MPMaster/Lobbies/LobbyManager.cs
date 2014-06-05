@@ -173,7 +173,7 @@ namespace D2MPMaster.Lobbies
             Browsers.SendTo(m=>m.lobby!=null&&m.lobby.id==lobby.id, new TextArgs(upd.ToString(Formatting.None), "lobby"));
             if (lobby.isPublic)
             {
-                var updates = new JArray {lobby.Update("publicLobbies", fields)};
+                var updates = new JArray {lobby.Update("lobby", fields)};
                 upd = new JObject();
                 upd["msg"] = "colupd";
                 upd["ops"] = updates;
@@ -296,8 +296,10 @@ namespace D2MPMaster.Lobbies
             lob.radiant[0] = Player.FromUser(user);
             PublicLobbies.Add(lob);
             PlayingLobbies.Add(lob);
-            Browsers.SendTo(m => m.user != null && m.user.Id == user.Id, BrowserController.LobbySnapshot(lob));
-            ClientsController.SendTo(m => m.SteamID == user.services.steam.steamid, ClientController.SetMod(mod));
+            Browsers.AsyncSendTo(m => m.user != null && m.user.Id == user.Id, BrowserController.LobbySnapshot(lob),
+                req => { });
+            ClientsController.AsyncSendTo(m => m.SteamID == user.services.steam.steamid, ClientController.SetMod(mod),
+                req => { });
 			log.InfoFormat("Lobby created, User: #{0}, Name: #{1}", user.profile.name, name);
             return lob;
         }
