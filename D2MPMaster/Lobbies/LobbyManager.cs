@@ -351,7 +351,7 @@ namespace D2MPMaster.Lobbies
         public static void BanFromLobby(Lobby lobby, string steam)
         {
             var client =
-                Browsers.Find(m => m.user != null && m.user.services.steam.steamid == steam && m.lobby.id == lobby.id);
+                Browsers.Find(m => m.user != null && m.user.services.steam.steamid == steam && m.lobby!=null&&m.lobby.id == lobby.id);
             var browserClients = client as BrowserController[] ?? client.ToArray();
             if (!browserClients.Any()) return;
             if (!lobby.banned.Contains(steam))

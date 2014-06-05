@@ -40,7 +40,13 @@ namespace D2MPMaster.Client
         void DeregisterClient(object se, OnClientDisconnectArgs e)
         {
             if (UID == null) return;
-            Mongo.Clients.Remove(Query.EQ("_id", UID));
+            try
+            {
+                Mongo.Clients.Remove(Query.EQ("_id", UID));
+            }
+            catch (Exception ex)
+            {
+            }
         }
 
         void RegisterClient()

@@ -405,6 +405,11 @@ namespace D2MPMaster.Browser
                                 RespondError(jdata, "That lobby is full.");
                                 return;
                             }
+                            if (lob.banned.Contains(user.services.steam.steamid))
+                            {
+                                RespondError(jdata, "You are banned from that lobby.");
+                                return;
+                            }
                             //Find the mod
                             var mod = Mods.Mods.ByID(lob.mod);
                             if (mod == null)
