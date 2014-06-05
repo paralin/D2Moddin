@@ -7,59 +7,54 @@ using System.Text.RegularExpressions;
 using D2MPMaster.Lobbies;
 using D2MPMaster.Properties;
 using d2mpserver;
-using Fleck;
 using Newtonsoft.Json.Linq;
 using ServerCommon.Data;
 using ServerCommon.Methods;
+using XSockets.Core.Common.Socket.Event.Arguments;
+using XSockets.Core.XSocket;
+using XSockets.Core.XSocket.Helpers;
 
 namespace D2MPMaster.Server
 {
-    public class ServerInstance
+    public class ServerController : XSocketController
     {
         public string ID { get; set; }
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         public ObservableCollection<ServerAddon> Addons = new ObservableCollection<ServerAddon>();
-        private bool _init;
         public Init InitData;
         public string Address;
-        public IWebSocketConnection Socket;
         public int portCounter;
-        public ConcurrentDictionary<int, GameInstance> Instances = new ConcurrentDictionary<int, GameInstance>(); 
-        public bool Inited {
-            get { return _init; }
-            set
-            {
-                _init = value;
-                if (value)
-                {
-                    Program.Server.RegisterServer(this);
-                }
-            }
-        }
+        public int IDCounter;
+        public ConcurrentDictionary<int, GameInstance> Instances = new ConcurrentDictionary<int, GameInstance>();
+        public bool Inited { get; set; }
 
-        public ServerInstance(IWebSocketConnection sock, string id)
+        public ServerController()
         {
-            ID = id;
-            Socket = sock;
-            Address = sock.ConnectionInfo.ClientIpAddress;
+            ID = Utils.RandomString(10);
+            this.OnClose += OnClosed;
         }
 
-        public void OnClose(object o, string id)
+        public void OnClosed(object sender, OnClientDisconnectArgs onClientDisconnectArgs)
         {
             //Delete all lobbies
             foreach(var instance in Instances.Values)
             {
-                Program.LobbyManager.OnServerShutdown(instance);
+                 LobbyManager.OnServerShutdown(instance);
             }
             Instances = null;
             Inited = false;
         }
 
-        public void HandleMessage(string data, IWebSocketConnection sock, string ID)
+        public void Send(string msg)
+        {
+            this.SendJson(msg, "commands");
+        }
+
+        public override void OnMessage(XSockets.Core.Common.Socket.Event.Interface.ITextArgs textArgs)
         {
             try
             {
-                var jdata = JObject.Parse(data);
+                var jdata = JObject.Parse(textArgs.data);
                 var id = jdata["msg"];
                 if (id == null) return;
                 var command = id.Value<string>();
@@ -67,17 +62,17 @@ namespace D2MPMaster.Server
                 {
                     case Init.Msg:
                     {
-                        if (_init) return;
+                        if (Inited) return;
                         var msg = jdata.ToObject<Init>();
                         if (msg.password != Init.Password)
                         {
                             //Wrong password
-                            Socket.Send("shutdown");
+                            Send("shutdown");
                             return;
                         }
                         if (msg.version != Init.Version)
                         {
-                            Socket.Send("outOfDate|"+Program.S3.GenerateBundleURL("s"+Init.Version+".zip"));
+                            Send("outOfDate|"+Program.S3.GenerateBundleURL("s"+Init.Version+".zip"));
                             return;
                         }
                         //Build server addon operation 
@@ -87,11 +82,12 @@ namespace D2MPMaster.Server
                         {
                             portCounter = msg.portRangeStart;
                             InitData = msg;
+                            Address = InitData.publicIP;
                             Inited = true;
                         }
                         else
                         {
-                            Socket.Send("addonOps|"+string.Join(",", add)+"|"+string.Join(",", del));
+                            Send("addonOps|"+string.Join(",", add)+"|"+string.Join(",", del));
                         }
                         break;
                     }
@@ -101,7 +97,7 @@ namespace D2MPMaster.Server
                         if (Instances.ContainsKey(msg.id))
                         {
                             var instance = Instances[msg.id];
-                            Program.LobbyManager.OnServerReady(instance);
+                            LobbyManager.OnServerReady(instance);
                         }
                         break;
                     }
@@ -111,7 +107,7 @@ namespace D2MPMaster.Server
                         if (Instances.ContainsKey(msg.id))
                         {
                             var instance = Instances[msg.id];
-                            Program.LobbyManager.OnServerShutdown(instance);
+                            LobbyManager.OnServerShutdown(instance);
                         }
                         break;
                     }
@@ -125,12 +121,12 @@ namespace D2MPMaster.Server
 
         public GameInstance StartInstance(Lobby lobby)
         {
-            Program.Server.IDCounter++;
+            IDCounter++;
             portCounter++;
             if (portCounter > InitData.portRangeEnd) portCounter = InitData.portRangeStart;
             var instance = new GameInstance()
                            {
-                               ID = Program.Server.IDCounter,
+                               ID = IDCounter,
                                lobby = lobby,
                                RconPass = Utils.RandomString(10),
                                Server = this,
@@ -140,7 +136,7 @@ namespace D2MPMaster.Server
             var command = "launchServer|" + instance.ID + "|" + instance.port + "|" +
                           (lobby.devMode ? bool.TrueString : bool.FalseString) + "|" + Mods.Mods.ByID(lobby.mod).name +
                           "|" + instance.RconPass + "|" + string.Join("&", GenerateCommands(lobby));
-            Socket.Send(command);
+            Send(command);
             Instances[instance.ID] = instance;
             return instance;
         }

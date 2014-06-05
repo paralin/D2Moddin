@@ -1,16 +1,18 @@
-﻿
-using System;
-using System.Text.RegularExpressions;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading;
-using D2MPMaster.Browser;
-using D2MPMaster.Client;
 using D2MPMaster.Database;
 using D2MPMaster.Lobbies;
-using D2MPMaster.Properties;
 using D2MPMaster.Server;
 using D2MPMaster.Storage;
-using Fleck;
 using log4net.Config;
+using MongoDB.Driver.Linq;
+using XSockets.Core.Common.Configuration;
+using XSockets.Core.Common.Globals;
+using XSockets.Core.Common.Socket;
+using XSockets.Core.Configuration;
+using XSockets.Plugin.Framework;
+
 namespace D2MPMaster
 {
     class Program
@@ -18,11 +20,6 @@ namespace D2MPMaster
         private static string version = "1.0.1";
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
-        public static BrowserManager Browser;
-        public static ServerManager Server;
-        public static LobbyManager LobbyManager;
-        public static WebSocketServer SocketServer;
-        public static ClientManager Client;
         public static S3Manager S3;
         public static volatile bool shutdown;
 
@@ -46,55 +43,27 @@ namespace D2MPMaster
             log.Info("Initializing Amazon S3...");
             S3 = new S3Manager();
 
-            LobbyManager = new LobbyManager();
-            Browser = new BrowserManager();
-            Client = new ClientManager();
-            Server = new ServerManager();
-
-            var server = new WebSocketServer(4000, "ws://0.0.0.0");
-            server.Start(socket =>
-                         {
-                             string ID = Utils.RandomString(10);
-                             ISocketHandler handler;
-                             switch (Regex.Replace(socket.ConnectionInfo.Path.ToLower(), "[^a-zA-Z]", ""))
-                             {
-                                 case "browser":
-                                     handler = Browser;
-                                     break;
-                                 case "client":
-                                     handler = Client;
-                                     break;
-                                 case "server":
-                                     handler = Server;
-                                     break;
-                                 default:
-                                     log.Info("No handler for URI: "+socket.ConnectionInfo.Path);
-                                     return;
-                             }
-                             socket.OnOpen = () => handler.OnOpen(ID, socket);
-                             socket.OnClose = () => handler.OnClose(ID, socket);
-                             socket.OnMessage = message => handler.OnMessage(ID, socket, message);
-                         });
-
-            log.Info("Server running!");
+            log.Info("Initializing xsockets...");
+            var configs = new List<IConfigurationSetting>();
 
             Console.CancelKeyPress += delegate
-                                      {
-                                          shutdown = true;
-                                      };
-            while (!shutdown)
             {
-                Thread.Sleep(100);
+                shutdown = true;
+            };
+
+            configs.Add(new ConfigurationSetting("ws://0.0.0.0:4000"));
+            using (var server = Composable.GetExport<IXSocketServerContainer>())
+            {
+                server.StartServers(configurationSettings:configs);
+                log.Info("Server running!");
+                while (!shutdown)
+                {
+                    Thread.Sleep(100);
+                }
+                server.StopServers();
             }
 
-            
             log.Info("Done, shutting down...");
-
-            Client = null;
-            Browser = null;
-            Server = null;
-            LobbyManager = null;
-            SocketServer = null;
         }
     }
 }

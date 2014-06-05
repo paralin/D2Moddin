@@ -70,13 +70,6 @@ namespace d2mpserver
             }
 
             connection = new ServerConnection(manager);
-            if (!connection.Connect())
-            {
-                log.Fatal("Can't connect to the server!");
-                return;
-            }
-
-            connection.StartServerThread();
 
             while (!shutdown)
             {

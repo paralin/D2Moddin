@@ -36,9 +36,6 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\AWSSDK.2.1.1.0\lib\net45\AWSSDK.dll</HintPath>
     </Reference>
-    <Reference Include="Fleck">
-      <HintPath>..\packages\Fleck.0.10.0.27\lib\net40\Fleck.dll</HintPath>
-    </Reference>
     <Reference Include="log4net">
       <HintPath>..\packages\log4net.2.0.3\lib\net40-full\log4net.dll</HintPath>
     </Reference>
@@ -52,20 +49,8 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Newtonsoft.Json.6.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
-    <Reference Include="SuperSocket.Common">
-      <HintPath>..\packages\SuperWebSocketNETServer.0.8\lib\net45\SuperSocket.Common.dll</HintPath>
-    </Reference>
-    <Reference Include="SuperSocket.Facility">
-      <HintPath>..\packages\SuperWebSocketNETServer.0.8\lib\net45\SuperSocket.Facility.dll</HintPath>
-    </Reference>
-    <Reference Include="SuperSocket.SocketBase">
-      <HintPath>..\packages\SuperWebSocketNETServer.0.8\lib\net45\SuperSocket.SocketBase.dll</HintPath>
-    </Reference>
-    <Reference Include="SuperSocket.SocketEngine">
-      <HintPath>..\packages\SuperWebSocketNETServer.0.8\lib\net45\SuperSocket.SocketEngine.dll</HintPath>
-    </Reference>
-    <Reference Include="SuperWebSocket">
-      <HintPath>..\packages\SuperWebSocketNETServer.0.8\lib\net45\SuperWebSocket.dll</HintPath>
+    <Reference Include="ServiceStack.Text">
+      <HintPath>..\packages\XSockets.Core.3.0.6\lib\net40\ServiceStack.Text.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -74,10 +59,36 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
+    <Reference Include="XSockets.Controllers">
+      <HintPath>..\packages\XSockets.Server.3.0.6\lib\net40\XSockets.Controllers.dll</HintPath>
+    </Reference>
+    <Reference Include="XSockets.Core">
+      <HintPath>..\packages\XSockets.Core.3.0.6\lib\net40\XSockets.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="XSockets.Core.Common">
+      <HintPath>..\packages\XSockets.Core.3.0.6\lib\net40\XSockets.Core.Common.dll</HintPath>
+    </Reference>
+    <Reference Include="XSockets.Core.Communication">
+      <HintPath>..\packages\XSockets.Server.3.0.6\lib\net40\XSockets.Core.Communication.dll</HintPath>
+    </Reference>
+    <Reference Include="XSockets.Plugin.Framework">
+      <HintPath>..\packages\XSockets.Plugin.Framework.1.4.3\lib\XSockets.Plugin.Framework.dll</HintPath>
+    </Reference>
+    <Reference Include="XSockets.Protocol">
+      <HintPath>..\packages\XSockets.Server.3.0.6\lib\net40\XSockets.Protocol.dll</HintPath>
+    </Reference>
+    <Reference Include="XSockets.Serialization">
+      <HintPath>..\packages\XSockets.Core.3.0.6\lib\net40\XSockets.Serialization.dll</HintPath>
+    </Reference>
+    <Reference Include="XSockets.Server">
+      <HintPath>..\packages\XSockets.Server.3.0.6\lib\net40\XSockets.Server.dll</HintPath>
+    </Reference>
+    <Reference Include="XSockets.WebRTC">
+      <HintPath>..\packages\XSockets.Server.3.0.6\lib\net40\XSockets.WebRTC.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Browser\BrowserManager.cs" />
-    <Compile Include="Browser\BrowserClient.cs" />
+    <Compile Include="Browser\BrowserController.cs" />
     <Compile Include="Browser\Methods\ChatMessage.cs" />
     <Compile Include="Browser\Methods\CreateLobby.cs" />
     <Compile Include="Browser\Methods\InstallMod.cs" />
@@ -85,8 +96,7 @@
     <Compile Include="Browser\Methods\KickPlayer.cs" />
     <Compile Include="Browser\Methods\SetOption.cs" />
     <Compile Include="Browser\Methods\SwitchTeam.cs" />
-    <Compile Include="Client\ClientManager.cs" />
-    <Compile Include="Client\ModClient.cs" />
+    <Compile Include="Client\ClientController.cs" />
     <Compile Include="Database\Mongo.cs" />
     <Compile Include="Enums.cs" />
     <Compile Include="LiveData\DiffGenerator.cs" />
@@ -106,7 +116,7 @@
     </Compile>
     <Compile Include="Server\GameInstance.cs" />
     <Compile Include="Server\ServerAddons.cs" />
-    <Compile Include="Server\ServerInstance.cs" />
+    <Compile Include="Server\ServerController.cs" />
     <Compile Include="Server\ServerService.cs" />
     <Compile Include="Storage\S3Manager.cs" />
     <Compile Include="Utils.cs" />
@@ -131,7 +141,9 @@
       <Name>ServerCommon</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Content Include="XSocketsNET\ServerExample\ReadMe.txt" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

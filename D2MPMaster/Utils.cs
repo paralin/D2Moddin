@@ -2,10 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
-using Fleck;
 
 namespace D2MPMaster
 {
@@ -52,12 +49,6 @@ namespace D2MPMaster
             }
             return arr;
         }
-    }
-    public interface ISocketHandler
-    {
-        void OnMessage(string ID, IWebSocketConnection socket, string message);
-        void OnClose(string ID, IWebSocketConnection socket);
-        void OnOpen(string ID, IWebSocketConnection socket);
     }
 
     public class ConcurrentObservableCollection<t> : ObservableCollection<t>

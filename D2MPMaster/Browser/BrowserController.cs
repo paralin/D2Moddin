@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
-using System.Threading;
+using ClientCommon.Methods;
 using D2MPMaster.Browser.Methods;
 using D2MPMaster.Client;
 using D2MPMaster.Database;
@@ -11,75 +9,41 @@ using D2MPMaster.LiveData;
 using D2MPMaster.Lobbies;
 using D2MPMaster.Model;
 using d2mpserver;
-using Fleck;
 using MongoDB.Driver.Builders;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using XSockets.Core.Common.Socket.Event.Arguments;
+using XSockets.Core.Common.Socket.Event.Interface;
+using XSockets.Core.XSocket;
+using XSockets.Core.XSocket.Helpers;
+using InstallMod = D2MPMaster.Browser.Methods.InstallMod;
 
 
 namespace D2MPMaster.Browser
 {
-    public class BrowserClient
+    public class BrowserController : XSocketController
     {
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
-        public ConcurrentDictionary<string, IWebSocketConnection> sockets = new ConcurrentDictionary<string, IWebSocketConnection>();
-        public string baseSession;
-        public IWebSocketConnection baseWebsocket;
-		//public volatile bool proccommand = false;
-        private string _id;
-        private Thread SendQueue;
-        public ConcurrentQueue<string> MessageQueue = new ConcurrentQueue<string>();
-        private object msgLock = new object();
+        private static readonly ClientController ClientsController = new ClientController();
 
-        public BrowserClient(IWebSocketConnection socket, string sessionID)
-        {
-            sockets[sessionID] = socket;
-            baseSession = sessionID;
-            baseWebsocket = socket;
-            SendQueue = new Thread(SendQueueProc);
-            SendQueue.Start();
-        }
+        public string ID;
 
-        private void SendQueueProc()
+        public BrowserController()
         {
-            while (sockets != null && sockets.Count > 0)
-            {
-                string msg = null;
-                MessageQueue.TryDequeue(out msg);
-                if (msg != null)
-                {
-                    foreach (var socket in sockets.Values)
-                    {
-                        socket.Send(msg);
-                    }
-                }
-                Thread.Sleep(100);
-            }
+            this.OnClose += OnClosed;
+            ID = Utils.RandomString(10);
         }
 
         #region Variables
+        //Chat flood prevention
         private string lastMsg = "";
         private DateTime lastMsgTime = DateTime.UtcNow;
-        private bool _authed;
-        private bool authed
-        {
-            get { return _authed; }
-            set
-            {
-                _authed = value;
-                if (_authed)
-                {
-                    Program.Browser.RegisterUser(this, user);
-                }
-                else
-                {
-                    Program.Browser.DeregisterUser(this, user, _id);
-                }
-            }
-        }
+
+        //User and lobby
         public User user = null;
         public Lobby lobby = null;
         #endregion
+
         #region Helpers
         public void CheckLobby()
         {
@@ -98,63 +62,57 @@ namespace D2MPMaster.Browser
         #endregion
 
         #region Message Handling
-        public void HandleMessage(string data, IWebSocketConnection context, string sessionID)
+        public override void OnMessage(ITextArgs args)
         {
-            lock (msgLock)
+            try
             {
-                try
+                var jdata = JObject.Parse(args.data);
+                var id = jdata["id"];
+                if (id == null) return;
+                var command = id.Value<string>();
+                switch (command)
                 {
-                    var jdata = JObject.Parse(data);
-                    var id = jdata["id"];
-                    _id = sessionID;
-                    if (id == null) return;
-                    var command = id.Value<string>();
-                    switch (command)
-                    {
-                            #region Authentication
+                    #region Authentication
 
-                        case "deauth":
-                            authed = false;
+                    case "deauth":
+                        user = null;
+                        this.SendJson("{\"status\": false}", "auth");
+                        break;
+                    case "auth":
+                        //Parse the UID
+                        var uid = jdata["uid"].Value<string>();
+                        if (user != null && uid == user.Id)
+                        {
+                            this.SendJson("{\"msg\": \"auth\", \"status\": true}", "auth");
+                            return;
+                        }
+                        //Parse the resume key
+                        var key = jdata["key"]["hashedToken"].Value<string>();
+                        //Find it in the database
+                        var usr = Mongo.Users.FindOneAs<User>(Query.EQ("_id", uid));
+                        bool tokenfound = false;
+                        if (usr != null)
+                        {
+                            var tokens = usr.services.resume.loginTokens;
+                            tokenfound = tokens.Any(token => token.hashedToken == key);
+                        }
+                        if (tokenfound && usr.status.online)
+                        {
+                            log.Debug(string.Format("Authentication {0} -> {1} ", uid, key));
+                            user = usr;
+                            this.SendJson("{\"msg\": \"auth\", \"status\": true}", "auth");
+                        }
+                        else
+                        {
+                            log.Debug(string.Format("Authentication failed, {0} token {1}", uid, key));
                             user = null;
-                            context.Send("{\"msg\": \"auth\", \"status\": false}");
-                            break;
-                        case "auth":
-                            //Parse the UID
-                            var uid = jdata["uid"].Value<string>();
-                            if (authed && uid == user.Id)
-                            {
-                                context.Send("{\"msg\": \"auth\", \"status\": true}");
-                                return;
-                            }
-                            //Parse the resume key
-                            var key = jdata["key"]["hashedToken"].Value<string>();
-                            //Find it in the database
-                            var usr = Mongo.Users.FindOneAs<User>(Query.EQ("_id", uid));
-                            bool tokenfound = false;
-                            if (usr != null)
-                            {
-                                var tokens = usr.services.resume.loginTokens;
-                                tokenfound = tokens.Any(token => token.hashedToken == key);
-                            }
-                            if (tokenfound && usr.status.online)
-                            {
-                                log.Debug(string.Format("Authentication {0} -> {1} ", uid, key));
-                                user = usr;
-                                authed = true;
-                                context.Send("{\"msg\": \"auth\", \"status\": true}");
-                            }
-                            else
-                            {
-                                log.Debug(string.Format("Authentication failed, {0} token {1}", uid, key));
-                                authed = false;
-                                user = null;
-                                context.Send("{\"msg\": \"auth\", \"status\": false}");
-                            }
-                            break;
+                            this.SendJson("{\"msg\": \"auth\", \"status\": false}", "auth");
+                        }
+                        break;
 
-                            #endregion
+                    #endregion
 
-                        case "createlobby":
+                    case "createlobby":
                         {
                             if (user == null)
                             {
@@ -187,13 +145,8 @@ namespace D2MPMaster.Browser
                                 return;
                             }
                             //Find the client
-                            ModClient client = null;
-                            if (Program.Client.ClientUID.ContainsKey(user.Id))
-                            {
-                                client = Program.Client.ClientUID[user.Id];
-                            }
-                            if (client == null ||
-                                client.Mods.FirstOrDefault(m => m.name == mod.name && m.version == mod.version) == null)
+                            var clients = ClientsController.Find(m=>m.UID==user.Id);
+                            if (!clients.Any(m => m.Mods.Any(c=>c.name == mod.name && c.version == mod.version)))
                             {
                                 var obj = new JObject();
                                 obj["msg"] = "modneeded";
@@ -205,7 +158,7 @@ namespace D2MPMaster.Browser
                             lobby = LobbyManager.CreateLobby(user, mod, req.name);
                             break;
                         }
-                        case "switchteam":
+                    case "switchteam":
                         {
                             if (user == null)
                             {
@@ -226,17 +179,12 @@ namespace D2MPMaster.Browser
                                 RespondError(jdata, "That team is full.");
                                 return;
                             }
-                            Program.LobbyManager.RemoveFromTeam(lobby, user.services.steam.steamid);
+                            LobbyManager.RemoveFromTeam(lobby, user.services.steam.steamid);
                             lobby.AddPlayer(goodguys ? lobby.radiant : lobby.dire, Player.FromUser(user));
-                            Program.LobbyManager.TransmitLobbyUpdate(lobby, new[] {"radiant", "dire"});
-                            if (lobby.status == 0 && lobby.isPublic)
-                            {
-                                Program.Browser.TransmitPublicLobbiesUpdate(new List<Lobby> {lobby},
-                                    new[] {"radiant", "dire"});
-                            }
+                            LobbyManager.TransmitLobbyUpdate(lobby, new[] { "radiant", "dire" });
                             break;
                         }
-                        case "leavelobby":
+                    case "leavelobby":
                         {
                             if (user == null)
                             {
@@ -248,10 +196,10 @@ namespace D2MPMaster.Browser
                                 RespondError(jdata, "You are not in a lobby.");
                                 return;
                             }
-                            Program.LobbyManager.LeaveLobby(this);
+                            LobbyManager.LeaveLobby(this);
                             break;
                         }
-                        case "chatmsg":
+                    case "chatmsg":
                         {
                             if (user == null)
                             {
@@ -281,10 +229,10 @@ namespace D2MPMaster.Browser
                             }
                             lastMsg = msg;
                             lastMsgTime = now;
-                            Program.LobbyManager.ChatMessage(lobby, msg, user.profile.name);
+                            LobbyManager.ChatMessage(lobby, msg, user.profile.name);
                             break;
                         }
-                        case "kickplayer":
+                    case "kickplayer":
                         {
                             if (user == null)
                             {
@@ -302,10 +250,10 @@ namespace D2MPMaster.Browser
                                 return;
                             }
                             var req = jdata["req"].ToObject<KickPlayer>();
-                            Program.LobbyManager.BanFromLobby(lobby, req.steam);
+                            LobbyManager.BanFromLobby(lobby, req.steam);
                             break;
                         }
-                        case "setname":
+                    case "setname":
                         {
                             if (user == null)
                             {
@@ -330,10 +278,10 @@ namespace D2MPMaster.Browser
                                 RespondError(jdata, err);
                                 return;
                             }
-                            Program.LobbyManager.SetTitle(lobby, req.name);
+                            LobbyManager.SetTitle(lobby, req.name);
                             break;
                         }
-                        case "setregion":
+                    case "setregion":
                         {
                             if (user == null)
                             {
@@ -351,10 +299,10 @@ namespace D2MPMaster.Browser
                                 return;
                             }
                             var req = jdata["req"].ToObject<SetRegion>();
-                            Program.LobbyManager.SetRegion(lobby, req.region);
+                            LobbyManager.SetRegion(lobby, req.region);
                             break;
                         }
-                        case "startqueue":
+                    case "startqueue":
                         {
                             if (user == null)
                             {
@@ -382,10 +330,10 @@ namespace D2MPMaster.Browser
                                 RespondError(jdata, "Your lobby must be full to start.");
                                 return;
                             }
-                            Program.LobbyManager.StartQueue(lobby);
+                            LobbyManager.StartQueue(lobby);
                             return;
                         }
-                        case "stopqueue":
+                    case "stopqueue":
                         {
                             if (user == null)
                             {
@@ -407,10 +355,10 @@ namespace D2MPMaster.Browser
                                 RespondError(jdata, "You are not queueing.");
                                 return;
                             }
-                            Program.LobbyManager.CancelQueue(lobby);
+                            LobbyManager.CancelQueue(lobby);
                             return;
                         }
-                        case "joinlobby":
+                    case "joinlobby":
                         {
                             if (user == null)
                             {
@@ -424,7 +372,7 @@ namespace D2MPMaster.Browser
                             }
                             var req = jdata["req"].ToObject<JoinLobby>();
                             //Find lobby
-                            var lob = Program.LobbyManager.PublicLobbies.FirstOrDefault(m => m.id == req.LobbyID);
+                            var lob = LobbyManager.PublicLobbies.FirstOrDefault(m => m.id == req.LobbyID);
                             if (lob == null)
                             {
                                 RespondError(jdata, "Can't find that lobby.");
@@ -443,13 +391,8 @@ namespace D2MPMaster.Browser
                                 return;
                             }
                             //Find the client
-                            ModClient client = null;
-                            if (Program.Client.ClientUID.ContainsKey(user.Id))
-                            {
-                                client = Program.Client.ClientUID[user.Id];
-                            }
-                            if (client == null ||
-                                client.Mods.FirstOrDefault(m => m.name == mod.name && m.version == mod.version) == null)
+                            var clients = ClientsController.Find(m => m.UID == user.Id);
+                            if (!clients.Any(m => m.Mods.Any(c => c.name == mod.name && c.version == mod.version)))
                             {
                                 var obj = new JObject();
                                 obj["msg"] = "modneeded";
@@ -458,33 +401,41 @@ namespace D2MPMaster.Browser
                                 return;
                             }
 
-                            Program.LobbyManager.JoinLobby(lob, user, this);
+                            LobbyManager.JoinLobby(lob, user, this);
                             break;
                         }
-                        case "installmod":
+                    case "installmod":
                         {
                             if (user == null)
                             {
-                                SendInstallRes(false, "You are not logged in yet.");
+                                RespondError(jdata, "You are not logged in.");
                                 return;
                             }
-                            var client = Program.Client.ClientUID[user.Id];
-                            if (client == null)
+                            var clients = ClientsController.Find(m => m.UID == user.Id);
+                            var clientControllers = clients as ClientController[] ?? clients.ToArray();
+                            if (!clientControllers.Any())
                             {
-                                SendInstallRes(false, "You have not launched the manager yet.");
+                                //Error message
+                                RespondError(jdata, "Your client has not been started yet.");
                                 return;
                             }
                             var req = jdata["req"].ToObject<InstallMod>();
-                            var mod = Mods.Mods.ByID(req.mod);
+                            var mod = Mods.Mods.ByName(req.mod);
                             if (mod == null)
                             {
-                                SendInstallRes(false, "Can't find that mod in the database.");
+                                RespondError(jdata, "Can't find that mod in the database.");
                                 return;
                             }
-                            client.InstallMod(mod);
+                            if (clientControllers.FirstOrDefault().Mods.Any(m => m.name == mod.name && m.version == mod.version))
+                            {
+                                this.SendTo(x => x.user != null && x.user.Id == user.Id, InstallResponse("The mod has already been installed.", true));
+                                return;
+                            }
+
+                            ClientsController.SendTo(m=>m.UID==user.Id, ClientController.InstallMod(mod));
                             break;
                         }
-                        case "connectgame":
+                    case "connectgame":
                         {
                             if (user == null)
                             {
@@ -501,72 +452,69 @@ namespace D2MPMaster.Browser
                                 RespondError(jdata, "Your lobby isn't ready to play yet.");
                                 return;
                             }
-                            Program.LobbyManager.LaunchAndConnect(lobby, user.services.steam.steamid);
+                            LobbyManager.LaunchAndConnect(lobby, user.services.steam.steamid);
                             break;
                         }
-                        default:
-                            log.Debug(string.Format("Unknown command: {0}...", command.Substring(0, 10)));
-                            return;
-                    }
+                    default:
+                        log.Debug(string.Format("Unknown command: {0}...", command.Substring(0, 10)));
+                        return;
                 }
-                catch (Exception ex)
-                {
-                    log.Error(ex.ToString());
-                } //Handle all malformed JSON / no ID field / other troll data
             }
+            catch (Exception ex)
+            {
+                log.Error(ex.ToString());
+            } //Handle all malformed JSON / no ID field / other troll data
         }
         #endregion
 
-        public void OnClose(IWebSocketConnection closeEventArgs, string sessionID)
+        public void Send(string msg)
         {
-            IWebSocketConnection value;
-            sockets.TryRemove(sessionID, out value);
-            if (sockets.Count == 0)
+            this.SendJson(msg, "lobby");
+        }
+
+        public void OnClosed(object sender, OnClientDisconnectArgs e)
+        {
+            if (user == null) return;
+            if (lobby != null && !this.Find(p => p.user != null && p.user.Id == user.Id).Any())
             {
-                Program.Browser.DeregisterClient(this, baseSession);
-                if (user != null && lobby != null)
-                    Program.LobbyManager.LeaveLobby(this);
+                LobbyManager.LeaveLobby(this);
             }
         }
 
-        public void RegisterSocket(IWebSocketConnection webSocket, string session)
-        {
-            sockets[session] = webSocket;
-        }
 
-        public void Obsolete()
-        {
-            sockets = null;
-            baseSession = null;
-            baseWebsocket = null;
-        }
-
-        public void SendClearLobby(IWebSocketConnection webSocket)
+        public static ITextArgs ClearLobby()
         {
             var upd = new JObject();
             upd["msg"] = "colupd";
             upd["ops"] = new JArray { DiffGenerator.RemoveAll("lobbies") };
             var msg = upd.ToString(Formatting.None);
-            if (webSocket != null)
-                webSocket.Send(upd.ToString(Formatting.None));
-            else
-            {
-                Send(msg);
-            }
+            return new TextArgs(msg, "lobby");
         }
 
-        public void Send(string msg)
+        public static ITextArgs LobbySnapshot(Lobby lobby1)
         {
-            MessageQueue.Enqueue(msg);
+            var upd = new JObject();
+            upd["msg"] = "colupd";
+            upd["ops"] = new JArray { DiffGenerator.RemoveAll("lobbies"), lobby1.Add("lobbies") };
+            return new TextArgs(upd.ToString(Formatting.None), "lobby");
         }
 
-        public void SendInstallRes(bool worked, string msg)
+        public static ITextArgs ChatMessage(string cmsg)
+        {
+            var cmd = new JObject();
+            cmd["msg"] = "chat";
+            cmd["message"] = cmsg;
+            var data = cmd.ToString(Formatting.None);
+            return new TextArgs(data, "lobby");
+        }
+
+        public static ITextArgs InstallResponse(string message, bool success)
         {
             var upd = new JObject();
             upd["msg"] = "installres";
-            upd["success"] = worked;
-            upd["message"] = msg;
-            Send(upd.ToString(Formatting.None));
+            upd["success"] = success;
+            upd["message"] = message;
+            return new TextArgs(upd.ToString(Formatting.None), "lobby");
         }
     }
 }

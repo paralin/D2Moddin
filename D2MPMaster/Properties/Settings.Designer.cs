@@ -37,18 +37,6 @@ namespace D2MPMaster.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("mongodb://localhost")]
-        public string MongoURL {
-            get {
-                return ((string)(this["MongoURL"]));
-            }
-            set {
-                this["MongoURL"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("d2moddin")]
         public string MongoDB {
             get {
@@ -130,6 +118,18 @@ namespace D2MPMaster.Properties {
             }
             set {
                 this["InfoPort"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("mongodb://10.0.1.2")]
+        public string MongoURL {
+            get {
+                return ((string)(this["MongoURL"]));
+            }
+            set {
+                this["MongoURL"] = value;
             }
         }
     }

@@ -2,53 +2,56 @@
 using System.Configuration;
 using System.IO;
 using System.Net;
-using System.Net.Mime;
-using System.Runtime.Remoting.Channels;
 using System.Threading;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Newtonsoft.Json.Serialization;
 using ServerCommon.Methods;
-using WebSocketSharp;
 using d2mpserver.Properties;
+using XSockets.Client40;
+using XSockets.Client40.Common.Event.Arguments;
 
 namespace d2mpserver
 {
     public class ServerConnection
     {
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
-        public WebSocket socket = null;
         public bool infoValid = true;
-        private bool shutdown = false;
-        private bool reconnecting = false;
         private ServerManager manager;
+        private XSocketClient client;
 
         public ServerConnection(ServerManager manager)
         {
             this.manager = manager;
-        }
-
-        void RegisterCallbacks()
-        {
-            socket.OnClose += (sender, args) =>
+            client = new XSocketClient(Settings.Default.serverIP, "*");
+            client.OnClose += (sender, args) => log.Debug("Disconnected from the server");
+            client.OnError += (sender, args) => log.Error("Socket error: " + args.data);
+            client.Bind("commands", e =>
             {
-                log.Debug("Disconnected from the server");
-                reconnecting = true;
-            };
-            socket.OnError += (sender, args) =>
-            {
-                log.Error("Socket error: " + args.Message);
-            };
-            socket.OnMessage += (sender, args) =>
-            {
-                log.Debug("Server message: " + args.Data);
-                ProcessMessage(args.Data);
-            };
-            socket.OnOpen += (sender, args) =>
+                log.Debug("Server message: " + e.data);
+                ProcessMessage(e.data);
+            });
+            client.OnOpen += (sender, args) =>
             {
                 log.Info("Connected to the server.");
                 SendInit();
             };
+            client.Open();
+        }
+
+        private string GetPublicIpAddress()
+        {
+            var request = (HttpWebRequest)WebRequest.Create("http://ifconfig.me");
+            request.UserAgent = "curl"; // this simulate curl linux command
+            string publicIPAddress;
+            request.Method = "GET";
+            using (WebResponse response = request.GetResponse())
+            {
+                using (var reader = new StreamReader(response.GetResponseStream()))
+                {
+                    publicIPAddress = reader.ReadToEnd();
+                }
+            }
+            return publicIPAddress.Replace("\n", "");
         }
 
         private void PerformAddonOps(object state)
@@ -111,8 +114,8 @@ namespace d2mpserver
                         string rconPass = command[5];
                         string[] commands = command[6].Split('&');
                         var serv = manager.LaunchServer(id, port, dev, mod, rconPass, commands);
-                        serv.OnReady += (sender, args) => socket.Send(JObject.FromObject(new OnServerLaunched() { id = id }).ToString(Formatting.None));
-                        serv.OnShutdown += (sender, args) => socket.Send(JObject.FromObject(new OnServerShutdown() {id = id}).ToString(Formatting.None));
+                        serv.OnReady += (sender, args) => Send(JObject.FromObject(new OnServerLaunched() { id = id }).ToString(Formatting.None));
+                        serv.OnShutdown += (sender, args) => Send(JObject.FromObject(new OnServerShutdown() {id = id}).ToString(Formatting.None));
                         break;
                     }
                 case "setMaxLobbies":
@@ -167,6 +170,11 @@ namespace d2mpserver
                     }
                     break;
             }
+        }
+
+        void Send(string message)
+        {
+            client.Send(new TextArgs(message, "data"));
         }
 
         private void InstallAddon(string addon)
@@ -251,75 +259,19 @@ namespace d2mpserver
                            name = Settings.Default.serverName,
                            portRangeStart = Settings.Default.portRangeStart,
                            portRangeEnd = Settings.Default.portRangeEnd,
-                           serverCount = Settings.Default.serverCount
+                           serverCount = Settings.Default.serverCount,
+                           publicIP = GetPublicIpAddress()
                        };
             var json = JObject.FromObject(data);
-            socket.Send(json.ToString(Formatting.None));
+            Send(json.ToString(Formatting.None));
         }
 
-        public bool Connect()
-        {
-            if (socket != null && socket.IsAlive)
-            {
-                log.Debug("Already connected.");
-                return true;
-            }
-            log.Debug("attempting connection to " + Settings.Default.serverIP);
-            socket = new WebSocket(Settings.Default.serverIP);
-            RegisterCallbacks();
-            try
-            {
-                socket.Connect();
-            }
-            catch (Exception ex)
-            {
-                log.Error("Problem connecting: " + ex);
-                return false;
-            }
-
-            return socket.IsAlive;
-        }
-
-        public void Disconnect()
-        {
-            if (socket == null || !socket.IsAlive)
-                return;
-
-            socket.Close();
-            socket = null;
-        }
 
         public void Shutdown()
         {
-            shutdown = true;
             log.Debug("Shutting down...");
-        }
-
-        public void StartServerThread()
-        {
-            ThreadPool.QueueUserWorkItem(ServerThread);
-        }
-
-        private void ServerThread(object state)
-        {
-            while (!shutdown)
-            {
-                if (reconnecting)
-                {
-                    log.Debug("Attempting reconnection...");
-                    if (!Connect())
-                    {
-                        log.Debug("... failed, will try again in 10 seconds ...");
-                        //manager.ShutdownAllServers();
-                        Thread.Sleep(9900);
-                    }
-                    else
-                    {
-                        reconnecting = false;
-                    }
-                }
-                Thread.Sleep(100);
-            }
+            if(client.IsConnected)
+                client.Close();
             manager.ShutdownAllServers();
         }
     }

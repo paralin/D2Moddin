@@ -5,9 +5,6 @@
     <Setting Name="URI" Type="System.String" Scope="User">
       <Value Profile="(Default)">ws://0.0.0.0:4000</Value>
     </Setting>
-    <Setting Name="MongoURL" Type="System.String" Scope="User">
-      <Value Profile="(Default)">mongodb://localhost</Value>
-    </Setting>
     <Setting Name="MongoDB" Type="System.String" Scope="User">
       <Value Profile="(Default)">d2moddin</Value>
     </Setting>
@@ -28,6 +25,9 @@
     </Setting>
     <Setting Name="InfoPort" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">4003</Value>
+    </Setting>
+    <Setting Name="MongoURL" Type="System.String" Scope="User">
+      <Value Profile="(Default)">mongodb://10.0.1.2</Value>
     </Setting>
   </Settings>
 </SettingsFile>

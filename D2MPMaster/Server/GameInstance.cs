@@ -5,7 +5,7 @@ namespace D2MPMaster.Server
 {
     public class GameInstance
     {
-        public ServerInstance Server;
+        public ServerController Server;
         public int ID;
         public string RconPass;
         public Lobby lobby;
