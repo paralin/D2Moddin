@@ -106,7 +106,8 @@ namespace D2MPMaster.Server
                         var msg = jdata.ToObject<OnServerShutdown>();
                         if (Instances.ContainsKey(msg.id))
                         {
-                            var instance = Instances[msg.id];
+                            GameInstance instance;
+                            Instances.TryRemove(msg.id, out instance);
                             LobbyManager.OnServerShutdown(instance);
                         }
                         break;
