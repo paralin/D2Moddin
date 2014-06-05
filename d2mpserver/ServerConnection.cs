@@ -35,6 +35,13 @@ namespace d2mpserver
                 log.Info("Connected to the server.");
                 SendInit();
             };
+            client.OnClose += (sender, args) =>
+            {
+                log.Info("Disconnected from the server.");
+                Thread.Sleep(500);
+                log.Info("Attempting reconnect...");
+                client.Open();
+            };
             client.Open();
         }
 

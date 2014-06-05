@@ -47,7 +47,8 @@ namespace D2MPMaster.Browser
             get { return _lobby; }
             set
             {
-                _lobby = value; if (value != null)
+                _lobby = value; 
+                if (value != null)
                 {
                     this.AsyncSendTo(m => m.user != null && m.user.Id == user.Id, ClearPublicLobbies(),
                         req => { });
@@ -55,6 +56,8 @@ namespace D2MPMaster.Browser
                 else
                 {
                     this.AsyncSendTo(m => m.user != null && m.user.Id == user.Id, PublicLobbySnapshot(),
+                        req => { });
+                    this.AsyncSendTo(m => m.user != null && m.user.Id == user.Id, ClearLobbyR(),
                         req => { });
                 }
             }
@@ -501,7 +504,7 @@ namespace D2MPMaster.Browser
         }
 
 
-        public static ITextArgs ClearLobby()
+        public static ITextArgs ClearLobbyR()
         {
             var upd = new JObject();
             upd["msg"] = "colupd";

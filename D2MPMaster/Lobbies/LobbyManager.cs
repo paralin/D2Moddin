@@ -239,8 +239,10 @@ namespace D2MPMaster.Lobbies
 
         public static void CloseLobby(Lobby lob)
         {
-            Browsers.AsyncSendTo(m=>m.user!=null&&m.lobby!=null&&m.lobby.id==lob.id, BrowserController.ClearLobby(),
-                req => { });
+            foreach (var browser in Browsers.Find(m => m.user != null && m.lobby != null && m.lobby.id == lob.id))
+            {
+                browser.lobby = null;
+            }
             PublicLobbies.Remove(lob);
             PlayingLobbies.Remove(lob);
         }
@@ -250,7 +252,6 @@ namespace D2MPMaster.Lobbies
             if (controller.lobby == null || controller.user == null) return;
             var lob = controller.lobby;
             controller.lobby = null;
-            controller.Send(BrowserController.ClearLobby());
             if (lob.status > LobbyStatus.Queue) return;
             //Find the player
             var team = RemoveFromTeam(lob, controller.user.services.steam.steamid);
