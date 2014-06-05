@@ -170,15 +170,16 @@ namespace D2MPMaster.Lobbies
             var upd = new JObject();
             upd["msg"] = "colupd";
             upd["ops"] = new JArray {lobby.Update("lobbies", fields)};
-            Browsers.SendTo(m=>m.lobby!=null&&m.lobby.id==lobby.id, new TextArgs(upd.ToString(Formatting.None), "lobby"));
-            if (lobby.isPublic)
+            Browsers.AsyncSendTo(m=>m.lobby!=null&&m.lobby.id==lobby.id, new TextArgs(upd.ToString(Formatting.None), "lobby"),
+                req => { });
+            if (PublicLobbies.Contains(lobby))
             {
                 var updates = new JArray {lobby.Update("lobby", fields)};
                 upd = new JObject();
                 upd["msg"] = "colupd";
                 upd["ops"] = updates;
                 var msg = upd.ToString(Formatting.None);
-                Browsers.AsyncSendTo(m => m.user != null && m.lobby == null, new TextArgs(msg, "lobby"), ar => { });
+                Browsers.AsyncSendTo(m => m.user != null, new TextArgs(msg, "lobby"), ar => { });
             }
         }
 
@@ -207,7 +208,8 @@ namespace D2MPMaster.Lobbies
 
         public static void CloseLobby(Lobby lob)
         {
-            Browsers.SendTo(m=>m.user!=null&&m.lobby!=null&&m.lobby.id==lob.id, BrowserController.ClearLobby());
+            Browsers.AsyncSendTo(m=>m.user!=null&&m.lobby!=null&&m.lobby.id==lob.id, BrowserController.ClearLobby(),
+                req => { });
             PublicLobbies.Remove(lob);
             PlayingLobbies.Remove(lob);
         }
@@ -245,11 +247,13 @@ namespace D2MPMaster.Lobbies
                 lobby.AddPlayer(lobby.radiant, Player.FromUser(user));
             }
             controller.lobby = lobby;
-            Browsers.SendTo(m=>m.user!=null&&m.user.Id==user.Id, BrowserController.LobbySnapshot(lobby));
+            Browsers.AsyncSendTo(m => m.user != null && m.user.Id == user.Id, BrowserController.LobbySnapshot(lobby),
+                req => { });
             TransmitLobbyUpdate(lobby, new []{"radiant", "dire"});
             var mod = Mods.Mods.ByID(lobby.mod);
             if (mod != null)
-                ClientsController.SendTo(m=>m.SteamID==controller.user.services.steam.steamid, ClientController.SetMod(mod));
+                ClientsController.AsyncSendTo(m=>m.SteamID==controller.user.services.steam.steamid, ClientController.SetMod(mod),
+                    req => { });
         }
 
         /// <summary>
@@ -309,7 +313,7 @@ namespace D2MPMaster.Lobbies
             string cmsg = name + ": " + msg;
             if (msg.Length == 0) return;
             if (msg.Length > 140) msg = msg.Substring(0, 140);
-            Browsers.SendTo(m=>m.lobby.id==lobby.id, BrowserController.ChatMessage(cmsg));
+            Browsers.AsyncSendTo(m=>m.lobby!=null&&m.lobby.id==lobby.id, BrowserController.ChatMessage(cmsg), req => { });
         }
 
         public static void BanFromLobby(Lobby lobby, string steam)
@@ -369,12 +373,14 @@ namespace D2MPMaster.Lobbies
             foreach (var plyr in lobby.radiant)
             {
                 if (plyr == null) continue;
-                ClientsController.SendTo(c=>c.SteamID!=null&&c.SteamID==plyr.steam, ClientController.LaunchDota());
+                ClientsController.AsyncSendTo(c=>c.SteamID!=null&&c.SteamID==plyr.steam, ClientController.LaunchDota(),
+                    req => { });
             }
             foreach (var plyr in lobby.dire)
             {
                 if (plyr == null) continue;
-                ClientsController.SendTo(c =>c.SteamID!=null&& c.SteamID == plyr.steam, ClientController.LaunchDota());
+                ClientsController.AsyncSendTo(c => c.SteamID != null && c.SteamID == plyr.steam, ClientController.LaunchDota(),
+                    req => { });
             }
         }
 
@@ -383,19 +389,22 @@ namespace D2MPMaster.Lobbies
             foreach (var plyr in lobby.radiant)
             {
                 if (plyr == null) continue;
-                ClientsController.SendTo(c => c.SteamID!=null&&c.SteamID == plyr.steam, ClientController.ConnectDota(lobby.serverIP));
+                ClientsController.AsyncSendTo(c => c.SteamID != null && c.SteamID == plyr.steam, ClientController.ConnectDota(lobby.serverIP),
+                    req => { });
             }
             foreach (var plyr in lobby.dire)
             {
                 if (plyr == null) continue;
-                ClientsController.SendTo(c => c.SteamID!=null&&c.SteamID == plyr.steam, ClientController.ConnectDota(lobby.serverIP));
+                ClientsController.AsyncSendTo(c => c.SteamID != null && c.SteamID == plyr.steam, ClientController.ConnectDota(lobby.serverIP),
+                    req => { });
             }
         }
 
         public static void LaunchAndConnect(Lobby lobby, string steamid)
         {
-            ClientsController.SendTo(m=>m.SteamID==steamid, ClientController.LaunchDota());
-            ClientsController.SendTo(m => m.SteamID == steamid, ClientController.ConnectDota(lobby.serverIP));
+            ClientsController.AsyncSendTo(m => m.SteamID == steamid, ClientController.LaunchDota(), req => { });
+            ClientsController.AsyncSendTo(m => m.SteamID == steamid, ClientController.ConnectDota(lobby.serverIP),
+                req => { });
         }
     }
 }
