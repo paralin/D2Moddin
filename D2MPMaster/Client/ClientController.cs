@@ -31,10 +31,6 @@ namespace D2MPMaster.Client
         public ClientController()
         {
             this.OnClose += DeregisterClient;
-            this.OnOpen += (sender, args) =>
-                           {
-                               log.Debug("Client connected.");
-                           };
         }
 
         void DeregisterClient(object se, OnClientDisconnectArgs e)
@@ -104,7 +100,7 @@ namespace D2MPMaster.Client
                     case OnInstalledMod.Msg:
                     {
                         var msg = jdata.ToObject<OnInstalledMod>();
-                        log.Debug("Client installed " + msg.Mod.name + ".");
+                        log.Debug(SteamID+" -> installed " + msg.Mod.name + ".");
                         Mods.Add(msg.Mod);
                         XSocketHelper.AsyncSendTo(Browser, x=>x.user!=null&&x.user.services.steam.steamid==SteamID, BrowserController.InstallResponse("The mod has been installed.", true),
                             rf => { });
@@ -113,11 +109,9 @@ namespace D2MPMaster.Client
                     case Init.Msg:
                     {
                         var msg = jdata.ToObject<Init>();
-                        log.Debug("Client init with version "+msg.Version);
                         InitData = msg;
                         if (msg.Version != Version.ClientVersion)
                         {
-                            log.Debug("Old version, sending shutdown message.");
                             XSocketHelper.SendJson(this, JObject.FromObject(new Shutdown()).ToString(Formatting.None), "commands");
                             return;
                         }
@@ -131,7 +125,7 @@ namespace D2MPMaster.Client
             }
             catch (Exception ex)
             {
-                log.Error("Parsing client message.", ex);
+                //log.Error("Parsing client message.", ex);
             }
         }
 
