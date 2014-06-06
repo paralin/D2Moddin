@@ -455,7 +455,8 @@ namespace D2MPMaster.Browser
                             }
                             if (clientControllers.FirstOrDefault().Mods.Any(m => m.name == mod.name && m.version == mod.version))
                             {
-                                this.SendTo(x => x.user != null && x.user.Id == user.Id, InstallResponse("The mod has already been installed.", true));
+                                this.AsyncSendTo(x => x.user != null && x.user.Id == user.Id, InstallResponse("The mod has already been installed.", true),
+                                    rf => { });
                                 return;
                             }
 

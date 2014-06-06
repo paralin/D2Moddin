@@ -54,8 +54,9 @@ namespace d2mp
         private static List<ClientCommon.Data.ClientMod> mods = new List<ClientCommon.Data.ClientMod>();
         private static volatile ProcessIcon icon;
         private static volatile bool isInstalling;
-        private static bool hasConnected = true;
+        private static bool hasConnected = false;
         private static XSocketClient client;
+        private static List<string> steamids;
 
         private static void SteamCommand(string command)
         {
@@ -82,6 +83,80 @@ namespace d2mp
                 p.Kill();
                 log.Debug("Killed Dota 2.");
             }
+        }
+
+        private static void SetupClient()
+        {
+            client = new XSocketClient(server, "*");
+
+            client.OnOpen += (sender, args) =>
+            {
+                icon.DisplayBubble(hasConnected
+                    ? "Reconnected!"
+                    : "Connected and ready to begin installing mods.");
+                hasConnected = true;
+
+                log.Debug("Sending init, version: " + ClientCommon.Version.ClientVersion);
+                var init = new Init
+                {
+                    SteamIDs = steamids.ToArray(),
+                    Version = ClientCommon.Version.ClientVersion,
+                    Mods = mods.ToArray()
+                };
+                var json = JObject.FromObject(init).ToString(Formatting.None);
+                Send(json);
+            };
+
+            client.Bind("commands", e =>
+            {
+                log.Debug("server: " + e.data);
+                JObject msg = JObject.Parse(e.data);
+                switch (msg["msg"].Value<string>())
+                {
+                    case Shutdown.Msg:
+                        log.Debug("Shutting down due to server request.");
+                        shutDown = true;
+                        return;
+                    case ClientCommon.Methods.Uninstall.Msg:
+                        log.Debug("Uninstalling due to server request...");
+                        Uninstall();
+                        shutDown = true;
+                        return;
+                    case ClientCommon.Methods.InstallMod.Msg:
+                        ThreadPool.QueueUserWorkItem(InstallMod, msg.ToObject<InstallMod>());
+                        break;
+                    case ClientCommon.Methods.DeleteMod.Msg:
+                        ThreadPool.QueueUserWorkItem(DeleteMod, msg.ToObject<DeleteMod>());
+                        break;
+                    case ClientCommon.Methods.SetMod.Msg:
+                        ThreadPool.QueueUserWorkItem(SetMod, msg.ToObject<SetMod>());
+                        break;
+                    case ClientCommon.Methods.ConnectDota.Msg:
+                        ThreadPool.QueueUserWorkItem(ConnectDota, msg.ToObject<ConnectDota>());
+                        break;
+                    case ClientCommon.Methods.LaunchDota.Msg:
+                        ThreadPool.QueueUserWorkItem(LaunchDota, msg.ToObject<LaunchDota>());
+                        break;
+                    case ClientCommon.Methods.ConnectDotaSpectate.Msg:
+                        ThreadPool.QueueUserWorkItem(SpectateGame,
+                            msg.ToObject<ConnectDotaSpectate>());
+                        break;
+                    default:
+                        log.Error("Command not recognized.");
+                        break;
+                }
+            });
+            client.OnClose += (sender, args) =>
+            {
+                if (hasConnected)
+                {
+                    icon.DisplayBubble("Disconnected, attempting to reconnect...");
+                    hasConnected = false;
+                }
+                SetupClient();
+                Thread.Sleep(5000);
+                client.Open();
+            };
         }
 
         //Pipe a zip download directly through the decompressor
@@ -206,7 +281,7 @@ namespace d2mp
                 string config = File.ReadAllText(Path.Combine(steamDir, @"config\config.vdf"));
                 MatchCollection matches = Regex.Matches(config, "\"\\d{17}\"");
                 string steamid;
-                var steamids = new List<string>();
+                steamids = new List<string>();
                 if (matches.Count > 0)
                 {
                     foreach (Match match in matches)
@@ -237,83 +312,9 @@ namespace d2mp
                 watcher.Deleted += (sender, args) => { shutDown = true; };
                 watcher.EnableRaisingEvents = true;
 
-                client = new XSocketClient(server, "*");
-                bool hasConnected = false;
-                client.OnOpen += (sender, args) =>
-                {
-                    icon.DisplayBubble(hasConnected
-                        ? "Reconnected!"
-                        : "Connected and ready to begin installing mods.");
-                    hasConnected = true;
-
-                    log.Debug("Sending init, version: " + ClientCommon.Version.ClientVersion);
-                    var init = new Init
-                    {
-                        SteamIDs = steamids.ToArray(),
-                        Version = ClientCommon.Version.ClientVersion,
-                        Mods = mods.ToArray()
-                    };
-                    var json = JObject.FromObject(init).ToString(Formatting.None);
-                    Send(json);
-                };
-
-                client.Bind("commands", e =>
-                {
-                    log.Debug("server: " + e.data);
-                    JObject msg = JObject.Parse(e.data);
-                    switch (msg["msg"].Value<string>())
-                    {
-                        case Shutdown.Msg:
-                            log.Debug("Shutting down due to server request.");
-                            shutDown = true;
-                            return;
-                        case ClientCommon.Methods.Uninstall.Msg:
-                            log.Debug("Uninstalling due to server request...");
-                            Uninstall();
-                            shutDown = true;
-                            return;
-                        case ClientCommon.Methods.InstallMod.Msg:
-                            ThreadPool.QueueUserWorkItem(InstallMod, msg.ToObject<InstallMod>());
-                            break;
-                        case ClientCommon.Methods.DeleteMod.Msg:
-                            ThreadPool.QueueUserWorkItem(DeleteMod, msg.ToObject<DeleteMod>());
-                            break;
-                        case ClientCommon.Methods.SetMod.Msg:
-                            ThreadPool.QueueUserWorkItem(SetMod, msg.ToObject<SetMod>());
-                            break;
-                        case ClientCommon.Methods.ConnectDota.Msg:
-                            ThreadPool.QueueUserWorkItem(ConnectDota, msg.ToObject<ConnectDota>());
-                            break;
-                        case ClientCommon.Methods.LaunchDota.Msg:
-                            ThreadPool.QueueUserWorkItem(LaunchDota, msg.ToObject<LaunchDota>());
-                            break;
-                        case ClientCommon.Methods.ConnectDotaSpectate.Msg:
-                            ThreadPool.QueueUserWorkItem(SpectateGame,
-                                msg.ToObject<ConnectDotaSpectate>());
-                            break;
-                        default:
-                            log.Error("Command not recognized.");
-                            break;
-                    }
-                });
-                client.OnClose += (sender, args) =>
-                                  {
-                                      if (hasConnected)
-                                      {
-                                          icon.DisplayBubble("Disconnected, attempting to reconnect...");
-                                          hasConnected = false;
-                                      }
-                                      try
-                                      {
-                                          client.Open();
-                                      }
-                                      catch (Exception ex)
-                                      {
-                                          icon.DisplayBubble("Can't connect to the lobby server!");
-                                      }
-                                  };
                 try
                 {
+                    SetupClient();
                     client.Open();
                 }
                 catch (Exception ex)
@@ -362,13 +363,22 @@ namespace d2mp
         {
             activeMod = GetActiveMod();
             var op = state as SetMod;
-            if (Equals(activeMod, op.Mod)) return;
-            if (Directory.Exists(modDir))
-                Directory.Delete(modDir, true);
-            log.Debug("Setting active mod to " + op.Mod.name + ".");
-            FileSystem.CopyDirectory(Path.Combine(d2mpDir, op.Mod.name), modDir);
-            File.WriteAllText(Path.Combine(modDir, "modname.txt"), JObject.FromObject(op.Mod).ToString(Formatting.Indented));
-            icon.DisplayBubble("Set active mod to " + op.Mod.name + "!");
+            if (activeMod != null && Equals(activeMod, op.Mod)) return;
+            try
+            {
+                if (Directory.Exists(modDir))
+                    Directory.Delete(modDir, true);
+                log.Debug("Setting active mod to " + op.Mod.name + ".");
+                FileSystem.CopyDirectory(Path.Combine(d2mpDir, op.Mod.name), modDir);
+                File.WriteAllText(Path.Combine(modDir, "modname.txt"),
+                    JObject.FromObject(op.Mod).ToString(Formatting.Indented));
+                icon.DisplayBubble("Set active mod to " + op.Mod.name + "!");
+            }
+            catch (Exception ex)
+            {
+                log.Error("Can't set mod "+op.Mod.name+".", ex);
+                icon.DisplayBubble("Unable to set active mod, try closing Dota first.");
+            }
         }
 
         private static void ModGameInfo()
