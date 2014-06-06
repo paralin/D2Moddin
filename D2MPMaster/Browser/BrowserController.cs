@@ -119,14 +119,19 @@ namespace D2MPMaster.Browser
                         }
                         if (tokenfound && usr.status.online)
                         {
-                            //log.Debug(string.Format("Authentication {0} -> {1} ", uid, key));
+                            if (usr.authItems != null && usr.authItems.Contains("banned"))
+                            {
+                                log.Debug(string.Format("User is banned {0}", usr.profile.name));
+                                RespondError(jdata, "You are banned from the lobby server.");
+                                this.SendJson("{\"msg\": \"auth\", \"status\": false}", "auth");
+                                return;
+                            }  
                             user = usr;
                             this.SendJson("{\"msg\": \"auth\", \"status\": true}", "auth");
                             this.Send(PublicLobbySnapshot());
                         }
                         else
-                        {
-                            //log.Debug(string.Format("Authentication failed, {0} token {1}", uid, key));
+                        {                            
                             user = null;
                             this.SendJson("{\"msg\": \"auth\", \"status\": false}", "auth");
                         }
