@@ -15,11 +15,12 @@ namespace D2MPMaster
             //Params
             ServerRegion region = lobby.region;
             ServerController server = null;
+            var available = Servers.Find(m => m.Inited && m.Instances.Count < m.InitData.serverCount).OrderBy(m=>m.Instances.Count);
             if (region == ServerRegion.UNKNOWN)
             {
-                return Servers.Find(m=>m.Inited&&m.Instances.Count < m.InitData.serverCount).FirstOrDefault();
+                return available.FirstOrDefault();
             }
-            return Servers.Find(m => m.Inited&&m.Instances.Count < m.InitData.serverCount && (int)m.InitData.region == (int)region).FirstOrDefault();
+            return available.FirstOrDefault(m=>(int)m.InitData.region == (int)region);
         }
     }
 }
