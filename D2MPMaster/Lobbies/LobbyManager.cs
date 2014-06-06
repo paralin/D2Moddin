@@ -5,6 +5,7 @@ using System.Collections.Specialized;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Threading.Tasks;
 using D2MPMaster.Browser;
 using D2MPMaster.Client;
 using D2MPMaster.LiveData;
@@ -295,6 +296,7 @@ namespace D2MPMaster.Lobbies
             if (mod != null)
                 ClientsController.AsyncSendTo(m=>m.SteamID==controller.user.services.steam.steamid, ClientController.SetMod(mod),
                     req => { });
+            ClientsController.AsyncSendTo(m => m.SteamID == user.services.steam.steamid, ClientController.LaunchDota(), req => { });
         }
 
         /// <summary>
@@ -345,6 +347,7 @@ namespace D2MPMaster.Lobbies
                 req => { });
             ClientsController.AsyncSendTo(m => m.SteamID == user.services.steam.steamid, ClientController.SetMod(mod),
                 req => { });
+            ClientsController.AsyncSendTo(m => m.SteamID == user.services.steam.steamid, ClientController.LaunchDota(), req => { });
 			log.InfoFormat("Lobby created, User: #{0}, Name: #{1}", user.profile.name, name);
             return lob;
         }
@@ -443,8 +446,13 @@ namespace D2MPMaster.Lobbies
         public static void LaunchAndConnect(Lobby lobby, string steamid)
         {
             ClientsController.AsyncSendTo(m => m.SteamID == steamid, ClientController.LaunchDota(), req => { });
-            ClientsController.AsyncSendTo(m => m.SteamID == steamid, ClientController.ConnectDota(lobby.serverIP),
-                req => { });
+            var task = new Task(() =>
+            {
+                Thread.Sleep(3000);
+                ClientsController.AsyncSendTo(m => m.SteamID == steamid, ClientController.ConnectDota(lobby.serverIP), req => { });
+            });
+            task.Start();
+
         }
     }
 }
