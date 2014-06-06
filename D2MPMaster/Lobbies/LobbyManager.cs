@@ -49,6 +49,7 @@ namespace D2MPMaster.Lobbies
 
         public static Queue<JObject> PublicLobbyUpdateQueue = new Queue<JObject>();
         public static Thread LobbyUpdateThread;
+        public static Thread CalculateQueueThread;
 
         public static volatile bool shutdown = false;
 
@@ -58,6 +59,8 @@ namespace D2MPMaster.Lobbies
             {
                 LobbyUpdateThread = new Thread(LobbyUpdateProc);
                 LobbyUpdateThread.Start();
+                CalculateQueueThread = new Thread(CalculateQueueT);
+                CalculateQueueThread.Start();
                 PublicLobbies.CollectionChanged += TransmitLobbiesChange;
                 Registered = true;
             }
@@ -121,6 +124,15 @@ namespace D2MPMaster.Lobbies
             }
         }
 
+        public void CalculateQueueT()
+        {
+            while (!shutdown)
+            {
+                Thread.Sleep(500);
+                CalculateQueue();
+            }
+        }
+
         /// <summary>
         /// See if a user is already in a lobby.
         /// </summary>
@@ -165,13 +177,11 @@ namespace D2MPMaster.Lobbies
                 lobby.status = LobbyStatus.Start;
                 PublicLobbies.Add(lobby);
                 TransmitLobbyUpdate(lobby, new []{"status"});
-                CalculateQueue();
             }
         }
 
-        public static void CalculateQueue()
+        private static void CalculateQueue()
         {
-
             foreach (var lobby in LobbyQueue.ToArray())
             {
                 var server = ServerManager.FindForLobby(lobby);
@@ -196,7 +206,6 @@ namespace D2MPMaster.Lobbies
                 PublicLobbies.Remove(lobby);
                 TransmitLobbyUpdate(lobby, new[]{"status"});
                 SendLaunchDota(lobby);
-                CalculateQueue();
             }
         }
 
@@ -383,7 +392,6 @@ namespace D2MPMaster.Lobbies
             {
 				log.Info("Lobby finished "+instance.lobby.id);
                 CloseLobby(instance.lobby);
-                CalculateQueue();
             }
         }
 

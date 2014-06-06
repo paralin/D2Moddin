@@ -459,7 +459,8 @@ namespace D2MPMaster.Browser
                                 return;
                             }
 
-                            ClientsController.SendTo(m => m.UID == user.Id, ClientController.InstallMod(mod));
+                            ClientsController.AsyncSendTo(m => m.UID == user.Id, ClientController.InstallMod(mod),
+                                rf => { });
                             break;
                         }
                     case "connectgame":
