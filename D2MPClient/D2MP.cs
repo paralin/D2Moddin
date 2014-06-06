@@ -248,9 +248,8 @@ namespace d2mp
                 {
                     string[] dirs = Directory.GetDirectories(d2mpDir);
                     int i = 0;
-                    foreach (string dir in dirs)
+                    foreach (string modName in dirs.Select(Path.GetFileName))
                     {
-                        string modName = Path.GetFileName(dir);
                         log.Debug("Found mod: " + modName + " detecting version...");
                         string infoPath = Path.Combine(d2mpDir, modName + "/addoninfo.txt");
                         string versionFile = "";

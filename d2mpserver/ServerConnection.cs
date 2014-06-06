@@ -22,6 +22,12 @@ namespace d2mpserver
         public ServerConnection(ServerManager manager)
         {
             this.manager = manager;
+            SetupClient();
+            client.Open();
+        }
+
+        private void SetupClient()
+        {
             client = new XSocketClient(Settings.Default.serverIP, "*");
             client.OnClose += (sender, args) => log.Debug("Disconnected from the server");
             client.OnError += (sender, args) => log.Error("Socket error: " + args.data);
@@ -38,11 +44,11 @@ namespace d2mpserver
             client.OnClose += (sender, args) =>
             {
                 log.Info("Disconnected from the server.");
-                Thread.Sleep(500);
+                SetupClient();
+                Thread.Sleep(5000);
                 log.Info("Attempting reconnect...");
                 client.Open();
             };
-            client.Open();
         }
 
         private string GetPublicIpAddress()
