@@ -27,7 +27,7 @@
       <Value Profile="(Default)">4003</Value>
     </Setting>
     <Setting Name="MongoURL" Type="System.String" Scope="User">
-      <Value Profile="(Default)">mongodb://localhost</Value>
+      <Value Profile="(Default)">mongodb://website:mCBXZyUt9jsxZxtEKZ9f@capital.0.mongolayer.com:10048/d2moddin</Value>
     </Setting>
   </Settings>
 </SettingsFile>
