@@ -50,6 +50,8 @@ namespace D2MPMaster
                 shutdown = true;
             };
 
+            var settings = new List<ConfigurationSetting>();
+            settings.Add(new ConfigurationSetting());
             using (var server = Composable.GetExport<IXSocketServerContainer>())
             {
                 server.StartServers(useLoopback:false);

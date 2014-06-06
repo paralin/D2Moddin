@@ -9,10 +9,10 @@
       <Value Profile="(Default)">d2moddin</Value>
     </Setting>
     <Setting Name="AWSKey" Type="System.String" Scope="User">
-      <Value Profile="(Default)">AKIAJETYC7KSUXEAMT3Q</Value>
+      <Value Profile="(Default)">AKIAIDO3KQPVQMEEFIUA</Value>
     </Setting>
     <Setting Name="AWSSecret" Type="System.String" Scope="User">
-      <Value Profile="(Default)">gA+RbVdsM9rG/ZQ4NUEBOei5KA+afmUrEwaxNpQG</Value>
+      <Value Profile="(Default)">fjawqe3XkLZlm2LGd+acPDsERgmxZA9yDaD5mgsR</Value>
     </Setting>
     <Setting Name="Bucket" Type="System.String" Scope="User">
       <Value Profile="(Default)">d2mpclient</Value>
