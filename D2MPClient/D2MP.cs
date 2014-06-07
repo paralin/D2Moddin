@@ -92,9 +92,10 @@ namespace d2mp
 
             client.OnOpen += (sender, args) =>
             {
-                icon.DisplayBubble(hasConnected
-                    ? "Reconnected!"
-                    : "Connected and ready to begin installing mods.");
+                notifier.Notify(1, hasConnected ? "Reconnected" : "Connected", hasConnected ? "Connection to the server has been reestablished" : "Client has been connected to the server.");
+                //icon.DisplayBubble(hasConnected
+                //    ? "Reconnected!"
+                //    : "Connected and ready to begin installing mods.");
                 hasConnected = true;
 
                 log.Debug("Sending init, version: " + ClientCommon.Version.ClientVersion);
@@ -457,11 +458,13 @@ namespace d2mp
             var op = state as InstallMod; 
             if (isInstalling)
             {
-                icon.DisplayBubble("Already downloading a mod!");
+                notifier.Notify(3, "Already downloading a mod", "Please try again after a few seconds.");
+                //icon.DisplayBubble("Already downloading a mod!");
                 return;
             }
             isInstalling = true;
-            icon.DisplayBubble("Attempting to download "+op.Mod.name+"...");
+            notifier.Notify(2, "Downloading mod", "Attempting to download " + op.Mod.name + "...");
+            //icon.DisplayBubble("Attempting to download "+op.Mod.name+"...");
 
             log.Info("Server requested that we install mod " + op.Mod.name + " from download " + op.url);
 
@@ -482,11 +485,13 @@ namespace d2mp
             catch (Exception ex)
             {
                 isInstalling = false;
-                icon.DisplayBubble("Failed to download mod " + op.Mod.name + ".");
+                notifier.Notify(4, "Error downloading mod", "Failed to download mod " + op.Mod.name + ".");
+                //icon.DisplayBubble("Failed to download mod " + op.Mod.name + ".");
                 return;
             }
             log.Info("Mod installed!");
-            icon.DisplayBubble("Mod downloaded successfully: " + op.Mod.name + ".");
+            notifier.Notify(1, "Mod installed", "The following mod has been installed successfully: " + op.Mod.name);
+            //icon.DisplayBubble("Mod downloaded successfully: " + op.Mod.name + ".");
             var msg = new OnInstalledMod()
                                  {
                                      Mod = op.Mod
