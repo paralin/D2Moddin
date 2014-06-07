@@ -213,7 +213,7 @@ namespace d2mp
             var notifyThread = new Thread(delegate() {
                 using (notifier = new Notification_Form())
                 {
-                    notifier.Notify(2, "Starting up", "Please wait while the client is connecting...");
+                    notifier.Visible = true;
                     Application.Run();
                 }
             });

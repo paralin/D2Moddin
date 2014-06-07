@@ -46,33 +46,39 @@ namespace d2mp
         /// <param name="message">Message displayed on notification window</param>
         public void Notify(int type, string title, string message)
         {
-            switch (type)
+            
+            if (this.InvokeRequired)
             {
-                case 1:
-                    BackColor = successBg;
-                    icon.Image = successIcon;
-                    break;
-                case 2:
-                    BackColor = infoBg;
-                    icon.Image = infoIcon;
-                    break;
-                case 3:
-                    BackColor = warningBg;
-                    icon.Image = warningIcon;
-                    break;
-                case 4:
-                    BackColor = errorBg;
-                    icon.Image = errorIcon;
-                    break;
-                default:
-                    BackColor = successBg;
-                    break;
+                this.Invoke(new MethodInvoker(delegate
+                {
+                    switch (type)
+                    {
+                        case 1:
+                            BackColor = successBg;
+                            icon.Image = successIcon;
+                            break;
+                        case 2:
+                            BackColor = infoBg;
+                            icon.Image = infoIcon;
+                            break;
+                        case 3:
+                            BackColor = warningBg;
+                            icon.Image = warningIcon;
+                            break;
+                        case 4:
+                            BackColor = errorBg;
+                            icon.Image = errorIcon;
+                            break;
+                        default:
+                            BackColor = successBg;
+                            break;
+                    }
+                    lblTitle.Text = title;
+                    lblMsg.Text = message;
+
+                }));
             }
-            lblTitle.Text = title;
-            lblMsg.Text = message;
-            Location = new Point(Screen.PrimaryScreen.WorkingArea.Width - Width - 10,
-                                   Screen.PrimaryScreen.WorkingArea.Height - Height - 10);
-            Visible = true;
+            Fade(1);
             hideTimer.Enabled = true;
         }
         public void Fade(double opacity)
@@ -95,6 +101,7 @@ namespace d2mp
         private void Notification_Form_Load(object sender, EventArgs e)
         {
            SetWindowPos(this.Handle, HWND_TOPMOST, 0, 0, 0, 0, TOPMOST_FLAGS);
+           Location = new Point(Screen.PrimaryScreen.WorkingArea.Width - Width - 10, Screen.PrimaryScreen.WorkingArea.Height - Height - 10);
         }
 
     }

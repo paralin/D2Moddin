@@ -43,13 +43,13 @@
             this.lblTitle.ForeColor = System.Drawing.Color.White;
             this.lblTitle.Location = new System.Drawing.Point(44, 11);
             this.lblTitle.Name = "lblTitle";
-            this.lblTitle.Size = new System.Drawing.Size(157, 30);
+            this.lblTitle.Size = new System.Drawing.Size(109, 30);
             this.lblTitle.TabIndex = 0;
-            this.lblTitle.Text = "Placeholder Title";
+            this.lblTitle.Text = "Starting up";
             // 
             // icon
             // 
-            this.icon.Image = global::d2mp.Properties.Resources.icon_success;
+            this.icon.Image = global::d2mp.Properties.Resources.icon_info;
             this.icon.Location = new System.Drawing.Point(12, 15);
             this.icon.Name = "icon";
             this.icon.Size = new System.Drawing.Size(26, 26);
@@ -64,7 +64,7 @@
             this.lblMsg.Name = "lblMsg";
             this.lblMsg.Size = new System.Drawing.Size(341, 45);
             this.lblMsg.TabIndex = 2;
-            this.lblMsg.Text = "Placeholder Message";
+            this.lblMsg.Text = "Please wait while the client is connecting...";
             // 
             // hideTimer
             // 
@@ -74,7 +74,7 @@
             // Notification_Form
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
-            this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(67)))), ((int)(((byte)(172)))), ((int)(((byte)(106)))));
+            this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(91)))), ((int)(((byte)(192)))), ((int)(((byte)(222)))));
             this.ClientSize = new System.Drawing.Size(361, 87);
             this.ControlBox = false;
             this.Controls.Add(this.lblMsg);
