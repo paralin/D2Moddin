@@ -68,6 +68,7 @@
             // 
             // hideTimer
             // 
+            this.hideTimer.Enabled = true;
             this.hideTimer.Interval = 5000;
             this.hideTimer.Tick += new System.EventHandler(this.hideTimer_Tick);
             // 
