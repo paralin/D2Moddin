@@ -53,6 +53,7 @@ namespace d2mp
         public static string ourDir;
         private static List<ClientCommon.Data.ClientMod> mods = new List<ClientCommon.Data.ClientMod>();
         private static volatile ProcessIcon icon;
+        private static volatile Notification_Form notifier;
         private static volatile bool isInstalling;
         private static bool hasConnected = false;
         private static XSocketClient client;
@@ -150,7 +151,8 @@ namespace d2mp
             {
                 if (hasConnected)
                 {
-                    icon.DisplayBubble("Disconnected, attempting to reconnect...");
+                    notifier.Notify(3, "Lost connection", "Attempting to reconnect...");
+                    //icon.DisplayBubble("Disconnected, attempting to reconnect...");
                     hasConnected = false;
                 }
                 SetupClient();
@@ -207,7 +209,15 @@ namespace d2mp
         public static void main()
         {
             log.Debug("D2MP starting...");
-
+            var notifyThread = new Thread(delegate() {
+                using (notifier = new Notification_Form())
+                {
+                    notifier.Notify(2, "Starting up", "Please wait while the client is connecting...");
+                    Application.Run();
+                }
+            });
+            notifyThread.SetApartmentState(ApartmentState.STA);
+            notifyThread.Start();
             ourDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             File.WriteAllText(Path.Combine(ourDir, "version.txt"), ClientCommon.Version.ClientVersion);
             var iconThread = new Thread(delegate()
@@ -215,6 +225,7 @@ namespace d2mp
                                             using (icon = new ProcessIcon())
                                             {
                                                 icon.Display();
+                                                icon.showNotification = delegate { notifier.Invoke(new MethodInvoker(delegate { notifier.Fade(1); notifier.hideTimer.Enabled = true; })); };                        
                                                 Application.Run();
                                             }
                                         });
@@ -318,7 +329,8 @@ namespace d2mp
                 }
                 catch (Exception ex)
                 {
-                    icon.DisplayBubble("Can't connect to the lobby server!");
+                    notifier.Notify(4, "Server error", "Can't connect to the lobby server!");
+                    //icon.DisplayBubble("Can't connect to the lobby server!");
                 }
                 while (!shutDown)
                 {
@@ -371,12 +383,14 @@ namespace d2mp
                 FileSystem.CopyDirectory(Path.Combine(d2mpDir, op.Mod.name), modDir);
                 File.WriteAllText(Path.Combine(modDir, "modname.txt"),
                     JObject.FromObject(op.Mod).ToString(Formatting.Indented));
-                icon.DisplayBubble("Set active mod to " + op.Mod.name + "!");
+                notifier.Notify(1, "Active mod", "The current active mod has been set to " + op.Mod.name + ".");
+                //icon.DisplayBubble("Set active mod to " + op.Mod.name + "!");
             }
             catch (Exception ex)
             {
                 log.Error("Can't set mod "+op.Mod.name+".", ex);
-                icon.DisplayBubble("Unable to set active mod, try closing Dota first.");
+                notifier.Notify(4, "Active mod", "Unable to set active mod, try closing Dota first.");
+                //icon.DisplayBubble("Unable to set active mod, try closing Dota first.");
             }
         }
 
@@ -396,7 +410,8 @@ namespace d2mp
                     log.Debug("Patched file to add d2moddin search path.");
                     if (Dota2Running())
                     {
-                        icon.DisplayBubble("Restarting Dota 2 for you...");
+                        notifier.Notify(2, "Added mod", "Restarting Dota 2 to apply changes...");
+                        //icon.DisplayBubble("Restarting Dota 2 for you...");
                         KillDota2();
                         LaunchDota2();
                     }

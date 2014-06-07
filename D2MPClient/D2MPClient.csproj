@@ -101,9 +101,18 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="D2MP.cs" />
+    <Compile Include="Notification_Form.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Notification_Form.Designer.cs">
+      <DependentUpon>Notification_Form.cs</DependentUpon>
+    </Compile>
     <Compile Include="ProcessIcon.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <EmbeddedResource Include="Notification_Form.resx">
+      <DependentUpon>Notification_Form.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
@@ -158,6 +167,18 @@
       <Project>{dcf78698-62e1-461f-86ae-69a4e8dc5d16}</Project>
       <Name>ClientCommon</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\icon_success.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\icon_info.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\icon_error.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\icon_warning.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
