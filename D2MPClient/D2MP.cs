@@ -226,7 +226,7 @@ namespace d2mp
                                             using (icon = new ProcessIcon())
                                             {
                                                 icon.Display();
-                                                icon.showNotification = delegate { notifier.Invoke(new MethodInvoker(delegate { notifier.Fade(1); notifier.hideTimer.Enabled = true; })); };                        
+                                                icon.showNotification = delegate { notifier.Invoke(new MethodInvoker(delegate { notifier.Fade(1); notifier.hideTimer.Start(); })); };                        
                                                 Application.Run();
                                             }
                                         });

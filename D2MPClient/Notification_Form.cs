@@ -32,7 +32,7 @@ namespace d2mp
         [DllImport("user32.dll")]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
- 
+
         public Notification_Form()
         {
             InitializeComponent();
@@ -46,40 +46,37 @@ namespace d2mp
         /// <param name="message">Message displayed on notification window</param>
         public void Notify(int type, string title, string message)
         {
-            
-            if (this.InvokeRequired)
+            this.InvokeIfRequired(() =>
             {
-                this.Invoke(new MethodInvoker(delegate
+                switch (type)
                 {
-                    switch (type)
-                    {
-                        case 1:
-                            BackColor = successBg;
-                            icon.Image = successIcon;
-                            break;
-                        case 2:
-                            BackColor = infoBg;
-                            icon.Image = infoIcon;
-                            break;
-                        case 3:
-                            BackColor = warningBg;
-                            icon.Image = warningIcon;
-                            break;
-                        case 4:
-                            BackColor = errorBg;
-                            icon.Image = errorIcon;
-                            break;
-                        default:
-                            BackColor = successBg;
-                            break;
-                    }
-                    lblTitle.Text = title;
-                    lblMsg.Text = message;
-
-                }));
-            }
-            Fade(1);
-            hideTimer.Enabled = true;
+                    case 1:
+                        BackColor = successBg;
+                        icon.Image = successIcon;
+                        break;
+                    case 2:
+                        BackColor = infoBg;
+                        icon.Image = infoIcon;
+                        break;
+                    case 3:
+                        BackColor = warningBg;
+                        icon.Image = warningIcon;
+                        break;
+                    case 4:
+                        BackColor = errorBg;
+                        icon.Image = errorIcon;
+                        break;
+                    default:
+                        BackColor = successBg;
+                        break;
+                }
+                lblTitle.Text = title;
+                lblMsg.Text = message;
+                this.Opacity = 1;
+                // Resets the timer -- Looks damn stupid
+                hideTimer.Stop();
+                hideTimer.Start();
+            });
         }
         public void Fade(double opacity)
         {
@@ -94,17 +91,41 @@ namespace d2mp
 
         private void hideTimer_Tick(object sender, EventArgs e)
         {
-            Fade(0);
-            hideTimer.Enabled = false;
+            this.InvokeIfRequired(() =>
+            {
+                Fade(0);
+            });
+            hideTimer.Stop();
         }
 
         private void Notification_Form_Load(object sender, EventArgs e)
         {
-           SetWindowPos(this.Handle, HWND_TOPMOST, 0, 0, 0, 0, TOPMOST_FLAGS);
-           Location = new Point(Screen.PrimaryScreen.WorkingArea.Width - Width - 10, Screen.PrimaryScreen.WorkingArea.Height - Height - 10);
+            SetWindowPos(this.Handle, HWND_TOPMOST, 0, 0, 0, 0, TOPMOST_FLAGS);
+            Location = new Point(Screen.PrimaryScreen.WorkingArea.Width - Width - 10, Screen.PrimaryScreen.WorkingArea.Height - Height - 10);
+            this.MaximumSize = this.Size;
+            this.MinimumSize = this.Size;
+            hideTimer.Start();
         }
-
     }
-
 }
 
+public static class ControlExtensions
+{
+    public static void InvokeIfRequired(this Control control, Action action)
+    {
+        if (control.InvokeRequired)
+        {
+            control.Invoke(action);
+            return;
+        }
+        action();
+    }
+    public static TResult InvokeIfRequired<TResult>(this Control control, Func<TResult> func)
+    {
+        if (control.InvokeRequired)
+        {
+            return (TResult)control.Invoke(func);
+        }
+        return func();
+    }
+}

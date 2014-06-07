@@ -68,7 +68,6 @@
             // 
             // hideTimer
             // 
-            this.hideTimer.Enabled = true;
             this.hideTimer.Interval = 5000;
             this.hideTimer.Tick += new System.EventHandler(this.hideTimer_Tick);
             // 
@@ -76,7 +75,7 @@
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(91)))), ((int)(((byte)(192)))), ((int)(((byte)(222)))));
-            this.ClientSize = new System.Drawing.Size(361, 87);
+            this.ClientSize = new System.Drawing.Size(361, 104);
             this.ControlBox = false;
             this.Controls.Add(this.lblMsg);
             this.Controls.Add(this.icon);
