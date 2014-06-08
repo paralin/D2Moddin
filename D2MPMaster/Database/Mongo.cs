@@ -14,7 +14,6 @@ namespace D2MPMaster.Database
 
         public static MongoCollection Users;
         public static MongoCollection Mods;
-        public static MongoCollection Clients;
 
         public static void Setup()
         {
@@ -29,8 +28,6 @@ namespace D2MPMaster.Database
             Database = Server.GetDatabase(Settings.Default.MongoDB);
             Users = Database.GetCollection("users");
             Mods = Database.GetCollection("mods");
-            Clients = Database.GetCollection("clientRecords");
-            Clients.RemoveAll();
         }
     }
 }

@@ -12,6 +12,7 @@ using Newtonsoft.Json.Linq;
 using XSockets.Core.Common.Socket.Event.Arguments;
 using XSockets.Core.Common.Socket.Event.Interface;
 using XSockets.Core.XSocket;
+using XSockets.Core.XSocket.Helpers;
 using Query = MongoDB.Driver.Builders.Query;
 using Version = ClientCommon.Version;
 using XSocketHelper = XSockets.Core.XSocket.Helpers.XSocketHelper;
@@ -36,12 +37,10 @@ namespace D2MPMaster.Client
         void DeregisterClient(object se, OnClientDisconnectArgs e)
         {
             if (UID == null) return;
-            try
+            var browsers = Browser.Find(m => m.user != null && m.user.Id == UID);
+            foreach (var browser in browsers)
             {
-                Mongo.Clients.Remove(Query.EQ("_id", UID));
-            }
-            catch (Exception ex)
-            {
+                browser.SendManagerStatus(false);
             }
         }
 
@@ -59,14 +58,11 @@ namespace D2MPMaster.Client
             if (user == null) return;
             UID = user.Id;
 
-            var exist = Mongo.Clients.FindOneAs<ClientRecord>(Query.EQ("_id", UID));
-            if (exist == null)
+            //Find if the user is online
+            var browsers = Browser.Find(e => e.user != null && e.user.Id == UID);
+            foreach (var browser in browsers)
             {
-                Mongo.Clients.Insert(new ClientRecord()
-                {
-                    Id = UID,
-                    status = 0
-                });
+                browser.SendManagerStatus(true);
             }
         }
 

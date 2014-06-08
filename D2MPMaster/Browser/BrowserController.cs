@@ -506,6 +506,19 @@ namespace D2MPMaster.Browser
             this.SendJson(msg, "lobby");
         }
 
+        /// <summary>
+        /// Detect manager status and send it out w/o active reference.
+        /// </summary>
+        public void SendManagerStatus()
+        {
+            SendManagerStatus(user != null && ClientsController.Find(m => m.Inited && m.SteamID == user.services.steam.steamid).Any());
+        }
+
+        public void SendManagerStatus(bool isConnected)
+        {
+            this.Send(ManagerStatus(isConnected));
+        }
+
         public void OnClosed(object sender, OnClientDisconnectArgs e)
         {
             if (user == null) return;
@@ -515,7 +528,6 @@ namespace D2MPMaster.Browser
             }
         }
 
-
         public static ITextArgs ClearLobbyR()
         {
             var upd = new JObject();
@@ -523,6 +535,15 @@ namespace D2MPMaster.Browser
             upd["ops"] = new JArray { DiffGenerator.RemoveAll("lobbies") };
             var msg = upd.ToString(Formatting.None);
             return new TextArgs(msg, "lobby");
+        }
+
+        public static ITextArgs ManagerStatus(bool isConnected)
+        {
+            var upd = new JObject();
+            upd["msg"] = "status";
+            upd["status"] = isConnected;
+            var msg = upd.ToString(Formatting.None);
+            return new TextArgs(msg, "manager");
         }
 
         public static ITextArgs LobbySnapshot(Lobby lobby1)
