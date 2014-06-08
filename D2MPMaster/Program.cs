@@ -5,6 +5,7 @@ using D2MPMaster.Database;
 using D2MPMaster.Lobbies;
 using D2MPMaster.Server;
 using D2MPMaster.Storage;
+using D2MPMaster.Webserver;
 using log4net.Config;
 using MongoDB.Driver.Linq;
 using XSockets.Core.Common.Configuration;
@@ -43,6 +44,10 @@ namespace D2MPMaster
             log.Info("Initializing Amazon S3...");
             S3 = new S3Manager();
 
+            log.Info("Initializing web server...");
+            WebServer wserver = new WebServer();
+            wserver.Start();
+
             log.Info("Initializing xsockets...");
 
             Console.CancelKeyPress += delegate
@@ -64,6 +69,7 @@ namespace D2MPMaster
             }
 
             log.Info("Done, shutting down...");
+            wserver.Stop();
         }
     }
 }

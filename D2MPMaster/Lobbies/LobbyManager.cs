@@ -176,7 +176,8 @@ namespace D2MPMaster.Lobbies
             {
                 LobbyQueue.Remove(lobby);
                 lobby.status = LobbyStatus.Start;
-                PublicLobbies.Add(lobby);
+                if(lobby.isPublic)
+                    PublicLobbies.Add(lobby);
                 TransmitLobbyUpdate(lobby, new []{"status"});
             }
         }
@@ -207,6 +208,26 @@ namespace D2MPMaster.Lobbies
                 PublicLobbies.Remove(lobby);
                 TransmitLobbyUpdate(lobby, new[]{"status"});
                 SendLaunchDota(lobby);
+            }
+        }
+
+        public static void SetPassword(Lobby lobby, string password)
+        {
+            if (password == null) password = "";
+
+            if (password == "")
+            {
+                lobby.hasPassword = false;
+                lobby.isPublic = true;
+                lobby.password = "";
+                if (!PublicLobbies.Contains(lobby)) PublicLobbies.Add(lobby);
+            }
+            else
+            {
+                lobby.hasPassword = true;
+                lobby.isPublic = false;
+                lobby.password = password;
+                if (PublicLobbies.Contains(lobby)) PublicLobbies.Remove(lobby);
             }
         }
 
