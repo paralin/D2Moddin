@@ -110,6 +110,7 @@ namespace d2mp
             item.Click += new EventHandler(Restart_Click);
             menu.Items.Add(item);
 
+            // Uninstall.
             item = new ToolStripMenuItem();
             item.Text = "Uninstall";
             item.Click += new EventHandler(Uninstall_Click);
@@ -119,6 +120,12 @@ namespace d2mp
             item = new ToolStripMenuItem();
             item.Text = "Show Mod List";
             item.Click += new EventHandler(ModList_Click);
+            menu.Items.Add(item);
+
+            // Preferences
+            item = new ToolStripMenuItem();
+            item.Text = "Preferences";
+            item.Click += new EventHandler(Preferences_Click);
             menu.Items.Add(item);
 
             // Separator.
@@ -133,6 +140,11 @@ namespace d2mp
             menu.Items.Add(item);
 
             return menu;
+        }
+
+        private void Preferences_Click(object sender, EventArgs e)
+        {
+            D2MP.showPreferences();
         }
 
         private void Uninstall_Click(object sender, EventArgs e)

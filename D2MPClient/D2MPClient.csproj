@@ -101,17 +101,24 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="D2MP.cs" />
-    <Compile Include="Notification_Form.cs">
+    <Compile Include="notificationForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Notification_Form.Designer.cs">
-      <DependentUpon>Notification_Form.cs</DependentUpon>
+    <Compile Include="notificationForm.Designer.cs">
+      <DependentUpon>notificationForm.cs</DependentUpon>
     </Compile>
     <Compile Include="ProcessIcon.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <EmbeddedResource Include="Notification_Form.resx">
-      <DependentUpon>Notification_Form.cs</DependentUpon>
+    <Compile Include="Settings.cs" />
+    <Compile Include="settingsForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="settingsForm.Designer.cs">
+      <DependentUpon>settingsForm.cs</DependentUpon>
+    </Compile>
+    <EmbeddedResource Include="notificationForm.resx">
+      <DependentUpon>notificationForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
@@ -123,6 +130,9 @@
       <DependentUpon>Resources.resx</DependentUpon>
       <DesignTime>True</DesignTime>
     </Compile>
+    <EmbeddedResource Include="settingsForm.resx">
+      <DependentUpon>settingsForm.cs</DependentUpon>
+    </EmbeddedResource>
     <None Include="packages.config" />
     <None Include="Properties\app.manifest" />
     <None Include="Properties\Settings.settings">

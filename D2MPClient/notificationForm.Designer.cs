@@ -1,6 +1,6 @@
 ﻿namespace d2mp
 {
-    partial class Notification_Form
+    partial class notificationForm
     {
         /// <summary>
         /// Required designer variable.

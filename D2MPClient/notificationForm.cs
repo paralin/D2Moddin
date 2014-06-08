@@ -10,7 +10,7 @@ using System.Windows.Forms;
 
 namespace d2mp
 {
-    public partial class Notification_Form : Form
+    public partial class notificationForm : Form
     {
         private Color successBg = Color.FromArgb(67, 172, 106);
         private Color infoBg = Color.FromArgb(91, 192, 222);
@@ -33,7 +33,7 @@ namespace d2mp
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
 
-        public Notification_Form()
+        public notificationForm()
         {
             InitializeComponent();
         }
@@ -113,12 +113,19 @@ public static class ControlExtensions
 {
     public static void InvokeIfRequired(this Control control, Action action)
     {
-        if (control.InvokeRequired)
+        try
         {
-            control.Invoke(action);
-            return;
+            if (control.InvokeRequired)
+            {
+                control.Invoke(action);
+                return;
+            }
+            action();
         }
-        action();
+        catch ( ObjectDisposedException )
+        {
+            // Control is disposed.
+        }
     }
     public static TResult InvokeIfRequired<TResult>(this Control control, Func<TResult> func)
     {
