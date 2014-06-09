@@ -1,4 +1,6 @@
-﻿using System;
+﻿using log4net.Appender;
+using log4net.Core;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -22,6 +24,11 @@ namespace d2mp
         private void settingsForm_Load(object sender, EventArgs e)
         {
             refreshSettings();
+        }
+
+        private void settingsForm_Shown(object sender, EventArgs e)
+        {
+            txtLog.AppendText(logKeeper.log);
         }
 
         private void refreshSettings()
@@ -79,6 +86,51 @@ namespace d2mp
                 Settings.Reset();
                 D2MP.Restart();
             }
+        }
+
+
+        private void settingsForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            if (!D2MP.shutDown) {
+                Hide();
+                e.Cancel = true;
+            }
+        }
+
+    }
+    public class TextBoxAppender : AppenderSkeleton
+    {
+        private Form form;
+        private TextBox _textBox;
+        public string FormName { get; set; }
+        public string TextBoxName { get; set; }
+
+        protected override void Append(LoggingEvent loggingEvent)
+        {
+            if (_textBox == null)
+            {
+                if (String.IsNullOrEmpty(FormName) ||
+                    String.IsNullOrEmpty(TextBoxName))
+                    return;
+
+                form = Application.OpenForms[FormName];
+                if (form == null)
+                {
+                    logKeeper.log += loggingEvent.RenderedMessage + Environment.NewLine;
+                    return;
+                }
+
+                _textBox = form.Controls["gbxLog"].Controls[TextBoxName] as TextBox;
+                if (_textBox == null)
+                    return;
+
+                form.FormClosing += (s, e) => _textBox = null;
+            }
+            _textBox.Invoke((MethodInvoker)delegate {
+                _textBox.AppendText(loggingEvent.RenderedMessage + Environment.NewLine);
+                _textBox.SelectionStart = _textBox.Text.Length;
+                _textBox.ScrollToCaret();
+            });
         }
     }
 }

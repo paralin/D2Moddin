@@ -26,7 +26,7 @@
         /// Required method for Designer support - do not modify
         /// the contents of this method with the code editor.
         /// </summary>
-        private void InitializeComponent()
+        public void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(settingsForm));
             this.gbxSteamDir = new System.Windows.Forms.GroupBox();
@@ -36,11 +36,15 @@
             this.btnChangeDotaDir = new System.Windows.Forms.Button();
             this.txtDotaDir = new System.Windows.Forms.TextBox();
             this.gbxExtra = new System.Windows.Forms.GroupBox();
-            this.btnViewLog = new System.Windows.Forms.Button();
             this.btnResetSettings = new System.Windows.Forms.Button();
+            this.btnViewLog = new System.Windows.Forms.Button();
+            this.lblSeperator = new System.Windows.Forms.Label();
+            this.txtLog = new System.Windows.Forms.TextBox();
+            this.gbxLog = new System.Windows.Forms.GroupBox();
             this.gbxSteamDir.SuspendLayout();
             this.gbxDotaDir.SuspendLayout();
             this.gbxExtra.SuspendLayout();
+            this.gbxLog.SuspendLayout();
             this.SuspendLayout();
             // 
             // gbxSteamDir
@@ -116,16 +120,6 @@
             this.gbxExtra.TabStop = false;
             this.gbxExtra.Text = "Additional Preferences";
             // 
-            // btnViewLog
-            // 
-            this.btnViewLog.Location = new System.Drawing.Point(7, 19);
-            this.btnViewLog.Name = "btnViewLog";
-            this.btnViewLog.Size = new System.Drawing.Size(93, 34);
-            this.btnViewLog.TabIndex = 0;
-            this.btnViewLog.Text = "View Log";
-            this.btnViewLog.UseVisualStyleBackColor = true;
-            this.btnViewLog.Click += new System.EventHandler(this.btnViewLog_Click);
-            // 
             // btnResetSettings
             // 
             this.btnResetSettings.Location = new System.Drawing.Point(106, 20);
@@ -136,23 +130,69 @@
             this.btnResetSettings.UseVisualStyleBackColor = true;
             this.btnResetSettings.Click += new System.EventHandler(this.btnResetSettings_Click);
             // 
+            // btnViewLog
+            // 
+            this.btnViewLog.Location = new System.Drawing.Point(7, 19);
+            this.btnViewLog.Name = "btnViewLog";
+            this.btnViewLog.Size = new System.Drawing.Size(93, 34);
+            this.btnViewLog.TabIndex = 0;
+            this.btnViewLog.Text = "View Log";
+            this.btnViewLog.UseVisualStyleBackColor = true;
+            this.btnViewLog.Click += new System.EventHandler(this.btnViewLog_Click);
+            // 
+            // lblSeperator
+            // 
+            this.lblSeperator.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
+            this.lblSeperator.Location = new System.Drawing.Point(12, 222);
+            this.lblSeperator.Name = "lblSeperator";
+            this.lblSeperator.Size = new System.Drawing.Size(458, 2);
+            this.lblSeperator.TabIndex = 3;
+            // 
+            // txtLog
+            // 
+            this.txtLog.Font = new System.Drawing.Font("Segoe UI", 8F);
+            this.txtLog.Location = new System.Drawing.Point(6, 19);
+            this.txtLog.Multiline = true;
+            this.txtLog.Name = "txtLog";
+            this.txtLog.ReadOnly = true;
+            this.txtLog.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
+            this.txtLog.Size = new System.Drawing.Size(446, 156);
+            this.txtLog.TabIndex = 4;
+            // 
+            // gbxLog
+            // 
+            this.gbxLog.Controls.Add(this.txtLog);
+            this.gbxLog.Location = new System.Drawing.Point(12, 227);
+            this.gbxLog.Name = "gbxLog";
+            this.gbxLog.Size = new System.Drawing.Size(458, 181);
+            this.gbxLog.TabIndex = 5;
+            this.gbxLog.TabStop = false;
+            this.gbxLog.Text = "Application Log";
+            // 
             // settingsForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(482, 226);
+            this.ClientSize = new System.Drawing.Size(482, 420);
+            this.Controls.Add(this.gbxLog);
+            this.Controls.Add(this.lblSeperator);
             this.Controls.Add(this.gbxExtra);
             this.Controls.Add(this.gbxDotaDir);
             this.Controls.Add(this.gbxSteamDir);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "settingsForm";
             this.Text = "D2Modd.in Preferences";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.settingsForm_FormClosing);
             this.Load += new System.EventHandler(this.settingsForm_Load);
+            this.Shown += new System.EventHandler(this.settingsForm_Shown);
             this.gbxSteamDir.ResumeLayout(false);
             this.gbxSteamDir.PerformLayout();
             this.gbxDotaDir.ResumeLayout(false);
             this.gbxDotaDir.PerformLayout();
             this.gbxExtra.ResumeLayout(false);
+            this.gbxLog.ResumeLayout(false);
+            this.gbxLog.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -168,5 +208,8 @@
         private System.Windows.Forms.GroupBox gbxExtra;
         private System.Windows.Forms.Button btnViewLog;
         private System.Windows.Forms.Button btnResetSettings;
+        private System.Windows.Forms.Label lblSeperator;
+        private System.Windows.Forms.GroupBox gbxLog;
+        private System.Windows.Forms.TextBox txtLog;
     }
 }

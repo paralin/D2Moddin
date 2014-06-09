@@ -53,6 +53,7 @@ namespace d2mp
         private static List<ClientCommon.Data.ClientMod> mods = new List<ClientCommon.Data.ClientMod>();
         private static volatile ProcessIcon icon;
         private static volatile notificationForm notifier;
+        private static volatile settingsForm settingsForm = new settingsForm();
         private static volatile bool isInstalling;
         private static bool hasConnected = false;
         private static XSocketClient client;
@@ -541,7 +542,6 @@ namespace d2mp
 
         public static void showPreferences()
         {
-            settingsForm settingsForm = new settingsForm();
             settingsForm.Show();
         }
     }

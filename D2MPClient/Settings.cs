@@ -36,4 +36,8 @@ namespace d2mp
         }
 
     }
+    static class logKeeper
+    {
+        public static string log = "";
+    }
 }
