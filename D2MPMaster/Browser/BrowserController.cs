@@ -117,7 +117,7 @@ namespace D2MPMaster.Browser
                             var tokens = usr.services.resume.loginTokens;
                             tokenfound = tokens.Any(token => token.hashedToken == key);
                         }
-                        if (tokenfound && usr.status.online)
+					    if (tokenfound)
                         {
                             if (usr.authItems != null && usr.authItems.Contains("banned"))
                             {

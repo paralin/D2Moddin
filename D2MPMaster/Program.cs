@@ -44,9 +44,9 @@ namespace D2MPMaster
             log.Info("Initializing Amazon S3...");
             S3 = new S3Manager();
 
-            log.Info("Initializing web server...");
-            WebServer wserver = new WebServer();
-            wserver.Start();
+			//log.Info("Initializing web server...");
+			//WebServer wserver = new WebServer();
+			//wserver.Start();
 
             log.Info("Initializing xsockets...");
 
@@ -69,7 +69,7 @@ namespace D2MPMaster
             }
 
             log.Info("Done, shutting down...");
-            wserver.Stop();
+			//wserver.Stop();
         }
     }
 }
