@@ -142,7 +142,7 @@ namespace D2MPMaster.Lobbies
         public static PlayerLocation FindPlayer(User user)
         {
             PlayerLocation plyr = null;
-            string steamID = user.services.steam.steamid;
+            string steamID = user.steam.steamid;
             foreach (var lobby in PlayingLobbies)
             {
                 if (lobby.radiant.Any(player => player.steam == steamID))
@@ -285,7 +285,7 @@ namespace D2MPMaster.Lobbies
             controller.lobby = null;
             if (lob.status > LobbyStatus.Queue) return;
             //Find the player
-            var team = RemoveFromTeam(lob, controller.user.services.steam.steamid);
+            var team = RemoveFromTeam(lob, controller.user.steam.steamid);
             lob.status = LobbyStatus.Start;
             if(team != null)
                 TransmitLobbyUpdate(lob, new[] { team, "status" });
@@ -315,9 +315,9 @@ namespace D2MPMaster.Lobbies
             TransmitLobbyUpdate(lobby, new []{"radiant", "dire"});
             var mod = Mods.Mods.ByID(lobby.mod);
             if (mod != null)
-                ClientsController.AsyncSendTo(m=>m.SteamID==controller.user.services.steam.steamid, ClientController.SetMod(mod),
+                ClientsController.AsyncSendTo(m=>m.SteamID==controller.user.steam.steamid, ClientController.SetMod(mod),
                     req => { });
-            ClientsController.AsyncSendTo(m => m.SteamID == user.services.steam.steamid, ClientController.LaunchDota(), req => { });
+            ClientsController.AsyncSendTo(m => m.SteamID == user.steam.steamid, ClientController.LaunchDota(), req => { });
         }
 
         /// <summary>
@@ -366,9 +366,9 @@ namespace D2MPMaster.Lobbies
             PlayingLobbies.Add(lob);
             Browsers.AsyncSendTo(m => m.user != null && m.user.Id == user.Id, BrowserController.LobbySnapshot(lob),
                 req => { });
-            ClientsController.AsyncSendTo(m => m.SteamID == user.services.steam.steamid, ClientController.SetMod(mod),
+            ClientsController.AsyncSendTo(m => m.SteamID == user.steam.steamid, ClientController.SetMod(mod),
                 req => { });
-            ClientsController.AsyncSendTo(m => m.SteamID == user.services.steam.steamid, ClientController.LaunchDota(), req => { });
+            ClientsController.AsyncSendTo(m => m.SteamID == user.steam.steamid, ClientController.LaunchDota(), req => { });
 			log.InfoFormat("Lobby created, User: #{0}, Name: #{1}", user.profile.name, name);
             return lob;
         }
@@ -384,7 +384,7 @@ namespace D2MPMaster.Lobbies
         public static void BanFromLobby(Lobby lobby, string steam)
         {
             var client =
-                Browsers.Find(m => m.user != null && m.user.services.steam.steamid == steam && m.lobby!=null&&m.lobby.id == lobby.id);
+                Browsers.Find(m => m.user != null && m.user.steam.steamid == steam && m.lobby!=null&&m.lobby.id == lobby.id);
             var browserClients = client as BrowserController[] ?? client.ToArray();
             if (!browserClients.Any()) return;
             if (!lobby.banned.Contains(steam))

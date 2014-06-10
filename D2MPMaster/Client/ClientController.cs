@@ -98,7 +98,7 @@ namespace D2MPMaster.Client
                         var msg = jdata.ToObject<OnInstalledMod>();
                         log.Debug(SteamID+" -> installed " + msg.Mod.name + ".");
                         Mods.Add(msg.Mod);
-                        XSocketHelper.AsyncSendTo(Browser, x=>x.user!=null&&x.user.services.steam.steamid==SteamID, BrowserController.InstallResponse("The mod has been installed.", true),
+                        XSocketHelper.AsyncSendTo(Browser, x=>x.user!=null&&x.user.steam.steamid==SteamID, BrowserController.InstallResponse("The mod has been installed.", true),
                             rf => { });
                         break;
                     }
