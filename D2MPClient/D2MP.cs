@@ -239,7 +239,6 @@ namespace d2mp
                 var steam = new SteamFinder();
                 if (!Directory.Exists(Settings.steamDir) || !Directory.Exists(Settings.dotaDir))
                 {
-                    MessageBox.Show("Please install Dota 2 using your Steam client.");
                     Settings.steamDir = steam.FindSteam(true);
                     Settings.dotaDir = steam.FindDota(true);
                 }
