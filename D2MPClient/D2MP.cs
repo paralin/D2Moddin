@@ -47,12 +47,13 @@ namespace d2mp
         private static string addonsDir;
         private static string d2mpDir;
         private static string modDir;
-        private static string dotaDir;
         private static ClientCommon.Data.ClientMod activeMod;
         public static bool shutDown = false;
         public static string ourDir;
         private static List<ClientCommon.Data.ClientMod> mods = new List<ClientCommon.Data.ClientMod>();
         private static volatile ProcessIcon icon;
+        private static volatile notificationForm notifier;
+        private static volatile settingsForm settingsForm = new settingsForm();
         private static volatile bool isInstalling;
         private static bool hasConnected = false;
         private static XSocketClient client;
@@ -91,9 +92,10 @@ namespace d2mp
 
             client.OnOpen += (sender, args) =>
             {
-                icon.DisplayBubble(hasConnected
-                    ? "Reconnected!"
-                    : "Connected and ready to begin installing mods.");
+                notifier.Notify(1, hasConnected ? "Reconnected" : "Connected", hasConnected ? "Connection to the server has been reestablished" : "Client has been connected to the server.");
+                //icon.DisplayBubble(hasConnected
+                //    ? "Reconnected!"
+                //    : "Connected and ready to begin installing mods.");
                 hasConnected = true;
 
                 log.Debug("Sending init, version: " + ClientCommon.Version.ClientVersion);
@@ -150,7 +152,8 @@ namespace d2mp
             {
                 if (hasConnected)
                 {
-                    icon.DisplayBubble("Disconnected, attempting to reconnect...");
+                    notifier.Notify(3, "Lost connection", "Attempting to reconnect...");
+                    //icon.DisplayBubble("Disconnected, attempting to reconnect...");
                     hasConnected = false;
                 }
                 SetupClient();
@@ -207,7 +210,15 @@ namespace d2mp
         public static void main()
         {
             log.Debug("D2MP starting...");
-
+            var notifyThread = new Thread(delegate() {
+                using (notifier = new notificationForm())
+                {
+                    notifier.Visible = true;
+                    Application.Run();
+                }
+            });
+            notifyThread.SetApartmentState(ApartmentState.STA);
+            notifyThread.Start();
             ourDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             File.WriteAllText(Path.Combine(ourDir, "version.txt"), ClientCommon.Version.ClientVersion);
             var iconThread = new Thread(delegate()
@@ -215,6 +226,7 @@ namespace d2mp
                                             using (icon = new ProcessIcon())
                                             {
                                                 icon.Display();
+                                                icon.showNotification = delegate { notifier.Invoke(new MethodInvoker(delegate { notifier.Fade(1); notifier.hideTimer.Start(); })); };                        
                                                 Application.Run();
                                             }
                                         });
@@ -225,18 +237,22 @@ namespace d2mp
             try
             {
                 var steam = new SteamFinder();
-                string steamDir = steam.FindSteam(true);
-                dotaDir = steam.FindDota(true);
-                if (steamDir == null || dotaDir == null)
+                if (!Directory.Exists(Settings.steamDir) || !Directory.Exists(Settings.dotaDir))
+                {
+                    Settings.steamDir = steam.FindSteam(true);
+                    Settings.dotaDir = steam.FindDota(true);
+                }
+
+                if (Settings.steamDir == null || Settings.dotaDir == null)
                 {
                     log.Fatal("Steam/dota was not found!");
                     return;
                 }
-                log.Debug("Steam found: " + steamDir);
-                log.Debug("Dota found: " + dotaDir);
+                log.Debug("Steam found: " + Settings.steamDir);
+                log.Debug("Dota found: " + Settings.dotaDir);
 
-                addonsDir = Path.Combine(dotaDir, "dota/addons/");
-                d2mpDir = Path.Combine(dotaDir, "dota/d2moddin/");
+                addonsDir = Path.Combine(Settings.dotaDir, @"dota\addons\");
+                d2mpDir = Path.Combine(Settings.dotaDir, @"dota\d2moddin\");
                 modDir = Path.Combine(addonsDir, "d2moddin");
                 if (!Directory.Exists(addonsDir))
                     Directory.CreateDirectory(addonsDir);
@@ -251,7 +267,7 @@ namespace d2mp
                     foreach (string modName in dirs.Select(Path.GetFileName))
                     {
                         log.Debug("Found mod: " + modName + " detecting version...");
-                        string infoPath = Path.Combine(d2mpDir, modName + "/addoninfo.txt");
+                        string infoPath = Path.Combine(d2mpDir, modName + @"\addoninfo.txt");
                         string versionFile = "";
                         if (File.Exists(infoPath))
                         {
@@ -277,7 +293,7 @@ namespace d2mp
                 }
 
                 //Detect user
-                string config = File.ReadAllText(Path.Combine(steamDir, @"config\config.vdf"));
+                string config = File.ReadAllText(Path.Combine(Settings.steamDir, @"config\config.vdf"));
                 MatchCollection matches = Regex.Matches(config, "\"\\d{17}\"");
                 string steamid;
                 steamids = new List<string>();
@@ -318,7 +334,8 @@ namespace d2mp
                 }
                 catch (Exception ex)
                 {
-                    icon.DisplayBubble("Can't connect to the lobby server!");
+                    notifier.Notify(4, "Server error", "Can't connect to the lobby server!");
+                    //icon.DisplayBubble("Can't connect to the lobby server!");
                 }
                 while (!shutDown)
                 {
@@ -371,18 +388,20 @@ namespace d2mp
                 FileSystem.CopyDirectory(Path.Combine(d2mpDir, op.Mod.name), modDir);
                 File.WriteAllText(Path.Combine(modDir, "modname.txt"),
                     JObject.FromObject(op.Mod).ToString(Formatting.Indented));
-                icon.DisplayBubble("Set active mod to " + op.Mod.name + "!");
+                notifier.Notify(1, "Active mod", "The current active mod has been set to " + op.Mod.name + ".");
+                //icon.DisplayBubble("Set active mod to " + op.Mod.name + "!");
             }
             catch (Exception ex)
             {
                 log.Error("Can't set mod "+op.Mod.name+".", ex);
-                icon.DisplayBubble("Unable to set active mod, try closing Dota first.");
+                notifier.Notify(4, "Active mod", "Unable to set active mod, try closing Dota first.");
+                //icon.DisplayBubble("Unable to set active mod, try closing Dota first.");
             }
         }
 
         private static void ModGameInfo()
         {
-            string path = Path.Combine(dotaDir, "dota/gameinfo.txt");
+            string path = Path.Combine(Settings.dotaDir, @"dota\gameinfo.txt");
             if (File.Exists(path))
             {
                 log.Debug("Checking if patch needed on " + path + "...");
@@ -396,7 +415,8 @@ namespace d2mp
                     log.Debug("Patched file to add d2moddin search path.");
                     if (Dota2Running())
                     {
-                        icon.DisplayBubble("Restarting Dota 2 for you...");
+                        notifier.Notify(2, "Added mod", "Restarting Dota 2 to apply changes...");
+                        //icon.DisplayBubble("Restarting Dota 2 for you...");
                         KillDota2();
                         LaunchDota2();
                     }
@@ -406,7 +426,7 @@ namespace d2mp
 
         private static void UnmodGameInfo()
         {
-            string path = Path.Combine(dotaDir, "dota/gameinfo.txt");
+            string path = Path.Combine(Settings.dotaDir, @"dota\gameinfo.txt");
             if (File.Exists(path))
             {
                 log.Debug("Checking if unpatch needed on " + path + "...");
@@ -442,11 +462,13 @@ namespace d2mp
             var op = state as InstallMod; 
             if (isInstalling)
             {
-                icon.DisplayBubble("Already downloading a mod!");
+                notifier.Notify(3, "Already downloading a mod", "Please try again after a few seconds.");
+                //icon.DisplayBubble("Already downloading a mod!");
                 return;
             }
             isInstalling = true;
-            icon.DisplayBubble("Attempting to download "+op.Mod.name+"...");
+            notifier.Notify(2, "Downloading mod", "Attempting to download " + op.Mod.name + "...");
+            //icon.DisplayBubble("Attempting to download "+op.Mod.name+"...");
 
             log.Info("Server requested that we install mod " + op.Mod.name + " from download " + op.url);
 
@@ -461,26 +483,42 @@ namespace d2mp
             {
                 using (var wc = new WebClient())
                 {
-                    UnzipFromStream(wc.OpenRead(op.url), targetDir);
+                    int lastProgress = -1;
+                    wc.DownloadProgressChanged += (sender, e) => {
+                        if (e.ProgressPercentage % 5 == 0 && e.ProgressPercentage > lastProgress)
+                        {
+                            lastProgress = e.ProgressPercentage;
+                            log.Info(String.Format("Downloading mod: {0}% complete.", e.ProgressPercentage.ToString()));
+                        }
+                    };
+                    wc.DownloadDataCompleted += (sender, e) =>
+                    {
+                        byte[] buffer = e.Result;
+                        Stream s = new MemoryStream(buffer);
+                        UnzipFromStream(s, targetDir);
+                        log.Info("Mod installed!");
+                        notifier.Notify(1, "Mod installed", "The following mod has been installed successfully: " + op.Mod.name);
+                        //icon.DisplayBubble("Mod downloaded successfully: " + op.Mod.name + ".");
+                        var msg = new OnInstalledMod()
+                        {
+                            Mod = op.Mod
+                        };
+                        Send(JObject.FromObject(msg).ToString(Formatting.None));
+                        var existing = mods.FirstOrDefault(m => m.name == op.Mod.name);
+                        if (existing != null) mods.Remove(existing);
+                        mods.Add(op.Mod);
+                        isInstalling = false;
+                    };
+                    wc.DownloadDataAsync(new Uri(op.url));
                 }
             }
             catch (Exception ex)
             {
                 isInstalling = false;
-                icon.DisplayBubble("Failed to download mod " + op.Mod.name + ".");
+                notifier.Notify(4, "Error downloading mod", "Failed to download mod " + op.Mod.name + ".");
+                //icon.DisplayBubble("Failed to download mod " + op.Mod.name + ".");
                 return;
             }
-            log.Info("Mod installed!");
-            icon.DisplayBubble("Mod downloaded successfully: " + op.Mod.name + ".");
-            var msg = new OnInstalledMod()
-                                 {
-                                     Mod = op.Mod
-                                 };
-            Send(JObject.FromObject(msg).ToString(Formatting.None));
-            var existing = mods.FirstOrDefault(m => m.name == op.Mod.name);
-            if (existing != null) mods.Remove(existing);
-            mods.Add(op.Mod);
-            isInstalling = false;
         }
 
         public static void DeleteMods()
@@ -511,9 +549,18 @@ namespace d2mp
             string message = "You currently have the following detected mods installed:\n\n";
             foreach (var mod in mods)
             {
-                message += mod.name + "@" + mod.version;
+                message += mod.name + "@" + mod.version + Environment.NewLine;
+            }
+            if (mods.Count == 0)
+            {
+                message += "None.";
             }
             MessageBox.Show(message, "Installed Mods");
+        }
+
+        public static void showPreferences()
+        {
+            settingsForm.Show();
         }
     }
 
@@ -556,7 +603,26 @@ namespace d2mp
                     return cachedLocation;
                 }
 
-                //Search using file search? Eh... Return null.
+                Process[] processes = Process.GetProcessesByName("STEAM");
+                if (processes.Length > 0)
+                {
+                    Process.Start("steam://");
+                }
+                int tries = 0;
+                while (tries < 20)
+                {
+                    if (processes.Length > 0)
+                    {
+                        cachedLocation = processes[0].MainModule.FileName.Substring(0, processes[0].MainModule.FileName.Length - 9);
+                        return cachedLocation;
+
+                   }
+                    else
+                    {
+                        Thread.Sleep(500);
+                        tries++;
+                    }
+                }
                 return null;
             }
             return cachedLocation;
@@ -578,14 +644,34 @@ namespace d2mp
 
             if (steamDir != null)
             {
-                string dir = Path.Combine(steamDir, "steamapps/common/dota 2 beta/");
+                string dir = Path.Combine(steamDir, @"steamapps\common\dota 2 beta\");
                 if (Directory.Exists(dir))
                 {
                     cachedDotaLocation = dir;
                     return dir;
                 }
             }
+            Process[] processes = Process.GetProcessesByName("DOTA");
+            if (processes.Length > 0)
+            {
+                Process.Start("steam://rungameid/570");
+            }
+            int tries = 0;
+            while (tries < 20)
+            {
+                if (processes.Length > 0)
+                {
+                    cachedLocation = processes[0].MainModule.FileName.Substring(0, processes[0].MainModule.FileName.Length - 8);
+                    processes[0].Kill();
+                    return cachedLocation;
 
+                }
+                else
+                {
+                    Thread.Sleep(500);
+                    tries++;
+                }
+            }
             return null;
         }
     }
