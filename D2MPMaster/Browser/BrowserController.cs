@@ -129,6 +129,7 @@ namespace D2MPMaster.Browser
                             user = usr;
                             this.SendJson("{\"msg\": \"auth\", \"status\": true}", "auth");
                             this.Send(PublicLobbySnapshot());
+							SendManagerStatus();
                         }
                         else
                         {                            
