@@ -560,6 +560,12 @@ namespace d2mp
             settingsForm.Show();
             settingsForm.Focus();
         }
+
+        public static void showCredits()
+        {
+            creditsForm frm = new creditsForm();
+            frm.Show();
+        }
     }
 
     public class SteamFinder

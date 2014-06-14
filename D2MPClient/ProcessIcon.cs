@@ -134,6 +134,12 @@ namespace d2mp
             sep = new ToolStripSeparator();
             menu.Items.Add(sep);
 
+            // About
+            item = new ToolStripMenuItem();
+            item.Text = "About";
+            item.Click += new EventHandler(About_Click);
+            menu.Items.Add(item);
+
             // Exit.
             item = new ToolStripMenuItem();
             item.Text = "Exit";
@@ -162,6 +168,11 @@ namespace d2mp
         private void Restart_Click(object sender, EventArgs e)
         {
             D2MP.Restart();
+        }
+
+        private void About_Click(object sender, EventArgs e)
+        {
+            D2MP.showCredits();
         }
 
         /// <summary>
