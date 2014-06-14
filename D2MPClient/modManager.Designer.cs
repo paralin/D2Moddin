@@ -59,7 +59,7 @@
             this.gbxMods.Size = new System.Drawing.Size(540, 141);
             this.gbxMods.TabIndex = 0;
             this.gbxMods.TabStop = false;
-            this.gbxMods.Text = "Availible Mods";
+            this.gbxMods.Text = "Available Mods";
             // 
             // modsGridView
             // 
