@@ -276,6 +276,7 @@ namespace D2MPMaster.Lobbies
             }
             PublicLobbies.Remove(lob);
             PlayingLobbies.Remove(lob);
+            LobbyQueue.Remove(lob);
         }
 
         public static void LeaveLobby(BrowserController controller)

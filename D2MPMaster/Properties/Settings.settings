@@ -2,9 +2,6 @@
 <SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="D2MPMaster.Properties" GeneratedClassName="Settings">
   <Profiles />
   <Settings>
-    <Setting Name="URI" Type="System.String" Scope="User">
-      <Value Profile="(Default)">ws://0.0.0.0:4000</Value>
-    </Setting>
     <Setting Name="MongoDB" Type="System.String" Scope="User">
       <Value Profile="(Default)">d2moddin</Value>
     </Setting>
@@ -22,9 +19,6 @@
     </Setting>
     <Setting Name="PostURL" Type="System.String" Scope="User">
       <Value Profile="(Default)">http://ddp2.d2modd.in:4001/gdataapi/matchres</Value>
-    </Setting>
-    <Setting Name="InfoPort" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">4003</Value>
     </Setting>
     <Setting Name="MongoURL" Type="System.String" Scope="User">
       <Value Profile="(Default)">mongodb://appfog:E74y9KXNuUhE6F4pbFvC@capital.0.mongolayer.com:10048/d2moddin</Value>

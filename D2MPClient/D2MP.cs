@@ -148,18 +148,28 @@ namespace d2mp
                         break;
                 }
             });
-            client.OnClose += (sender, args) =>
+            client.OnClose += (sender, args)=>
+                HandleClose();
+        }
+
+        private static void HandleClose()
+        {
+            if (hasConnected)
             {
-                if (hasConnected)
-                {
-                    notifier.Notify(3, "Lost connection", "Attempting to reconnect...");
-                    //icon.DisplayBubble("Disconnected, attempting to reconnect...");
-                    hasConnected = false;
-                }
-                SetupClient();
-                Thread.Sleep(5000);
+                notifier.Notify(3, "Lost connection", "Attempting to reconnect...");
+                //icon.DisplayBubble("Disconnected, attempting to reconnect...");
+                hasConnected = false;
+            }
+            SetupClient();
+            Thread.Sleep(5000);
+            try
+            {
                 client.Open();
-            };
+            }
+            catch (Exception ex)
+            {
+                HandleClose();
+            }
         }
 
         //Pipe a zip download directly through the decompressor
@@ -335,7 +345,8 @@ namespace d2mp
                 catch (Exception ex)
                 {
                     notifier.Notify(4, "Server error", "Can't connect to the lobby server!");
-                    //icon.DisplayBubble("Can't connect to the lobby server!");
+                    Thread.Sleep(5000);
+                    HandleClose();
                 }
                 while (!shutDown)
                 {

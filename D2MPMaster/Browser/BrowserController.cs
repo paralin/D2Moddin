@@ -108,7 +108,7 @@ namespace D2MPMaster.Browser
                             return;
                         }
                         //Parse the resume key
-                        var key = jdata["key"]["hashedToken"].Value<string>();
+                        var key = jdata["key"].Value<string>();
                         //Find it in the database
                         var usr = Mongo.Users.FindOneAs<User>(Query.EQ("_id", uid));
                         if (usr != null)
@@ -523,11 +523,7 @@ namespace D2MPMaster.Browser
 
         public void OnClosed(object sender, OnClientDisconnectArgs e)
         {
-            if (user == null) return;
-            if (lobby != null && !this.Find(p => p.user != null && p.user.Id == user.Id).Any())
-            {
-                LobbyManager.LeaveLobby(this);
-            }
+            LobbyManager.LeaveLobby(this);
         }
 
         public static ITextArgs ClearLobbyR()

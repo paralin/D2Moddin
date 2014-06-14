@@ -7,6 +7,7 @@ namespace D2MPMaster.Model
     /// </summary>
     public class User
     {
+        public int __v { get; set; }
         public string Id { get; set; }
         public string[] authItems { get; set; }
         public Profile profile { get; set; }
@@ -34,7 +35,7 @@ namespace D2MPMaster.Model
         public string gameid { get; set; }
         public string loccountrycode { get; set; }
         public string locstatecode { get; set; }
-        public string loccityid { get; set; }
+        public int loccityid { get; set; }
     }
 
 
