@@ -136,7 +136,9 @@ namespace d2mp
                         ThreadPool.QueueUserWorkItem(ConnectDota, msg.ToObject<ConnectDota>());
                         break;
                     case ClientCommon.Methods.LaunchDota.Msg:
+#if !DEBUG
                         ThreadPool.QueueUserWorkItem(LaunchDota, msg.ToObject<LaunchDota>());
+#endif
                         break;
                     case ClientCommon.Methods.ConnectDotaSpectate.Msg:
                         ThreadPool.QueueUserWorkItem(SpectateGame,
@@ -325,7 +327,7 @@ namespace d2mp
             Application.Exit();
         }
 
-        private static ClientCommon.Data.ClientMod GetActiveMod()
+        public static ClientCommon.Data.ClientMod GetActiveMod()
         {
             string infoPath = Path.Combine(modDir, "modname.txt");
             if (!File.Exists(infoPath)) return null;
@@ -348,7 +350,7 @@ namespace d2mp
             if (!Dota2Running()) LaunchDota2();
         }
 
-        private static void SetMod(object state)
+        public static void SetMod(object state)
         {
             activeMod = GetActiveMod();
             var op = state as SetMod;
@@ -362,6 +364,7 @@ namespace d2mp
                 File.WriteAllText(Path.Combine(modDir, "modname.txt"),
                     JObject.FromObject(op.Mod).ToString(Formatting.Indented));
                 notifier.Notify(1, "Active mod", "The current active mod has been set to " + op.Mod.name + ".");
+                refreshMods();
                 //icon.DisplayBubble("Set active mod to " + op.Mod.name + "!");
             }
             catch (Exception ex)
@@ -475,7 +478,15 @@ namespace d2mp
                     };
                     wc.DownloadDataCompleted += (sender, e) =>
                     {
-                        byte[] buffer = e.Result;
+                        byte[] buffer;
+                        try
+                        {
+                            buffer = e.Result;
+                        }
+                        catch{
+                            notifier.Notify(4, "Error downloading mod", "The connection forcibly closed by the remote host. Please try again.");
+                            throw;
+                        }
                         Stream s = new MemoryStream(buffer);
                         UnzipFromStream(s, targetDir);
                         refreshMods();

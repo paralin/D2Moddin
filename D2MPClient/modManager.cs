@@ -45,15 +45,22 @@ namespace d2mp
             }
             List<RemoteMod> needsUpdate = modController.checkUpdates();
             List<RemoteMod> needsInstall = modController.checkAvailable();
+            var activeMod = D2MP.GetActiveMod();
             foreach (var mod in remoteMods)
             {
-                int rowIndex = modsGridView.Rows.Add(new Object[] { mod.fullname, mod.version, mod.author });
-                modsGridView.Rows[rowIndex].Tag = mod;
+                int rowIndex = modsGridView.Rows.Add(new Object[] { mod.fullname, mod.version, mod.author, "Up to date" });
+                DataGridViewRow row = modsGridView.Rows[rowIndex];
+                row.Tag = mod;
+                if (activeMod != null && mod.name == activeMod.name)
+                {
+                        row.Cells[3].Value = "Active mod";
+                }
                 if (mod.needsUpdate)
                 {
                     DataGridViewCellStyle boldStyle = new DataGridViewCellStyle();
                     boldStyle.Font = new Font(modsGridView.Font, FontStyle.Bold);
-                    modsGridView.Rows[rowIndex].DefaultCellStyle = boldStyle;
+                    row.DefaultCellStyle = boldStyle;
+                    row.Cells[3].Value = "Needs update";
                 }
                 else{
                     DataGridViewCellStyle normalStyle = new DataGridViewCellStyle();
@@ -63,6 +70,7 @@ namespace d2mp
                 if (mod.needsInstall)
                 {
                     modsGridView.Rows[rowIndex].DefaultCellStyle.ForeColor = Color.Gray;
+                    row.Cells[3].Value = "Not installed";
                 }
                 else
                 {
@@ -133,6 +141,7 @@ namespace d2mp
                 installModToolStripMenuItem.Enabled = (((RemoteMod)modsGridView.SelectedRows[0].Tag).needsInstall);
                 updateModToolStripMenuItem.Enabled = (((RemoteMod)modsGridView.SelectedRows[0].Tag).needsUpdate);
                 removeModToolStripMenuItem.Enabled = !(((RemoteMod)modsGridView.SelectedRows[0].Tag).needsInstall);
+                setActiveToolStripMenuItem.Enabled = !(((RemoteMod)modsGridView.SelectedRows[0].Tag).needsInstall);
             }
         }
 
@@ -154,6 +163,21 @@ namespace d2mp
             var mod = (RemoteMod)modsGridView.SelectedRows[0].Tag;
             var parameterMod = new ClientCommon.Data.ClientMod { name = mod.name };
             D2MP.DeleteMod(new ClientCommon.Methods.DeleteMod { Mod = parameterMod });
+        }
+
+        private void btnUninstallAll_Click(object sender, EventArgs e)
+        {
+            List<ClientCommon.Data.ClientMod> clientMods = new List<ClientCommon.Data.ClientMod>(modController.getLocalMods());
+            foreach (var mod in clientMods)
+            {
+                D2MP.DeleteMod(new ClientCommon.Methods.DeleteMod { Mod = mod });
+            }
+        }
+
+        private void setActiveToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            var mod = (RemoteMod)modsGridView.SelectedRows[0].Tag;
+            D2MP.SetMod(new ClientCommon.Methods.SetMod { Mod = new ClientCommon.Data.ClientMod { name = mod.name, version = mod.version } });
         }
     }
 }

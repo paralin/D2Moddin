@@ -22,7 +22,7 @@ namespace d2mp
         private static List<RemoteMod> remoteMods = new List<RemoteMod>();
         public static List<ClientCommon.Data.ClientMod> clientMods = new List<ClientCommon.Data.ClientMod>();
 
-        public static void getLocalMods()
+        public static List<ClientCommon.Data.ClientMod> getLocalMods()
         {
             clientMods.Clear();
             string[] dirs = Directory.GetDirectories(D2MP.d2mpDir);
@@ -51,6 +51,7 @@ namespace d2mp
                     D2MP.log.Error("Can't find version info for mod: " + modName + ", not including");
                 }
             }
+            return clientMods;
         }
 
         public static List<RemoteMod> getRemoteMods()
