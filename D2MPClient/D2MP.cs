@@ -539,6 +539,8 @@ namespace d2mp
 
         public static void showModManager()
         {
+            Form frm = Application.OpenForms["modManager"];
+            if (frm != null) frm.Close();
             modManager manager = new modManager();
             manager.Show();
         }
@@ -556,6 +558,7 @@ namespace d2mp
         public static void showPreferences()
         {
             settingsForm.Show();
+            settingsForm.Focus();
         }
     }
 
