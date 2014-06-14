@@ -104,6 +104,8 @@ namespace d2mp
             ToolStripMenuItem item;
             ToolStripSeparator sep;
 
+            menu.ShowImageMargin = false;
+
             // Restart.
             item = new ToolStripMenuItem();
             item.Text = "Restart";
@@ -116,10 +118,10 @@ namespace d2mp
             item.Click += new EventHandler(Uninstall_Click);
             menu.Items.Add(item);
 
-            // Mod List.
+            // Mod Manager.
             item = new ToolStripMenuItem();
-            item.Text = "Show Mod List";
-            item.Click += new EventHandler(ModList_Click);
+            item.Text = "Mod Manager";
+            item.Click += new EventHandler(ModManager_Click);
             menu.Items.Add(item);
 
             // Preferences
@@ -152,9 +154,9 @@ namespace d2mp
             D2MP.Uninstall();
         }
 
-        private void ModList_Click(object sender, EventArgs e)
+        private void ModManager_Click(object sender, EventArgs e)
         {
-            D2MP.ShowModList();
+            D2MP.showModManager();
         }
 
         private void Restart_Click(object sender, EventArgs e)

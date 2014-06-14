@@ -102,6 +102,14 @@ namespace D2MPMaster.Client
                             rf => { });
                         break;
                     }
+                    case OnDeletedMod.Msg:
+                    {
+                        var msg = jdata.ToObject<OnDeletedMod>();
+                        log.Debug(SteamID + " -> removed " + msg.Mod.name + ".");
+                        Mods.Remove(msg.Mod);
+
+                        break;
+                    }
                     case Init.Msg:
                     {
                         var msg = jdata.ToObject<Init>();
