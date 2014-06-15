@@ -50,6 +50,8 @@ namespace d2mpserver
                 return;
             }
 
+            Settings.Default.Save();
+
             Console.CancelKeyPress += (sender, arg) => ShutdownImmediately();
 
             XmlConfigurator.Configure();
