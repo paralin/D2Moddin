@@ -462,7 +462,7 @@ namespace d2mp
                 return;
             }
             isInstalling = true;
-            notifier.Notify(5, "Downloading mod", "Downloadloading " + op.Mod.name + "...");
+            notifier.Notify(5, "Downloading mod", "Downloading " + op.Mod.name + "...");
             //icon.DisplayBubble("Attempting to download "+op.Mod.name+"...");
 
             log.Info("Server requested that we install mod " + op.Mod.name + " from download " + op.url);
