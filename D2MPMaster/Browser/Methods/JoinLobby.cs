@@ -10,4 +10,9 @@ namespace D2MPMaster.Browser.Methods
     {
         public string LobbyID;
     }
+
+    public class JoinPasswordLobby
+    {
+        public string password;
+    }
 }

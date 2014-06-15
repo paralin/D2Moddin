@@ -22,4 +22,9 @@ namespace D2MPMaster.Browser.Methods
     {
         public ServerRegion region { get; set; }
     }
+
+    public class SetPassword
+    {
+        public string password { get; set; }
+    }
 }

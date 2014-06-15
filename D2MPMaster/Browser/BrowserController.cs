@@ -310,6 +310,28 @@ namespace D2MPMaster.Browser
                             LobbyManager.SetTitle(lobby, req.name);
                             break;
                         }
+                    case "setpassword":
+                        {
+                            if (user == null)
+                            {
+                                RespondError(jdata, "You are not logged in (can't set name).");
+                                return;
+                            }
+                            if (lobby == null)
+                            {
+                                RespondError(jdata, "You are not in a lobby (can't set name).");
+                                return;
+                            }
+                            if (lobby.creatorid != user.Id)
+                            {
+                                RespondError(jdata, "You are not the lobby host.");
+                                return;
+                            }
+
+                            var req = jdata["req"].ToObject<SetPassword>();
+                            LobbyManager.SetPassword(lobby, req.password);
+                            break;
+                        }
                     case "setregion":
                         {
                             if (user == null)
@@ -405,6 +427,57 @@ namespace D2MPMaster.Browser
                             if (lob == null)
                             {
                                 RespondError(jdata, "Can't find that lobby.");
+                                return;
+                            }
+                            if (lob.TeamCount(lob.dire) >= 5 && lob.TeamCount(lob.radiant) >= 5)
+                            {
+                                RespondError(jdata, "That lobby is full.");
+                                return;
+                            }
+                            if (lob.banned.Contains(user.steam.steamid))
+                            {
+                                RespondError(jdata, "You are banned from that lobby.");
+                                return;
+                            }
+                            //Find the mod
+                            var mod = Mods.Mods.ByID(lob.mod);
+                            if (mod == null)
+                            {
+                                RespondError(jdata, "Can't find the mod, you probably don't have access.");
+                                return;
+                            }
+                            //Find the client
+                            var clients = ClientsController.Find(m => m.UID == user.Id);
+                            if (!clients.Any(m => m.Mods.Any(c => c.name == mod.name && c.version == mod.version)))
+                            {
+                                var obj = new JObject();
+                                obj["msg"] = "modneeded";
+                                obj["name"] = mod.name;
+                                Send(obj.ToString(Formatting.None));
+                                return;
+                            }
+
+                            LobbyManager.JoinLobby(lob, user, this);
+                            break;
+                        }
+                    case "joinpasswordlobby":
+                        {
+                            if (user == null)
+                            {
+                                RespondError(jdata, "You are not logged in yet.");
+                                return;
+                            }
+                            if (lobby != null)
+                            {
+                                RespondError(jdata, "You are already in a lobby.");
+                                return;
+                            }
+                            var req = jdata["req"].ToObject<JoinPasswordLobby>();
+                            //Find lobby
+                            var lob = LobbyManager.PublicLobbies.FirstOrDefault(m => m.hasPassword&&m.password==req.password);
+                            if (lob == null)
+                            {
+                                RespondError(jdata, "Can't find any lobbies with that password.");
                                 return;
                             }
                             if (lob.TeamCount(lob.dire) >= 5 && lob.TeamCount(lob.radiant) >= 5)
