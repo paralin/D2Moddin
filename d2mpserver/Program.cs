@@ -73,7 +73,7 @@ namespace d2mpserver
 
             connection = new ServerConnection(manager);
 
-            while (!shutdown)
+            while (!shutdown&&!Console.KeyAvailable)
             {
                 Thread.Sleep(100);
             }
