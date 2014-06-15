@@ -97,12 +97,12 @@ namespace d2mp
         {
             var results =
               from rMod in remoteMods
-              where !clientMods.Any(cMod => cMod.name == rMod.name)
+              where clientMods.All(cMod => cMod.name != rMod.name)
               select rMod;
             List<RemoteMod> availableMods = results.ToList();
             remoteMods.ForEach(rMod =>
             {
-                if (availableMods.Any(iMod => rMod.name == iMod.name)) { rMod.needsInstall = true; } else { rMod.needsInstall = false; }
+                rMod.needsInstall = availableMods.Any(iMod => rMod.name == iMod.name);
             });
             return availableMods;
         }

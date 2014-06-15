@@ -106,8 +106,8 @@ namespace D2MPMaster.Client
                     {
                         var msg = jdata.ToObject<OnDeletedMod>();
                         log.Debug(SteamID + " -> removed " + msg.Mod.name + ".");
-                        Mods.Remove(msg.Mod);
-
+                        var localMod = Mods.FirstOrDefault(m => Equals(msg.Mod, m));
+                        if(localMod != null) Mods.Remove(localMod);
                         break;
                     }
                     case Init.Msg:

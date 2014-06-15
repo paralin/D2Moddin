@@ -430,7 +430,7 @@ namespace d2mp
             var op = state as DeleteMod;
             string targetDir = Path.Combine(d2mpDir, op.Mod.name);
             if (Directory.Exists(targetDir)) Directory.Delete(targetDir, true);
-            log.Debug("Server requested that we delete mod " + op.Mod.name + ".");
+            log.Debug("Server/user requested that we delete mod " + op.Mod.name + ".");
             var msg = new OnDeletedMod
             {
                 Mod = op.Mod

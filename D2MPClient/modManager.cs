@@ -167,7 +167,7 @@ namespace d2mp
 
         private void btnUninstallAll_Click(object sender, EventArgs e)
         {
-            List<ClientCommon.Data.ClientMod> clientMods = new List<ClientCommon.Data.ClientMod>(modController.getLocalMods());
+            var clientMods = new List<ClientCommon.Data.ClientMod>(modController.getLocalMods());
             foreach (var mod in clientMods)
             {
                 D2MP.DeleteMod(new ClientCommon.Methods.DeleteMod { Mod = mod });
