@@ -108,17 +108,18 @@ namespace D2MPMaster.Browser
                             return;
                         }
                         //Parse the resume key
-                        var key = jdata["key"]["hashedToken"].Value<string>();
+                        var key = jdata["key"].Value<string>();
                         //Find it in the database
                         var usr = Mongo.Users.FindOneAs<User>(Query.EQ("_id", uid));
-                        bool tokenfound = false;
                         if (usr != null)
                         {
-                            var tokens = usr.services.resume.loginTokens;
-                            tokenfound = tokens.Any(token => token.hashedToken == key);
-                        }
-					    if (tokenfound)
-                        {
+                            var session = Mongo.Sessions.FindOneAs<Session>(Query.EQ("_id", key));
+                            if (session == null || session.expires < DateTime.Now)
+                            {
+                                user = null;
+                                this.SendJson("{\"status\": false}", "auth");
+                                break;
+                            }
                             if (usr.authItems != null && usr.authItems.Contains("banned"))
                             {
                                 log.Debug(string.Format("User is banned {0}", usr.profile.name));
@@ -207,7 +208,7 @@ namespace D2MPMaster.Browser
                                 RespondError(jdata, "That team is full.");
                                 return;
                             }
-                            LobbyManager.RemoveFromTeam(lobby, user.services.steam.steamid);
+                            LobbyManager.RemoveFromTeam(lobby, user.steam.steamid);
                             lobby.AddPlayer(goodguys ? lobby.radiant : lobby.dire, Player.FromUser(user));
                             LobbyManager.TransmitLobbyUpdate(lobby, new[] { "radiant", "dire" });
                             break;
@@ -411,7 +412,7 @@ namespace D2MPMaster.Browser
                                 RespondError(jdata, "That lobby is full.");
                                 return;
                             }
-                            if (lob.banned.Contains(user.services.steam.steamid))
+                            if (lob.banned.Contains(user.steam.steamid))
                             {
                                 RespondError(jdata, "You are banned from that lobby.");
                                 return;
@@ -487,7 +488,7 @@ namespace D2MPMaster.Browser
                                 RespondError(jdata, "Your lobby isn't ready to play yet.");
                                 return;
                             }
-                            LobbyManager.LaunchAndConnect(lobby, user.services.steam.steamid);
+                            LobbyManager.LaunchAndConnect(lobby, user.steam.steamid);
                             break;
                         }
                     default:
@@ -512,7 +513,7 @@ namespace D2MPMaster.Browser
         /// </summary>
         public void SendManagerStatus()
         {
-            SendManagerStatus(user != null && ClientsController.Find(m => m.Inited && m.SteamID == user.services.steam.steamid).Any());
+            SendManagerStatus(user != null && ClientsController.Find(m => m.Inited && m.SteamID == user.steam.steamid).Any());
         }
 
         public void SendManagerStatus(bool isConnected)
@@ -522,11 +523,7 @@ namespace D2MPMaster.Browser
 
         public void OnClosed(object sender, OnClientDisconnectArgs e)
         {
-            if (user == null) return;
-            if (lobby != null && !this.Find(p => p.user != null && p.user.Id == user.Id).Any())
-            {
-                LobbyManager.LeaveLobby(this);
-            }
+            LobbyManager.LeaveLobby(this);
         }
 
         public static ITextArgs ClearLobbyR()

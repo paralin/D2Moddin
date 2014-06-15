@@ -28,9 +28,9 @@ namespace D2MPMaster.Lobbies
         {
             return new Player
                    {
-                       avatar = user.services.steam.avatar.full,
+                       avatar = user.steam.avatarfull,
                        name = user.profile.name,
-                       steam = user.services.steam.steamid
+                       steam = user.steam.steamid
                    };
         }
     }

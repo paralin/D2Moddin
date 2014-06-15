@@ -33,6 +33,11 @@ namespace D2MPMaster.Model
         public string user { get; set; }
         public bool isPublic { get; set; }
 
+        /// <summary>
+        /// Use some other static hosting off of AWS
+        /// </summary>
+        public string staticClientBundle { get; set; }
+
         public ClientMod ToClientMod()
         {
             return new ClientMod()

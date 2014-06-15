@@ -51,12 +51,14 @@ namespace D2MPMaster.Client
             foreach (var steamid in InitData.SteamIDs.Where(steamid => steamid.Length == 17))
             {
                 SteamID = steamid;
-                user = Mongo.Users.FindOneAs<User>(Query.EQ("services.steam.id", steamid));
+                user = Mongo.Users.FindOneAs<User>(Query.EQ("steam.steamid", steamid));
                 if (user != null) break;
             }
 
             if (user == null) return;
             UID = user.Id;
+
+            Inited = true;
 
             //Find if the user is online
             var browsers = Browser.Find(e => e.user != null && e.user.Id == UID);
@@ -98,8 +100,7 @@ namespace D2MPMaster.Client
                         var msg = jdata.ToObject<OnInstalledMod>();
                         log.Debug(SteamID+" -> installed " + msg.Mod.name + ".");
                         Mods.Add(msg.Mod);
-                        XSocketHelper.AsyncSendTo(Browser, x=>x.user!=null&&x.user.services.steam.steamid==SteamID, BrowserController.InstallResponse("The mod has been installed.", true),
-                            rf => { });
+                        Browser.AsyncSendTo(x=>x.user!=null&&x.user.steam.steamid==SteamID, BrowserController.InstallResponse("The mod has been installed.", true), rf => { });
                         break;
                     }
                     case OnDeletedMod.Msg:
@@ -116,7 +117,7 @@ namespace D2MPMaster.Client
                         InitData = msg;
                         if (msg.Version != Version.ClientVersion)
                         {
-                            XSocketHelper.SendJson(this, JObject.FromObject(new Shutdown()).ToString(Formatting.None), "commands");
+                            this.SendJson(JObject.FromObject(new Shutdown()).ToString(Formatting.None), "commands");
                             return;
                         }
                         foreach (var mod in msg.Mods.Where(mod => mod.name != null && mod.version != null)) Mods.Add(mod);
