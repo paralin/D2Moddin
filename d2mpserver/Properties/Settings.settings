@@ -48,7 +48,7 @@
       <Value Profile="(Default)">29000</Value>
     </Setting>
     <Setting Name="serverName" Type="System.String" Scope="User">
-      <Value Profile="(Default)">Unnamed Server</Value>
+      <Value Profile="(Default)">UNNAMED</Value>
     </Setting>
     <Setting Name="serverRegion" Type="d2mpserver.ServerRegion" Scope="User">
       <Value Profile="(Default)">UNKNOWN</Value>

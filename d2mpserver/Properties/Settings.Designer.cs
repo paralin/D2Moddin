@@ -205,7 +205,7 @@ namespace d2mpserver.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("Unnamed Server")]
+        [global::System.Configuration.DefaultSettingValueAttribute("UNNAMED")]
         public string serverName {
             get {
                 return ((string)(this["serverName"]));

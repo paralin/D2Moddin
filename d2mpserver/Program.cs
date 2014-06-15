@@ -50,6 +50,11 @@ namespace d2mpserver
                 return;
             }
 
+            if (Settings.Default.serverName == "UNNAMED")
+            {
+                Settings.Default["serverName"] = "Unnamed Server";
+            }
+
             Settings.Default.Save();
 
             Console.CancelKeyPress += (sender, arg) => ShutdownImmediately();
