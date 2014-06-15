@@ -1,6 +1,4 @@
 ﻿using System;
-using MongoDB.Bson;
-using MongoDB.Bson.Serialization.Attributes;
 
 namespace D2MPMaster.Model
 {
@@ -9,45 +7,37 @@ namespace D2MPMaster.Model
     /// </summary>
     public class User
     {
+        public int __v { get; set; }
         public string Id { get; set; }
-        public DateTime createdAt { get; set; }
-        public Profile profile { get; set; }
-        public Services services { get; set; }
-        public Status status { get; set; }
         public string[] authItems { get; set; }
-    }
-
-    public class Status
-    {
-        public DateTime lastLogin { get; set; }
-        public bool online { get; set; }
-    }
-
-    public class Services
-    {
-        public ResumeService resume { get; set; }
+        public Profile profile { get; set; }
         public SteamService steam { get; set; }
     }
 
     public class SteamService
     {
-        [BsonElement("id")]
         public string steamid { get; set; }
-        public string username { get; set; }
-        public Avatar avatar { get; set; }
+        public int communityvisibilitystate { get; set; }
+        public int profilestate { get; set; }
+        public string personaname { get; set; }
+        public long lastlogoff { get; set; }
+        public int commentpermission { get; set; }
+        public string profileurl { get; set; }
+        public string avatar { get; set; }
+        public string avatarmedium { get; set; }
+        public string avatarfull { get; set; }
+        public int personastate { get; set; }
+        public string realname { get; set; }
+        public string primaryclanid { get; set; }
+        public long timecreated { get; set; }
+        public int personastateflags { get; set; }
+        public string gameextrainfo { get; set; }
+        public string gameid { get; set; }
+        public string loccountrycode { get; set; }
+        public string locstatecode { get; set; }
+        public int loccityid { get; set; }
     }
 
-    public class Avatar
-    {
-        public string small { get; set; }
-        public string medium { get; set; }
-        public string full { get; set; }
-    }
-
-    public class ResumeService
-    {
-        public LoginToken[] loginTokens;
-    }
 
     public class LoginToken
     {

@@ -30,6 +30,8 @@ namespace D2MPMaster.Storage
         }
         public string GenerateModURL(Mod mod)
         {
+            if (mod.staticClientBundle != null)
+                return mod.staticClientBundle;
             return GenerateBundleURL(mod.bundle);
         }
     }

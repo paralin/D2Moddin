@@ -116,6 +116,7 @@
     <Compile Include="Lobbies\Player.cs" />
     <Compile Include="Model\ClientRecord.cs" />
     <Compile Include="Model\Mod.cs" />
+    <Compile Include="Model\Session.cs" />
     <Compile Include="Model\User.cs" />
     <Compile Include="Mods\Mods.cs" />
     <Compile Include="Program.cs" />

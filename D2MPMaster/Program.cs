@@ -59,7 +59,7 @@ namespace D2MPMaster
             settings.Add(new ConfigurationSetting());
             using (var server = Composable.GetExport<IXSocketServerContainer>())
             {
-                server.StartServers(useLoopback:false);
+                server.StartServers();
                 log.Info("Server running!");
                 while (!shutdown)
                 {
