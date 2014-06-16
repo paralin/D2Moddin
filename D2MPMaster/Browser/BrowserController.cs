@@ -474,7 +474,7 @@ namespace D2MPMaster.Browser
                             }
                             var req = jdata["req"].ToObject<JoinPasswordLobby>();
                             //Find lobby
-                            var lob = LobbyManager.PublicLobbies.FirstOrDefault(m => m.hasPassword&&m.password==req.password);
+                            var lob = LobbyManager.PlayingLobbies.FirstOrDefault(m => m.hasPassword&&m.password==req.password);
                             if (lob == null)
                             {
                                 RespondError(jdata, "Can't find any lobbies with that password.");
