@@ -181,9 +181,9 @@ namespace d2mp
             while (zipEntry != null)
             {
                 String entryFileName = zipEntry.Name;
-                log.Debug(" --> " + entryFileName);
+                log.Debug("CRC:" + zipEntry.Crc + " --> " + entryFileName);
                 var buffer = new byte[4096];
-                String fullZipToPath = Path.Combine(outFolder, entryFileName);
+                String fullZipToPath = Path.Combine(outFolder, "temp", entryFileName);
                 string directoryName = Path.GetDirectoryName(fullZipToPath);
                 if (directoryName.Length > 0)
                 {
@@ -200,6 +200,24 @@ namespace d2mp
                 }
                 zipEntry = zipInputStream.GetNextEntry();
             }
+
+            try
+            {
+                foreach (var file in Directory.EnumerateFiles(Path.Combine(outFolder, "temp"), "*", System.IO.SearchOption.AllDirectories))
+                {
+                    string destinationPath = Path.Combine(outFolder, file.Substring(outFolder.Length + 6, file.Length - outFolder.Length - 6));
+                    if (!Directory.Exists(Path.GetDirectoryName(destinationPath)))
+                        Directory.CreateDirectory(Path.GetDirectoryName(destinationPath));
+                    File.Move(file, destinationPath);
+                }
+                if (Directory.Exists(Path.Combine(outFolder, "temp")))
+                    Directory.Delete(Path.Combine(outFolder, "temp"), true);
+            }
+            catch (Exception)
+            {
+                notifier.Notify(4, "Mod installation failed", "Error moving extracted files from temporary folder.");
+            }
+
         }
 
         static void Send(string json)
