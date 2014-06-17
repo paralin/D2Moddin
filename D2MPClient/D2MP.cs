@@ -157,10 +157,11 @@ namespace d2mp
 
         private static void updateClient()
         {
+            var updaterPath = Path.Combine(Directory.GetParent(ourDir).FullName, "updater.exe");
             using (WebClient wc = new WebClient())
             {
-                wc.DownloadFile("https://s3-us-west-2.amazonaws.com/d2mpclient/D2MPUpdater.exe", "updater.exe");
-                Process.Start("updater.exe");
+                wc.DownloadFile("https://s3-us-west-2.amazonaws.com/d2mpclient/D2MPUpdater.exe", updaterPath);
+                Process.Start(updaterPath);
                 Application.Exit();
             }
         }
@@ -268,7 +269,7 @@ namespace d2mp
                                             using (icon = new ProcessIcon())
                                             {
                                                 icon.Display();
-                                                icon.showNotification = delegate { notifier.Invoke(new MethodInvoker(delegate { notifier.Fade(1); notifier.hideTimer.Start(); })); };
+                                                icon.showNotification = ()=> notifier.Invoke(new MethodInvoker(()=>{ notifier.Fade(1); notifier.hideTimer.Start(); }));
                                                 Application.Run();
                                             }
                                         });
