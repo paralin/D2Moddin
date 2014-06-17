@@ -201,11 +201,11 @@ namespace D2MPMaster.Lobbies
         {
             if (!LobbyQueue.Contains(lobby))
             {
-                LobbyQueue.Add(lobby);
                 lobby.status = LobbyStatus.Queue;
                 PublicLobbies.Remove(lobby);
                 TransmitLobbyUpdate(lobby, new[]{"status"});
                 SendLaunchDota(lobby);
+                LobbyQueue.Add(lobby);
             }
         }
 
@@ -297,13 +297,9 @@ namespace D2MPMaster.Lobbies
         public static void JoinLobby(Lobby lobby, User user, BrowserController controller)
         {
             if (lobby==null || user == null) return;
-            var res = RemoveFromTeam(lobby, user.steam.steamid);
-            if (res != null)
+            foreach (var result in Browsers.Find(m => m.user != null && m.user.Id == user.Id && m.lobby!=null))
             {
-                foreach (var result in Browsers.Find(m => m.user != null && m.user.Id == user.Id))
-                {
-                    result.lobby = null;
-                }
+                LeaveLobby(result);
             }
             var direCount = lobby.TeamCount(lobby.dire);
             var radCount = lobby.TeamCount(lobby.radiant);
@@ -336,6 +332,10 @@ namespace D2MPMaster.Lobbies
         /// <returns></returns>
         public static Lobby CreateLobby(User user, Mod mod, string name)
         {
+            foreach (var result in Browsers.Find(m => m.user != null && m.user.Id == user.Id && m.lobby!=null))
+            {
+                LeaveLobby(result);
+            }
             //Filter lobby name to alphanumeric only
             name = Regex.Replace(name, "^[\\w \\.\"'[]\\{\\}\\(\\)]+", "");
             //Constrain lobby name length to 40 characters
