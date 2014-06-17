@@ -686,14 +686,18 @@ namespace d2mp
                 regKey.OpenSubKey(@"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 570");
             if (regKey != null)
             {
-                cachedDotaLocation = regKey.GetValue("InstallLocation").ToString();
-                return cachedDotaLocation;
+                string dir = regKey.GetValue("InstallLocation").ToString();
+                if (Directory.Exists(dir) && File.Exists(Path.Combine(dir, "dota.exe")))
+                {
+                    cachedDotaLocation = regKey.GetValue("InstallLocation").ToString();
+                    return cachedDotaLocation;
+                }
             }
 
             if (steamDir != null)
             {
                 string dir = Path.Combine(steamDir, @"steamapps\common\dota 2 beta\");
-                if (Directory.Exists(dir))
+                if (Directory.Exists(dir) && File.Exists(Path.Combine(dir, "dota.exe")))
                 {
                     cachedDotaLocation = dir;
                     return dir;
