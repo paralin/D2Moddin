@@ -371,12 +371,20 @@ namespace d2mp
 
         public static ClientCommon.Data.ClientMod GetActiveMod()
         {
-            string infoPath = Path.Combine(modDir, "modname.txt");
-            if (!File.Exists(infoPath)) return null;
-            string name = File.ReadAllText(infoPath);
-            var mod = JObject.Parse(name).ToObject<ClientMod>();
-            log.Debug("Current active mod: " + mod.name);
-            return mod;
+            try
+            {
+                string infoPath = Path.Combine(modDir, "modname.txt");
+                if (!File.Exists(infoPath)) return null;
+                string name = File.ReadAllText(infoPath);
+                var mod = JObject.Parse(name).ToObject<ClientMod>();
+                log.Debug("Current active mod: " + mod.name);
+                return mod;
+            }
+            catch (Exception ex)
+            {
+                log.Error("Problem detecting active mod, assuming there is no active mod.", ex);
+                return null;
+            }
         }
 
         private static void SpectateGame(object state)
