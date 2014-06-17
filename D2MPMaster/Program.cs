@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Threading;
 using D2MPMaster.Database;
 using D2MPMaster.Lobbies;
+using D2MPMaster.MatchData;
+using D2MPMaster.Properties;
 using D2MPMaster.Server;
 using D2MPMaster.Storage;
 using D2MPMaster.Webserver;
@@ -44,9 +46,8 @@ namespace D2MPMaster
             log.Info("Initializing Amazon S3...");
             S3 = new S3Manager();
 
-			//log.Info("Initializing web server...");
-			//WebServer wserver = new WebServer();
-			//wserver.Start();
+			log.Info("Initializing match result server...");
+			MatchDataServer matchDataServer = new MatchDataServer(Settings.Default.MatchResultBind);
 
             log.Info("Initializing xsockets...");
 
@@ -66,6 +67,7 @@ namespace D2MPMaster
                     Thread.Sleep(100);
                 }
                 server.StopServers();
+                matchDataServer.Shutdown();
             }
 
             log.Info("Done, shutting down...");

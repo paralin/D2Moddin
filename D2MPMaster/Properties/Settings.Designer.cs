@@ -108,5 +108,17 @@ namespace D2MPMaster.Properties {
                 this["MongoURL"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("http://*:4001/")]
+        public string MatchResultBind {
+            get {
+                return ((string)(this["MatchResultBind"]));
+            }
+            set {
+                this["MatchResultBind"] = value;
+            }
+        }
     }
 }

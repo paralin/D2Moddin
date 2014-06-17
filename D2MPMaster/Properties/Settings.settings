@@ -23,5 +23,8 @@
     <Setting Name="MongoURL" Type="System.String" Scope="User">
       <Value Profile="(Default)">mongodb://appfog:E74y9KXNuUhE6F4pbFvC@capital.0.mongolayer.com:10048/d2moddin</Value>
     </Setting>
+    <Setting Name="MatchResultBind" Type="System.String" Scope="User">
+      <Value Profile="(Default)">http://*:4001/</Value>
+    </Setting>
   </Settings>
 </SettingsFile>
