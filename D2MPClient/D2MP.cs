@@ -383,7 +383,7 @@ namespace d2mp
         {
             activeMod = GetActiveMod();
             var op = state as SetMod;
-            if (activeMod != null && Equals(activeMod, op.Mod)) return;
+            if (activeMod != null && Equals(activeMod, op.Mod) && activeMod.version == op.Mod.version) return;
             try
             {
                 if (Directory.Exists(modDir))
