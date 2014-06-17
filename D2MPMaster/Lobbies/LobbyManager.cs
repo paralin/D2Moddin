@@ -297,6 +297,14 @@ namespace D2MPMaster.Lobbies
         public static void JoinLobby(Lobby lobby, User user, BrowserController controller)
         {
             if (lobby==null || user == null) return;
+            var res = RemoveFromTeam(lobby, user.steam.steamid);
+            if (res != null)
+            {
+                foreach (var result in Browsers.Find(m => m.user != null && m.user.Id == user.Id))
+                {
+                    result.lobby = null;
+                }
+            }
             var direCount = lobby.TeamCount(lobby.dire);
             var radCount = lobby.TeamCount(lobby.radiant);
             if (direCount >= 5 && radCount >= 5) return;
