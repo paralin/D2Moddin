@@ -2,16 +2,11 @@
 using System.Collections.Generic;
 using System.Threading;
 using D2MPMaster.Database;
-using D2MPMaster.Lobbies;
 using D2MPMaster.MatchData;
 using D2MPMaster.Properties;
 using D2MPMaster.Server;
 using D2MPMaster.Storage;
-using D2MPMaster.Webserver;
 using log4net.Config;
-using MongoDB.Driver.Linq;
-using XSockets.Core.Common.Configuration;
-using XSockets.Core.Common.Globals;
 using XSockets.Core.Common.Socket;
 using XSockets.Core.Configuration;
 using XSockets.Plugin.Framework;
@@ -47,7 +42,7 @@ namespace D2MPMaster
             S3 = new S3Manager();
 
 			log.Info("Initializing match result server...");
-			MatchDataServer matchDataServer = new MatchDataServer(Settings.Default.MatchResultBind);
+			MatchDataServer matchDataServer = new MatchDataServer(Settings.Default.WebserverBind);
 
             log.Info("Initializing xsockets...");
 

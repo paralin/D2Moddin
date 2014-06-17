@@ -15,6 +15,7 @@ namespace D2MPMaster.Database
         public static MongoCollection Users;
         public static MongoCollection Mods;
         public static MongoCollection Sessions;
+        public static MongoCollection Results;
 
         public static void Setup()
         {
@@ -30,6 +31,7 @@ namespace D2MPMaster.Database
             Users = Database.GetCollection("users");
             Mods = Database.GetCollection("mods");
             Sessions = Database.GetCollection("sessions");
+            Results = Database.GetCollection("matchResults");
         }
     }
 }

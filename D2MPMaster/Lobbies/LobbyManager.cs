@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
@@ -8,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using D2MPMaster.Browser;
 using D2MPMaster.Client;
+using D2MPMaster.Database;
 using D2MPMaster.LiveData;
 using D2MPMaster.Model;
 using D2MPMaster.Server;
@@ -44,6 +46,8 @@ namespace D2MPMaster.Lobbies
         /// </summary>
         public static ObservableCollection<Lobby> PlayingLobbies = new ObservableCollection<Lobby>();
 
+        public static ConcurrentDictionary<string,Lobby> LobbyID = new ConcurrentDictionary<string,Lobby>(); 
+
         public static volatile bool Registered = false;
 
         public static List<Lobby> LobbyQueue = new List<Lobby>();
@@ -63,7 +67,36 @@ namespace D2MPMaster.Lobbies
                 CalculateQueueThread = new Thread(CalculateQueueT);
                 CalculateQueueThread.Start();
                 PublicLobbies.CollectionChanged += TransmitLobbiesChange;
+                PlayingLobbies.CollectionChanged += UpdateLobbyIDDict;
                 Registered = true;
+            }
+        }
+
+        private void UpdateLobbyIDDict(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            if (e.Action == NotifyCollectionChangedAction.Reset)
+            {
+                LobbyID.Clear();
+                return;
+            }
+            foreach (Lobby lobby in e.NewItems)
+            {
+                switch (e.Action)
+                {
+                    case NotifyCollectionChangedAction.Add:
+                        LobbyID[lobby.id] = lobby;
+                        break;
+                }
+            }
+            foreach (Lobby lobby in e.OldItems)
+            {
+                switch (e.Action)
+                {
+                    case NotifyCollectionChangedAction.Remove:
+                        Lobby res;
+                        LobbyID.TryRemove(lobby.id, out res);
+                        break;
+                }
             }
         }
 
@@ -419,8 +452,8 @@ namespace D2MPMaster.Lobbies
 
         public static void OnServerShutdown(GameInstance instance)
         {
-            if (!PlayingLobbies.Contains(instance.lobby)) return;
-            log.Info("Lobby finished "+instance.lobby.id);
+            log.Info("Server shutdown: " + instance.lobby.id);
+            if (!PlayingLobbies.Contains(instance.lobby) || instance.lobby.status == LobbyStatus.Start) return;
             CloseLobby(instance.lobby);
         }
 
@@ -430,9 +463,18 @@ namespace D2MPMaster.Lobbies
             var lobby = instance.lobby;
             lobby.serverIP = instance.Server.Address.Split(':')[0]+":"+instance.port;
             lobby.status = LobbyStatus.Play;
-            TransmitLobbyUpdate(lobby, new []{"serverIP", "status"});
+            TransmitLobbyUpdate(lobby, new []{"status"});
             SendConnectDota(lobby);
             log.Info("Server ready "+instance.lobby.id+" "+instance.lobby.serverIP);
+        }
+
+        public static void ReturnToWait(Lobby lobby)
+        {
+            if (!PlayingLobbies.Contains(lobby)) return;
+            lobby.serverIP = "";
+            lobby.status = LobbyStatus.Start;
+            TransmitLobbyUpdate(lobby, new[] { "status" });
+            if (lobby.isPublic) PublicLobbies.Add(lobby);
         }
 
         private static void SendLaunchDota(Lobby lobby)
@@ -467,6 +509,31 @@ namespace D2MPMaster.Lobbies
         {
             ClientsController.AsyncSendTo(m => m.SteamID == steamid, ClientController.LaunchDota(), req => { });
             ClientsController.AsyncSendTo(m => m.SteamID == steamid, ClientController.ConnectDota(lobby.serverIP), req => { });
+        }
+
+        public static void OnMatchComplete(Model.MatchData toObject)
+        {
+            Lobby lob;
+            if (!LobbyID.TryGetValue(toObject.match_id, out lob)) return;
+            log.Debug("Match completed, "+lob.id);
+            CloseLobby(lob);
+            try
+            {
+                Mongo.Results.Insert(toObject);
+            }
+            catch (Exception ex)
+            {
+                log.Error("Failed to store match result " + lob.id, ex);
+            }
+        }
+
+        public static void OnLoadFail(string matchid)
+        {
+            Lobby lob;
+            if (!LobbyID.TryGetValue(matchid, out lob)) return;
+            if (lob.status != LobbyStatus.Play) return;
+            log.Debug(matchid+" failed to load, returning to waiting stage.");
+            ReturnToWait(lob);
         }
     }
 }

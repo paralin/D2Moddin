@@ -129,6 +129,7 @@
     <Compile Include="Lobbies\Lobby.cs" />
     <Compile Include="Lobbies\LobbyManager.cs" />
     <Compile Include="Lobbies\Player.cs" />
+    <Compile Include="Model\MatchData.cs" />
     <Compile Include="MatchData\MatchDataServer.cs" />
     <Compile Include="Model\ClientRecord.cs" />
     <Compile Include="Model\Mod.cs" />
@@ -148,7 +149,6 @@
     <Compile Include="Server\ServerService.cs" />
     <Compile Include="Storage\S3Manager.cs" />
     <Compile Include="Utils.cs" />
-    <Compile Include="Webserver\Server.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config">
@@ -172,6 +172,9 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="XSocketsNET\ServerExample\ReadMe.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="MatchData\Data\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

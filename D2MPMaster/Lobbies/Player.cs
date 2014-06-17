@@ -24,6 +24,11 @@ namespace D2MPMaster.Lobbies
         /// </summary>
         public string avatar { get; set; }
 
+        /// <summary>
+        /// Did they fail to connect?
+        /// </summary>
+        public bool failedConnect { get; set; }
+
         public static Player FromUser(User user)
         {
             return new Player

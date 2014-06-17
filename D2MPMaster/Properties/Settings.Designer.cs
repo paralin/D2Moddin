@@ -87,7 +87,7 @@ namespace D2MPMaster.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("http://ddp2.d2modd.in:4001/gdataapi/matchres")]
+        [global::System.Configuration.DefaultSettingValueAttribute("http://ddp2.d2modd.in/gdataapi/matchres")]
         public string PostURL {
             get {
                 return ((string)(this["PostURL"]));
@@ -111,13 +111,13 @@ namespace D2MPMaster.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("http://*:4001/")]
-        public string MatchResultBind {
+        [global::System.Configuration.DefaultSettingValueAttribute("http://*:80/")]
+        public string WebserverBind {
             get {
-                return ((string)(this["MatchResultBind"]));
+                return ((string)(this["WebserverBind"]));
             }
             set {
-                this["MatchResultBind"] = value;
+                this["WebserverBind"] = value;
             }
         }
     }
