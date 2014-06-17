@@ -280,7 +280,7 @@ namespace d2mp
             try
             {
                 var steam = new SteamFinder();
-                if (!Directory.Exists(Settings.steamDir) || !Directory.Exists(Settings.dotaDir))
+                if (!Directory.Exists(Settings.steamDir) || !Directory.Exists(Settings.dotaDir) || !SteamFinder.checkDotaDir(Settings.dotaDir))
                 {
                     Settings.steamDir = steam.FindSteam(true);
                     Settings.dotaDir = steam.FindDota(true);
@@ -695,7 +695,7 @@ namespace d2mp
             if (regKey != null)
             {
                 string dir = regKey.GetValue("InstallLocation").ToString();
-                if (Directory.Exists(dir) && File.Exists(Path.Combine(dir, "dota.exe")))
+                if (checkDotaDir(dir))
                 {
                     cachedDotaLocation = regKey.GetValue("InstallLocation").ToString();
                     return cachedDotaLocation;
@@ -705,7 +705,7 @@ namespace d2mp
             if (steamDir != null)
             {
                 string dir = Path.Combine(steamDir, @"steamapps\common\dota 2 beta\");
-                if (Directory.Exists(dir) && File.Exists(Path.Combine(dir, "dota.exe")))
+                if (checkDotaDir(dir))
                 {
                     cachedDotaLocation = dir;
                     return dir;
@@ -721,9 +721,13 @@ namespace d2mp
             {
                 if (processes.Length > 0)
                 {
-                    cachedLocation = processes[0].MainModule.FileName.Substring(0, processes[0].MainModule.FileName.Length - 8);
+                    string dir = processes[0].MainModule.FileName.Substring(0, processes[0].MainModule.FileName.Length - 8);
                     processes[0].Kill();
-                    return cachedLocation;
+                    if (checkDotaDir(dir))
+                    {
+                        cachedLocation = dir;
+                        return cachedLocation;
+                    }
 
                 }
                 else
@@ -733,6 +737,10 @@ namespace d2mp
                 }
             }
             return null;
+        }
+        public static bool checkDotaDir(string path)
+        {
+            return Directory.Exists(path) && Directory.Exists(Path.Combine(path, "dota")) && File.Exists(Path.Combine(path, "dota/gameinfo.txt"));
         }
     }
 }
