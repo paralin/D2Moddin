@@ -172,14 +172,12 @@ namespace D2MPMaster.Lobbies
         /// <param name="lobby"></param>
         public static void CancelQueue(Lobby lobby)
         {
-            if (LobbyQueue.Contains(lobby))
-            {
-                LobbyQueue.Remove(lobby);
-                lobby.status = LobbyStatus.Start;
-                if(lobby.isPublic)
-                    PublicLobbies.Add(lobby);
-                TransmitLobbyUpdate(lobby, new []{"status"});
-            }
+            if (!LobbyQueue.Contains(lobby)) return;
+            LobbyQueue.Remove(lobby);
+            lobby.status = LobbyStatus.Start;
+            if(lobby.isPublic)
+                PublicLobbies.Add(lobby);
+            TransmitLobbyUpdate(lobby, new []{"status"});
         }
 
         private static void CalculateQueue()
