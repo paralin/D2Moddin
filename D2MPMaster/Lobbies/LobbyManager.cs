@@ -413,37 +413,31 @@ namespace D2MPMaster.Lobbies
 
         public static void OnServerShutdown(GameInstance instance)
         {
-            if (PlayingLobbies.Contains(instance.lobby))
-            {
-				log.Info("Lobby finished "+instance.lobby.id);
-                CloseLobby(instance.lobby);
-            }
+            if (!PlayingLobbies.Contains(instance.lobby)) return;
+            log.Info("Lobby finished "+instance.lobby.id);
+            CloseLobby(instance.lobby);
         }
 
         public static void OnServerReady(GameInstance instance)
         {
-            if (PlayingLobbies.Contains(instance.lobby))
-			{
-                var lobby = instance.lobby;
-                lobby.serverIP = instance.Server.Address.Split(':')[0]+":"+instance.port;
-                lobby.status = LobbyStatus.Play;
-                TransmitLobbyUpdate(lobby, new []{"serverIP", "status"});
-                SendConnectDota(lobby);
-				log.Info("Server ready "+instance.lobby.id+" "+instance.lobby.serverIP);
-            }
+            if (!PlayingLobbies.Contains(instance.lobby)) return;
+            var lobby = instance.lobby;
+            lobby.serverIP = instance.Server.Address.Split(':')[0]+":"+instance.port;
+            lobby.status = LobbyStatus.Play;
+            TransmitLobbyUpdate(lobby, new []{"serverIP", "status"});
+            SendConnectDota(lobby);
+            log.Info("Server ready "+instance.lobby.id+" "+instance.lobby.serverIP);
         }
 
         private static void SendLaunchDota(Lobby lobby)
         {
-            foreach (var plyr in lobby.radiant)
+            foreach (var plyr in lobby.radiant.Where(plyr => plyr != null))
             {
-                if (plyr == null) continue;
                 ClientsController.AsyncSendTo(c=>c.SteamID!=null&&c.SteamID==plyr.steam, ClientController.LaunchDota(),
                     req => { });
             }
-            foreach (var plyr in lobby.dire)
+            foreach (var plyr in lobby.dire.Where(plyr => plyr != null))
             {
-                if (plyr == null) continue;
                 ClientsController.AsyncSendTo(c => c.SteamID != null && c.SteamID == plyr.steam, ClientController.LaunchDota(),
                     req => { });
             }
@@ -451,15 +445,13 @@ namespace D2MPMaster.Lobbies
 
         private static void SendConnectDota(Lobby lobby)
         {
-            foreach (var plyr in lobby.radiant)
+            foreach (var plyr in lobby.radiant.Where(plyr => plyr != null))
             {
-                if (plyr == null) continue;
                 ClientsController.AsyncSendTo(c => c.SteamID != null && c.SteamID == plyr.steam, ClientController.ConnectDota(lobby.serverIP),
                     req => { });
             }
-            foreach (var plyr in lobby.dire)
+            foreach (var plyr in lobby.dire.Where(plyr => plyr != null))
             {
-                if (plyr == null) continue;
                 ClientsController.AsyncSendTo(c => c.SteamID != null && c.SteamID == plyr.steam, ClientController.ConnectDota(lobby.serverIP),
                     req => { });
             }
@@ -468,13 +460,7 @@ namespace D2MPMaster.Lobbies
         public static void LaunchAndConnect(Lobby lobby, string steamid)
         {
             ClientsController.AsyncSendTo(m => m.SteamID == steamid, ClientController.LaunchDota(), req => { });
-            var task = new Task(() =>
-            {
-                Thread.Sleep(3000);
-                ClientsController.AsyncSendTo(m => m.SteamID == steamid, ClientController.ConnectDota(lobby.serverIP), req => { });
-            });
-            task.Start();
-
+            ClientsController.AsyncSendTo(m => m.SteamID == steamid, ClientController.ConnectDota(lobby.serverIP), req => { });
         }
     }
 }

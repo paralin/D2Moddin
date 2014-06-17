@@ -18,7 +18,7 @@ namespace D2MPMaster
 {
     class Program
     {
-        private static string version = "1.0.1";
+        private static string version = "1.0.2";
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
         public static S3Manager S3;
