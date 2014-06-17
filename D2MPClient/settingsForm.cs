@@ -67,7 +67,7 @@ namespace d2mp
             fDialog.Description = "Please select your Dota 2 directory.";
             if (fDialog.ShowDialog() == DialogResult.OK)
             {
-                if (File.Exists(Path.Combine(fDialog.SelectedPath, @"dota/gameinfo.txt")))
+                if (SteamFinder.checkDotaDir(fDialog.SelectedPath))
                 {
                     Settings.dotaDir = fDialog.SelectedPath;
                     refreshSettings();
