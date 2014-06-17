@@ -115,7 +115,9 @@ namespace d2mp
                 switch (msg["msg"].Value<string>())
                 {
                     case Shutdown.Msg:
-                        log.Debug("Shutting down due to server request.");
+                        log.Debug("Shutting down due to server request. Client not up to date.");
+                        notifier.Notify(2, "Outdated version", "Updating to new version...");
+                        updateClient();
                         shutDown = true;
                         return;
                     case ClientCommon.Methods.Uninstall.Msg:
@@ -151,6 +153,16 @@ namespace d2mp
             });
             client.OnClose += (sender, args)=>
                 HandleClose();
+        }
+
+        private static void updateClient()
+        {
+            using (WebClient wc = new WebClient())
+            {
+                wc.DownloadFile("https://s3-us-west-2.amazonaws.com/d2mpclient/D2MPUpdater.exe", "updater.exe");
+                Process.Start("updater.exe");
+                Application.Exit();
+            }
         }
 
         private static void HandleClose()
