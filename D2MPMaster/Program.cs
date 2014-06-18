@@ -56,7 +56,7 @@ namespace D2MPMaster
                 uris.Add(new Uri("http://" + localAddr + ":" + Settings.Default.WebserverBind + "/"));
                 urilist = uris.ToArray();
             }
-            var config = new HostConfiguration() {RewriteLocalhost = false};
+            var config = new HostConfiguration() {RewriteLocalhost = false, UrlReservations = new UrlReservations(){CreateAutomatically = true}};
             using (var nancyServer = new NancyHost(config,urilist))
             {
                 nancyServer.Start();
