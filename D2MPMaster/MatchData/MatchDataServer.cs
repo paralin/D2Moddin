@@ -13,7 +13,7 @@ namespace D2MPMaster.MatchData
         private HttpServer server;
         public MatchDataServer(string url)
         {
-            this.server = new HttpServer(url);
+            server = new HttpServer(url);
             SetupServerBinds();
         }
 

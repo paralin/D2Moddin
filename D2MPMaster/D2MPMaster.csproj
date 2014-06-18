@@ -39,15 +39,6 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\AWSSDK.2.1.1.0\lib\net45\AWSSDK.dll</HintPath>
     </Reference>
-    <Reference Include="Griffin.Networking">
-      <HintPath>..\packages\Griffin.Networking.0.5.7\lib\net40\Griffin.Networking.dll</HintPath>
-    </Reference>
-    <Reference Include="Griffin.Networking.Protocol.Http">
-      <HintPath>..\packages\Griffin.Networking.Protocol.Http.0.5.2\lib\net40\Griffin.Networking.Protocol.Http.dll</HintPath>
-    </Reference>
-    <Reference Include="Griffin.WebServer">
-      <HintPath>..\packages\Griffin.WebServer.0.5.0\lib\net40\Griffin.WebServer.dll</HintPath>
-    </Reference>
     <Reference Include="log4net">
       <HintPath>..\packages\log4net.2.0.3\lib\net40-full\log4net.dll</HintPath>
     </Reference>
@@ -61,11 +52,7 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Newtonsoft.Json.6.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
-    <Reference Include="ServiceStack.Text">
-      <HintPath>..\packages\XSockets.Core.3.0.6\lib\net40\ServiceStack.Text.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
-    <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
     <Reference Include="System.Reactive.Core">
       <HintPath>..\packages\Rx-Core.2.1.30214.0\lib\Net45\System.Reactive.Core.dll</HintPath>
@@ -79,38 +66,14 @@
     <Reference Include="System.Reactive.PlatformServices">
       <HintPath>..\packages\Rx-PlatformServices.2.1.30214.0\lib\Net45\System.Reactive.PlatformServices.dll</HintPath>
     </Reference>
-    <Reference Include="System.Web.Extensions" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Xml" />
-    <Reference Include="XSockets.Controllers">
-      <HintPath>..\packages\XSockets.Server.3.0.6\lib\net40\XSockets.Controllers.dll</HintPath>
-    </Reference>
     <Reference Include="XSockets.Core">
       <HintPath>..\packages\XSockets.Core.3.0.6\lib\net40\XSockets.Core.dll</HintPath>
     </Reference>
     <Reference Include="XSockets.Core.Common">
       <HintPath>..\packages\XSockets.Core.3.0.6\lib\net40\XSockets.Core.Common.dll</HintPath>
     </Reference>
-    <Reference Include="XSockets.Core.Communication">
-      <HintPath>..\packages\XSockets.Server.3.0.6\lib\net40\XSockets.Core.Communication.dll</HintPath>
-    </Reference>
     <Reference Include="XSockets.Plugin.Framework">
       <HintPath>..\packages\XSockets.Plugin.Framework.1.4.3\lib\XSockets.Plugin.Framework.dll</HintPath>
-    </Reference>
-    <Reference Include="XSockets.Protocol">
-      <HintPath>..\packages\XSockets.Server.3.0.6\lib\net40\XSockets.Protocol.dll</HintPath>
-    </Reference>
-    <Reference Include="XSockets.Serialization">
-      <HintPath>..\packages\XSockets.Core.3.0.6\lib\net40\XSockets.Serialization.dll</HintPath>
-    </Reference>
-    <Reference Include="XSockets.Server">
-      <HintPath>..\packages\XSockets.Server.3.0.6\lib\net40\XSockets.Server.dll</HintPath>
-    </Reference>
-    <Reference Include="XSockets.WebRTC">
-      <HintPath>..\packages\XSockets.Server.3.0.6\lib\net40\XSockets.WebRTC.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
