@@ -144,5 +144,17 @@ namespace D2MPMaster.Properties {
                 this["MongoDevDB"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("ddp2.d2modd.in")]
+        public string WebAddress {
+            get {
+                return ((string)(this["WebAddress"]));
+            }
+            set {
+                this["WebAddress"] = value;
+            }
+        }
     }
 }

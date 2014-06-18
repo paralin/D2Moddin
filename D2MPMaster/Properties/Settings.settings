@@ -32,5 +32,8 @@
     <Setting Name="MongoDevDB" Type="System.String" Scope="User">
       <Value Profile="(Default)">d2mpdev</Value>
     </Setting>
+    <Setting Name="WebAddress" Type="System.String" Scope="User">
+      <Value Profile="(Default)">ddp2.d2modd.in</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

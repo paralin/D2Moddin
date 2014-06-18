@@ -51,10 +51,13 @@ namespace D2MPMaster
             Uri[] urilist = null;
             {
 				IList<Uri> uris = new List<Uri>();// { new Uri("http://127.0.0.1:" + Settings.Default.WebserverBind + "/") };
+#if DEBUG
+                uris.Add(new Uri("http://127.0.0.1:" + Settings.Default.WebserverBind));
+#endif
 				//var u = new UdpClient("8.8.8.8", 1);
 				//IPAddress localAddr = ((IPEndPoint) u.Client.LocalEndPoint).Address;
 				//uris.Add(new Uri("http://" + localAddr + ":" + Settings.Default.WebserverBind + "/"));
-				uris.Add(new Uri("http://dev1.d2modd.in:"+Settings.Default.WebserverBind));
+				uris.Add(new Uri("http://"+Settings.Default.WebAddress+":"+Settings.Default.WebserverBind));
                 urilist = uris.ToArray();
             }
 			foreach(var uri in urilist){
