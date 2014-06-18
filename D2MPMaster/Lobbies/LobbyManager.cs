@@ -77,6 +77,7 @@ namespace D2MPMaster.Lobbies
                 LobbyID.Clear();
                 return;
             }
+            if(e.NewItems != null)
             foreach (Lobby lobby in e.NewItems)
             {
                 switch (e.Action)
@@ -86,6 +87,7 @@ namespace D2MPMaster.Lobbies
                         break;
                 }
             }
+            if(e.OldItems != null)
             foreach (Lobby lobby in e.OldItems)
             {
                 switch (e.Action)

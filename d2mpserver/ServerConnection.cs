@@ -23,12 +23,24 @@ namespace d2mpserver
         {
             this.manager = manager;
             SetupClient();
-            client.Open();
+            try
+            {
+                client.Open();
+            }
+            catch (Exception ex)
+            {
+                log.Error("Can't connect.");
+                AttemptReconnect();
+            }
         }
 
         private void SetupClient()
         {
+#if DEBUG
+            client = new XSocketClient("ws://localhost:4502/ServerController", "*");
+#else
             client = new XSocketClient(Settings.Default.serverIP, "*");
+#endif
             client.OnClose += (sender, args) => log.Debug("Disconnected from the server");
             client.OnError += (sender, args) => log.Error("Socket error: " + args.data);
             client.Bind("commands", e =>
@@ -44,11 +56,23 @@ namespace d2mpserver
             client.OnClose += (sender, args) =>
             {
                 log.Info("Disconnected from the server.");
-                SetupClient();
-                Thread.Sleep(5000);
-                log.Info("Attempting reconnect...");
-                client.Open();
+                AttemptReconnect();
             };
+        }
+
+        private void AttemptReconnect()
+        {
+            Thread.Sleep(5000);
+            SetupClient();
+            log.Info("Attempting reconnect...");
+            try
+            {
+                client.Open();
+            }
+            catch (Exception ex)
+            {
+                AttemptReconnect();
+            }
         }
 
         private string GetPublicIpAddress()

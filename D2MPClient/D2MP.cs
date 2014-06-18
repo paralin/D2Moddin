@@ -42,7 +42,11 @@ namespace d2mp
 {
     public class D2MP
     {
+#if DEBUG
+        private static string server = "ws://localhost:4502/ClientController";
+#else
         private static string server = "ws://ddp2.d2modd.in:4502/ClientController";
+#endif
         public static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
         private static string addonsDir;
         public static string d2mpDir;
