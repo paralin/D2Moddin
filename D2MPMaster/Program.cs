@@ -56,7 +56,8 @@ namespace D2MPMaster
                 uris.Add(new Uri("http://" + localAddr + ":" + Settings.Default.WebserverBind + "/"));
                 urilist = uris.ToArray();
             }
-            using (var nancyServer = new NancyHost(urilist))
+            var config = new HostConfiguration() {RewriteLocalhost = false};
+            using (var nancyServer = new NancyHost(config,urilist))
             {
                 nancyServer.Start();
                 log.Info("Initializing xsockets...");

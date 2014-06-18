@@ -5,6 +5,8 @@ using System.Linq;
 using D2MPMaster.Lobbies;
 using d2mpserver;
 using Nancy;
+using Nancy.ErrorHandling;
+using Nancy.Responses;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -66,6 +68,19 @@ namespace D2MPMaster.MatchData
         private static void HandleMatchComplete(Model.MatchData toObject)
         {
             LobbyManager.OnMatchComplete(toObject);
+        }
+    }
+    public class My404Hander : IStatusCodeHandler
+    {
+        public bool HandlesStatusCode(HttpStatusCode statusCode,
+                                      NancyContext context)
+        {
+            return statusCode == HttpStatusCode.NotFound;
+        }
+
+        public void Handle(HttpStatusCode statusCode, NancyContext context)
+        {
+            context.Response = new TextResponse(statusCode, "Not found.");
         }
     }
 }

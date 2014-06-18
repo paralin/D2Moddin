@@ -120,5 +120,29 @@ namespace D2MPMaster.Properties {
                 this["WebserverBind"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("mongodb://development:fcnbZAAHb5ajp57WGCWn@kahana.mongohq.com:10065/d2mpdev")]
+        public string MongoDevURL {
+            get {
+                return ((string)(this["MongoDevURL"]));
+            }
+            set {
+                this["MongoDevURL"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("d2mpdev")]
+        public string MongoDevDB {
+            get {
+                return ((string)(this["MongoDevDB"]));
+            }
+            set {
+                this["MongoDevDB"] = value;
+            }
+        }
     }
 }

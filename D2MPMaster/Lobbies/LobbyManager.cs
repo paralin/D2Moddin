@@ -471,12 +471,15 @@ namespace D2MPMaster.Lobbies
             //Guilty unless proven innocent
             foreach (var player in lobby.radiant)
             {
+                if (player == null) continue;
                 player.failedConnect = true;
             }
             foreach (var player in lobby.dire)
             {
+                if (player == null) continue;
                 player.failedConnect = true;
             }
+            SendLaunchDota(lobby);
             SendConnectDota(lobby);
             log.Info("Server ready "+instance.lobby.id+" "+instance.lobby.serverIP);
         }

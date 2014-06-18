@@ -26,5 +26,11 @@
     <Setting Name="WebserverBind" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">80</Value>
     </Setting>
+    <Setting Name="MongoDevURL" Type="System.String" Scope="User">
+      <Value Profile="(Default)">mongodb://development:fcnbZAAHb5ajp57WGCWn@kahana.mongohq.com:10065/d2mpdev</Value>
+    </Setting>
+    <Setting Name="MongoDevDB" Type="System.String" Scope="User">
+      <Value Profile="(Default)">d2mpdev</Value>
+    </Setting>
   </Settings>
 </SettingsFile>
