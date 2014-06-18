@@ -7,6 +7,7 @@ namespace D2MPMaster.Model
 {
     public class MatchData
     {
+		public string mod;
         public bool automatic_surrender;
         public long date;
         public int duration;

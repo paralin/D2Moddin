@@ -50,20 +50,17 @@ namespace D2MPMaster
 			log.Info("Initializing match result server...");
             Uri[] urilist = null;
             {
-				IList<Uri> uris = new List<Uri>();// { new Uri("http://127.0.0.1:" + Settings.Default.WebserverBind + "/") };
+				IList<Uri> uris = new List<Uri>();
 #if DEBUG
                 uris.Add(new Uri("http://127.0.0.1:" + Settings.Default.WebserverBind));
 #endif
-				//var u = new UdpClient("8.8.8.8", 1);
-				//IPAddress localAddr = ((IPEndPoint) u.Client.LocalEndPoint).Address;
-				//uris.Add(new Uri("http://" + localAddr + ":" + Settings.Default.WebserverBind + "/"));
 				uris.Add(new Uri("http://"+Settings.Default.WebAddress+":"+Settings.Default.WebserverBind));
                 urilist = uris.ToArray();
             }
 			foreach(var uri in urilist){
 				log.Debug(uri);
 			}
-			var config = new HostConfiguration();// {UrlReservations = new UrlReservations(){CreateAutomatically = true}};
+			var config = new HostConfiguration();
             using (var nancyServer = new NancyHost(config,urilist))
             {
                 nancyServer.Start();

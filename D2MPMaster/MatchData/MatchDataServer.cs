@@ -44,7 +44,7 @@ namespace D2MPMaster.MatchData
                     }
                 }else if (status == "completed")
                 {
-                    HandleMatchComplete(JsonConvert.DeserializeObject<Model.MatchData>(baseData.ToString()).ConvertData());
+					HandleMatchComplete(JsonConvert.DeserializeObject<Model.MatchData>(baseData.ToString()).ConvertData(), lob);
                 }
                 else if (status == "load_failed")
                 {
@@ -65,8 +65,13 @@ namespace D2MPMaster.MatchData
             LobbyManager.OnLoadFail(matchid);
         }
 
-        private static void HandleMatchComplete(Model.MatchData toObject)
+		private static void HandleMatchComplete(Model.MatchData toObject, Lobby lob)
         {
+			var mod = Mods.Mods.ByID(lob.mod);
+			if(mod != null)
+				toObject.mod = mod.name;
+			else
+				toObject.mod = lob.mod;
             LobbyManager.OnMatchComplete(toObject);
         }
     }
