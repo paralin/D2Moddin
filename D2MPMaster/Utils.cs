@@ -49,6 +49,11 @@ namespace D2MPMaster
             }
             return arr;
         }
+
+        public static string ToSteamID64(this int accountid)
+        {
+            return (accountid + 76561197960265728) + "";
+        }
     }
 
     public class ConcurrentObservableCollection<t> : ObservableCollection<t>

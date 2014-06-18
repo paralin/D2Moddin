@@ -44,5 +44,6 @@ namespace D2MPMaster.Lobbies
     {
         public Lobby lobby;
         public bool goodguys;
+        public Player player;
     }
 }

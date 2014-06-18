@@ -1,4 +1,9 @@
-﻿namespace D2MPMaster.Model
+﻿using Amazon.DataPipeline.Model;
+using D2MPMaster.Database;
+using MongoDB.Driver.Linq;
+using Query = MongoDB.Driver.Builders.Query;
+
+namespace D2MPMaster.Model
 {
     public class MatchData
     {
@@ -14,24 +19,31 @@
         public int server_version;
         public TeamRecord[] teams;
 
+        public MatchData ConvertData()
+        {
+            foreach(var team in teams)
+            {
+                foreach (var player in team.players)
+                {
+                    player.ConvertData();
+                }
+            }
+            return this;
+        }
     }
 
     public class TeamRecord
     {
-        public PlayerRecord players;
+        public PlayerRecord[] players;
     }
 
     public class PlayerRecord
     {
-        public AbilityUpgradeRecord[] ability_upgrades;
-    }
-
-    public class AbilityUpgradeRecord
-    {
-        public int ability;
-        public int time;
+        private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         public int assists;
-        public long account_id;
+        public int account_id;
+        public string steam_id;
+        public string user_id;
         public int claimed_denies;
         public int claimed_farm_gold;
         public int deaths;
@@ -48,6 +60,21 @@
         public int level;
         public int tower_damage;
         public int xp_per_minute;
+
+        public void ConvertData()
+        {
+            //Detect steamid from accountid
+            steam_id = account_id.ToSteamID64();
+            var user = Mongo.Users.FindOneAs<User>(Query.EQ("steam.steamid", steam_id));
+            if (user != null)
+            {
+                user_id = user.Id;
+            }
+            else
+            {
+                log.Error("Can't find user for steam ID: "+steam_id+" account ID: "+account_id);
+            }
+        }
     }
 }
 /* Game Enclassult

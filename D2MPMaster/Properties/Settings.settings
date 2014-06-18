@@ -15,7 +15,7 @@
       <Value Profile="(Default)">d2mpclient</Value>
     </Setting>
     <Setting Name="ServerAddons" Type="System.String" Scope="User">
-      <Value Profile="(Default)">[{"name":"d2fixups","version":"0.2","bundle":"serv_d2fixups.zip"},{"name":"metamod","version":"0.3.4","bundle":"metamod.zip"},{"name":"lobby","version":"1.3","bundle":"lobby.zip"},{"name":"dst","version":"0.1","bundle":"dst.zip"}]</Value>
+      <Value Profile="(Default)">[{"name":"d2fixups","version":"0.2","bundle":"serv_d2fixups.zip"},{"name":"metamod","version":"0.3.4","bundle":"metamod.zip"},{"name":"lobby","version":"1.4","bundle":"lobby.zip"},{"name":"dst","version":"0.1","bundle":"dst.zip"}]</Value>
     </Setting>
     <Setting Name="PostURL" Type="System.String" Scope="User">
       <Value Profile="(Default)">http://ddp2.d2modd.in/gdataapi/matchres</Value>
@@ -23,8 +23,8 @@
     <Setting Name="MongoURL" Type="System.String" Scope="User">
       <Value Profile="(Default)">mongodb://appfog:E74y9KXNuUhE6F4pbFvC@capital.0.mongolayer.com:10048/d2moddin</Value>
     </Setting>
-    <Setting Name="WebserverBind" Type="System.String" Scope="User">
-      <Value Profile="(Default)">http://*:80/</Value>
+    <Setting Name="WebserverBind" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">80</Value>
     </Setting>
   </Settings>
 </SettingsFile>

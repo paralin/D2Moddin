@@ -174,29 +174,33 @@ namespace D2MPMaster.Lobbies
         /// <returns></returns>
         public static PlayerLocation FindPlayer(User user)
         {
-            PlayerLocation plyr = null;
-            string steamID = user.steam.steamid;
-            foreach (var lobby in PlayingLobbies)
+            return PlayingLobbies.Select(lobby => FindPlayerLocation(user, lobby)).FirstOrDefault(loc => loc != null);
+        }
+
+        public static PlayerLocation FindPlayerLocation(User user, Lobby lobby)
+        {
+            Player plyr;
+            plyr = lobby.radiant.FirstOrDefault(player => player.steam == user.steam.steamid);
+            if (plyr != null)
             {
-                if (lobby.radiant.Any(player => player.steam == steamID))
+                return new PlayerLocation()
                 {
-                    plyr = new PlayerLocation()
-                           {
-                               lobby = lobby,
-                               goodguys = true
-                           };
-                }
-                if (lobby.dire.Any(player => player.steam == steamID))
-                {
-                    plyr = new PlayerLocation()
-                    {
-                        lobby = lobby,
-                        goodguys = false
-                    };
-                }
-                if (plyr != null) break;
+                    lobby = lobby,
+                    goodguys = true,
+                    player = plyr
+                };
             }
-            return plyr;
+            plyr = lobby.dire.FirstOrDefault(player => player.steam == user.steam.steamid);
+            if (plyr != null)
+            {
+                return new PlayerLocation()
+                {
+                    lobby = lobby,
+                    goodguys = true,
+                    player = plyr
+                };
+            }
+            return null;
         }
 
         /// <summary>
@@ -464,6 +468,15 @@ namespace D2MPMaster.Lobbies
             lobby.serverIP = instance.Server.Address.Split(':')[0]+":"+instance.port;
             lobby.status = LobbyStatus.Play;
             TransmitLobbyUpdate(lobby, new []{"status"});
+            //Guilty unless proven innocent
+            foreach (var player in lobby.radiant)
+            {
+                player.failedConnect = true;
+            }
+            foreach (var player in lobby.dire)
+            {
+                player.failedConnect = true;
+            }
             SendConnectDota(lobby);
             log.Info("Server ready "+instance.lobby.id+" "+instance.lobby.serverIP);
         }
@@ -473,7 +486,7 @@ namespace D2MPMaster.Lobbies
             if (!PlayingLobbies.Contains(lobby)) return;
             lobby.serverIP = "";
             lobby.status = LobbyStatus.Start;
-            TransmitLobbyUpdate(lobby, new[] { "status" });
+            TransmitLobbyUpdate(lobby, new[] { "status", "radiant", "dire" });
             if (lobby.isPublic) PublicLobbies.Add(lobby);
         }
 
@@ -534,6 +547,34 @@ namespace D2MPMaster.Lobbies
             if (lob.status != LobbyStatus.Play) return;
             log.Debug(matchid+" failed to load, returning to waiting stage.");
             ReturnToWait(lob);
+        }
+
+        public static void HandleEvent(GameEvents eventType, JToken data, Lobby lob)
+        {
+            switch (eventType)
+            {
+                case GameEvents.GameStateChange:
+                {
+                    var gameState = (GameState) data.Value<int>("new_state");
+                    log.Debug(lob.id + " -> entered state " + Enum.GetName(typeof(GameState), gameState));
+                    lob.state = gameState;
+                    TransmitLobbyUpdate(lob, new []{"state"});
+                    break;
+                }
+                case GameEvents.PlayerConnect:
+                {
+                    var plyr =
+                        FindPlayerLocation(
+                            new User() {steam = new SteamService() {steamid = data.Value<int>("player").ToSteamID64()}},
+                            lob);
+                    if (plyr != null)
+                    {
+                        plyr.player.failedConnect = false;
+                        log.Debug(lob.id+" -> player connected: "+plyr.player.name);
+                    }
+                    break;
+                }
+            }
         }
     }
 }
