@@ -176,7 +176,8 @@ namespace D2MPMaster.Lobbies
                             m.IdleSince < DateTime.Now.Subtract(TimeSpan.FromMinutes(2)));
                 foreach (var lobby in lobbies)
                 {
-                    CloseLobby(lobby);
+                    CloseLobby(lobby); 
+                    log.DebugFormat("Cleared lobby {0} for inactivity.", lobby.id);
                 }
             }
         }
@@ -252,7 +253,7 @@ namespace D2MPMaster.Lobbies
         {
             foreach (var lobby in LobbyQueue.ToArray())
             {
-                var server = ServerManager.FindForLobby(lobby);
+                var server = ServerService.FindForLobby(lobby);
                 if (server == null) continue;
                 GameInstance instance = server.StartInstance(lobby);
                 lobby.status = LobbyStatus.Configure;
@@ -649,7 +650,7 @@ namespace D2MPMaster.Lobbies
             }
         }
 
-        public static void ClearIdleLobbies()
+        public static void ClearPendingLobbies()
         {
             var lobbies = PlayingLobbies.Where(m => m.status == LobbyStatus.Start);
             foreach (var lobby in lobbies)
