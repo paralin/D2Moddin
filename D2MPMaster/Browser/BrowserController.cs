@@ -694,9 +694,16 @@ namespace D2MPMaster.Browser
         {
             var upd = new JObject();
             var ops = new JArray { DiffGenerator.RemoveAll("publicLobbies") };
-            foreach (var lobby in LobbyManager.PublicLobbies)
+            try
             {
-                ops.Add(lobby.Add("publicLobbies"));
+                foreach (var lobby in LobbyManager.PublicLobbies.ToArray())
+                {
+                    ops.Add(lobby.Add("publicLobbies"));
+                }
+            }
+            catch(Exception ex)
+            {
+                log.Error("Problem creating lobby snapshot: ", ex);
             }
             upd["msg"] = "colupd";
             upd["ops"] = ops;
