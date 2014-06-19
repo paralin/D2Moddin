@@ -172,6 +172,7 @@ namespace D2MPMaster.Lobbies
                     LobbyID.Values.Where(
                         m =>
                             m.status == LobbyStatus.Start &&
+                            !m.hasPassword &&
                             m.IdleSince < DateTime.Now.Subtract(TimeSpan.FromMinutes(2)));
                 foreach (var lobby in lobbies)
                 {
