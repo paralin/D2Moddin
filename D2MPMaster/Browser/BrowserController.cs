@@ -616,6 +616,16 @@ namespace D2MPMaster.Browser
                                                       LobbyManager.LaunchAndConnect(lobby, user.steam.steamid);
                                                       break;
                                                   }
+                                                  case "clearpubliclobbies":
+                                                  {
+                                                      if (user == null || !user.authItems.Contains("admin"))
+                                                      {
+                                                          RespondError(jdata, "You are not allowed to do this.");
+                                                          return;
+                                                      }
+                                                      LobbyManager.ClearIdleLobbies();
+                                                      break;
+                                                  }
                                                   default:
                                                       log.Debug(string.Format("Unknown command: {0}...",
                                                           command.Substring(0, 10)));

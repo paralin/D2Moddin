@@ -625,5 +625,14 @@ namespace D2MPMaster.Lobbies
                 }
             }
         }
+
+        public static void ClearIdleLobbies()
+        {
+            var lobbies = PlayingLobbies.Where(m => m.status == LobbyStatus.Start);
+            foreach (var lobby in lobbies)
+            {
+                CloseLobby(lobby);
+            }
+        }
     }
 }
