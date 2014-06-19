@@ -23,8 +23,17 @@
     <Setting Name="MongoURL" Type="System.String" Scope="User">
       <Value Profile="(Default)">mongodb://appfog:E74y9KXNuUhE6F4pbFvC@capital.0.mongolayer.com:10048/d2moddin</Value>
     </Setting>
-    <Setting Name="WebserverBind" Type="System.String" Scope="User">
-      <Value Profile="(Default)">http://*:80/</Value>
+    <Setting Name="WebserverBind" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">8080</Value>
+    </Setting>
+    <Setting Name="MongoDevURL" Type="System.String" Scope="User">
+      <Value Profile="(Default)">mongodb://development:fcnbZAAHb5ajp57WGCWn@kahana.mongohq.com:10065/d2mpdev</Value>
+    </Setting>
+    <Setting Name="MongoDevDB" Type="System.String" Scope="User">
+      <Value Profile="(Default)">d2mpdev</Value>
+    </Setting>
+    <Setting Name="WebAddress" Type="System.String" Scope="User">
+      <Value Profile="(Default)">ddp2.d2modd.in</Value>
     </Setting>
   </Settings>
 </SettingsFile>

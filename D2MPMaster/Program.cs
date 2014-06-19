@@ -1,12 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Net.NetworkInformation;
+using System.Net.Sockets;
 using System.Threading;
 using D2MPMaster.Database;
+using D2MPMaster.LiveData;
 using D2MPMaster.MatchData;
 using D2MPMaster.Properties;
 using D2MPMaster.Server;
 using D2MPMaster.Storage;
 using log4net.Config;
+using Nancy.Hosting.Self;
 using XSockets.Core.Common.Socket;
 using XSockets.Core.Configuration;
 using XSockets.Plugin.Framework;
@@ -15,7 +21,7 @@ namespace D2MPMaster
 {
     class Program
     {
-        private static string version = "1.0.2";
+        private static string version = "1.2.0";
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
         public static S3Manager S3;
@@ -42,25 +48,40 @@ namespace D2MPMaster
             S3 = new S3Manager();
 
 			log.Info("Initializing match result server...");
-			MatchDataServer matchDataServer = new MatchDataServer(Settings.Default.WebserverBind);
-
-            log.Info("Initializing xsockets...");
-
-            Console.CancelKeyPress += delegate
+            Uri[] urilist = null;
             {
-                shutdown = true;
-            };
-
-            using (var server = Composable.GetExport<IXSocketServerContainer>())
+				IList<Uri> uris = new List<Uri>();
+#if DEBUG
+                uris.Add(new Uri("http://127.0.0.1:" + Settings.Default.WebserverBind));
+#endif
+				uris.Add(new Uri("http://"+Settings.Default.WebAddress+":"+Settings.Default.WebserverBind));
+                urilist = uris.ToArray();
+            }
+			foreach(var uri in urilist){
+				log.Debug(uri);
+			}
+			var config = new HostConfiguration();
+            using (var nancyServer = new NancyHost(config,urilist))
             {
-                server.StartServers();
-                log.Info("Server running!");
-                while (!shutdown)
+                nancyServer.Start();
+                log.Info("Initializing xsockets...");
+
+                Console.CancelKeyPress += delegate
+                                          {
+                                              shutdown = true;
+                                          };
+
+                using (var server = Composable.GetExport<IXSocketServerContainer>())
                 {
-                    Thread.Sleep(100);
+                    server.StartServers();
+                    log.Info("Server running!");
+                    while (!shutdown)
+                    {
+                        Thread.Sleep(100);
+                    }
+                    server.StopServers();
                 }
-                server.StopServers();
-                matchDataServer.Shutdown();
+                nancyServer.Stop();
             }
 
             log.Info("Done, shutting down...");

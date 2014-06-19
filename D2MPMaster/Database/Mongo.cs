@@ -25,13 +25,17 @@ namespace D2MPMaster.Database
                 return;
             }
 #if DEBUG
-            var connectString = "mongodb://10.0.1.2/d2moddin";
+            var connectString = Settings.Default.MongoDevURL;
 #else
             var connectString = Settings.Default.MongoURL;
 #endif
             Client = new MongoClient(connectString);
             Server = Client.GetServer();
+#if DEBUG
+            Database = Server.GetDatabase(Settings.Default.MongoDevDB);
+#else
             Database = Server.GetDatabase(Settings.Default.MongoDB);
+#endif
             Users = Database.GetCollection("users");
             Mods = Database.GetCollection("mods");
             Sessions = Database.GetCollection("sessions");
