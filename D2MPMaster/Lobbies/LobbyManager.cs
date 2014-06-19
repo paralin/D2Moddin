@@ -6,6 +6,7 @@ using System.Collections.Specialized;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
+using Amazon.DataPipeline.Model;
 using D2MPMaster.Browser;
 using D2MPMaster.Client;
 using D2MPMaster.Database;
@@ -21,6 +22,7 @@ using XSockets.Core.Common.Socket.Event.Arguments;
 using XSockets.Core.XSocket;
 using XSockets.Core.XSocket.Helpers;
 using PluginRange = XSockets.Plugin.Framework.PluginRange;
+using Query = MongoDB.Driver.Builders.Query;
 
 namespace D2MPMaster.Lobbies
 {
@@ -175,6 +177,13 @@ namespace D2MPMaster.Lobbies
         public static PlayerLocation FindPlayer(User user)
         {
             return PlayingLobbies.Select(lobby => FindPlayerLocation(user, lobby)).FirstOrDefault(loc => loc != null);
+        }
+
+        public static PlayerLocation FindPlayerLocationU(string userid, Lobby lobby)
+        {
+            User user = Mongo.Users.FindOneAs<User>(Query.EQ("_id", userid));
+            if (user == null) return null;
+            return FindPlayerLocation(user, lobby);
         }
 
         public static PlayerLocation FindPlayerLocation(User user, Lobby lobby)
@@ -492,8 +501,42 @@ namespace D2MPMaster.Lobbies
             if (!PlayingLobbies.Contains(lobby)) return;
             lobby.serverIP = "";
             lobby.status = LobbyStatus.Start;
-            TransmitLobbyUpdate(lobby, new[] { "status", "radiant", "dire" });
-            if (lobby.isPublic) PublicLobbies.Add(lobby);
+            //Check that all members are still connected
+            var radiant = new List<Player>(5);
+            var dire = new List<Player>(5);
+            radiant.AddRange(from plyr in lobby.radiant
+                let hasBrowser = Browsers.Find(m => m.user != null && m.lobby != null && m.lobby.id == lobby.id).Any()
+                where hasBrowser
+                select plyr);
+            dire.AddRange(from plyr in lobby.dire
+                let hasBrowser = Browsers.Find(m => m.user != null && m.lobby != null && m.lobby.id == lobby.id).Any()
+                where hasBrowser
+                select plyr);
+            Player[] radiantt = new Player[5];
+            Player[] diret = new Player[5];
+            var i = 0;
+            foreach (var player in radiant)
+            {
+                radiantt[i] = player;
+                i++;
+            }
+            i = 0;
+            foreach (var player in dire)
+            {
+                diret[i] = player;
+                i++;
+            }
+            lobby.radiant = radiantt;
+            lobby.dire = diret;
+            if (FindPlayerLocationU(lobby.creatorid, lobby) == null)
+            {
+                CloseLobby(lobby);
+            }
+            else
+            {
+                TransmitLobbyUpdate(lobby, new[] {"status", "radiant", "dire"});
+                if (lobby.isPublic) PublicLobbies.Add(lobby);
+            }
         }
 
         private static void SendLaunchDota(Lobby lobby)
