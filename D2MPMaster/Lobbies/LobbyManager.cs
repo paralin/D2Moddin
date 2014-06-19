@@ -248,6 +248,7 @@ namespace D2MPMaster.Lobbies
 
         public static void SetPassword(Lobby lobby, string password)
         {
+            var hadPassword = lobby.hasPassword;
             if (password == null) password = "";
 
             if (password == "")
@@ -264,6 +265,8 @@ namespace D2MPMaster.Lobbies
                 lobby.password = password;
                 if (PublicLobbies.Contains(lobby)) PublicLobbies.Remove(lobby);
             }
+            if(hadPassword != lobby.hasPassword)
+                TransmitLobbyUpdate(lobby, new []{"isPublic","hasPassword"});
         }
 
         public static void TransmitLobbyUpdate(Lobby lobby, string[] fields)
