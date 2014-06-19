@@ -520,7 +520,7 @@ namespace D2MPMaster.Lobbies
 
         public static void ReturnToWait(Lobby lobby)
         {
-            if (!PlayingLobbies.Contains(lobby)) return;
+            if (!LobbyID.Values.Contains(lobby)) return;
             lobby.serverIP = "";
             lobby.status = LobbyStatus.Start;
             lobby.IdleSince = DateTime.Now;
@@ -528,11 +528,11 @@ namespace D2MPMaster.Lobbies
             var radiant = new List<Player>(5);
             var dire = new List<Player>(5);
             radiant.AddRange(from plyr in lobby.radiant
-                let hasBrowser = Browsers.Find(m => m.user != null && m.lobby != null && m.lobby.id == lobby.id).Any()
+                let hasBrowser = Browsers.Find(m => m.user != null && m.lobby != null && m.user.steam.steamid == plyr.steam && m.lobby.id == lobby.id).Any()
                 where hasBrowser
                 select plyr);
             dire.AddRange(from plyr in lobby.dire
-                let hasBrowser = Browsers.Find(m => m.user != null && m.lobby != null && m.lobby.id == lobby.id).Any()
+                let hasBrowser = Browsers.Find(m => m.user != null && m.lobby != null && m.user.steam.steamid == plyr.steam && m.lobby.id == lobby.id).Any()
                 where hasBrowser
                 select plyr);
             Player[] radiantt = new Player[5];
