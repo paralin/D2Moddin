@@ -74,7 +74,7 @@ namespace D2MPMaster.Browser
         #region Helpers
         public static void CheckLobby(BrowserController controller)
         {
-            if (controller.lobby != null && controller.lobby.deleted) controller.lobby = null;
+            //if (controller.lobby != null && controller.lobby.deleted) controller.lobby = null;
         }
 
         public void RespondError(JObject req, string msg)

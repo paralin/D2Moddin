@@ -55,6 +55,7 @@ namespace D2MPMaster.Lobbies
         public static Queue<JObject> PublicLobbyUpdateQueue = new Queue<JObject>();
         public static Thread LobbyUpdateThread;
         public static Thread CalculateQueueThread;
+        public static Thread IdleLobbyThread;
 
         public static volatile bool shutdown = false;
 
@@ -62,13 +63,15 @@ namespace D2MPMaster.Lobbies
         {
             if (!Registered)
             {
+                Registered = true;
+                IdleLobbyThread = new Thread(IdleLobbyProc);
+                IdleLobbyThread.Start();
                 LobbyUpdateThread = new Thread(LobbyUpdateProc);
                 LobbyUpdateThread.Start();
                 CalculateQueueThread = new Thread(CalculateQueueT);
                 CalculateQueueThread.Start();
                 PublicLobbies.CollectionChanged += TransmitLobbiesChange;
                 PlayingLobbies.CollectionChanged += UpdateLobbyIDDict;
-                Registered = true;
             }
         }
 
@@ -160,6 +163,23 @@ namespace D2MPMaster.Lobbies
             }
         }
 
+        public void IdleLobbyProc()
+        {
+            while (!shutdown)
+            {
+                Thread.Sleep(10000);
+                var lobbies =
+                    LobbyID.Values.Where(
+                        m =>
+                            m.status == LobbyStatus.Start &&
+                            m.IdleSince < DateTime.Now.Subtract(TimeSpan.FromMinutes(2)));
+                foreach (var lobby in lobbies)
+                {
+                    CloseLobby(lobby);
+                }
+            }
+        }
+
         public void CalculateQueueT()
         {
             while (!shutdown)
@@ -221,6 +241,7 @@ namespace D2MPMaster.Lobbies
             if (!LobbyQueue.Contains(lobby)) return;
             LobbyQueue.Remove(lobby);
             lobby.status = LobbyStatus.Start;
+            lobby.IdleSince = DateTime.Now;
             if(lobby.isPublic)
                 PublicLobbies.Add(lobby);
             TransmitLobbyUpdate(lobby, new []{"status"});
@@ -398,8 +419,8 @@ namespace D2MPMaster.Lobbies
                             creator = user.profile.name,
                             creatorid = user.Id,
                             banned = new string[0],
-                            deleted = false,
                             dire = new Player[5],
+                            IdleSince = DateTime.Now,
                             radiant = new Player[5],
                             devMode = false,
                             enableGG = true,
@@ -501,6 +522,7 @@ namespace D2MPMaster.Lobbies
             if (!PlayingLobbies.Contains(lobby)) return;
             lobby.serverIP = "";
             lobby.status = LobbyStatus.Start;
+            lobby.IdleSince = DateTime.Now;
             //Check that all members are still connected
             var radiant = new List<Player>(5);
             var dire = new List<Player>(5);

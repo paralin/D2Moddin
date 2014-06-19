@@ -1,4 +1,5 @@
-﻿using System.Dynamic;
+﻿using System;
+using System.Dynamic;
 using System.Linq;
 using D2MPMaster.LiveData;
 using d2mpserver;
@@ -33,8 +34,8 @@ namespace D2MPMaster.Lobbies
         public bool enableGG { get; set; }
         public GameState state { get; set; }
         public ServerRegion region { get; set; }
-        public bool deleted { get; set; }
         public LobbyStatus status { get; set; }
+        public DateTime IdleSince { get; set; }
 
         public int TeamCount(Player[] team)
         {
