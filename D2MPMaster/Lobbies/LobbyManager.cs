@@ -153,7 +153,9 @@ namespace D2MPMaster.Lobbies
                 var updates = new JArray();
                 while (PublicLobbyUpdateQueue.Count > 0)
                 {
-                    updates.Add(PublicLobbyUpdateQueue.Dequeue());
+                    var update = PublicLobbyUpdateQueue.Dequeue();
+                    if (update == null) continue;
+                    updates.Add(update);
                 }
                 if (updates.Count == 0) continue;
                 upd["msg"] = "colupd";
