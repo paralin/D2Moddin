@@ -654,11 +654,17 @@ namespace D2MPMaster.Lobbies
 
         public static void ClearPendingLobbies()
         {
-            var lobbies = PlayingLobbies.Where(m => m.status == LobbyStatus.Start);
+			log.Info("Clearing idle lobbies!");
+			try{
+			var lobbies = LobbyID.Values.Where(m => m.status == LobbyStatus.Start);
             foreach (var lobby in lobbies)
             {
                 CloseLobby(lobby);
             }
+				log.Info("Cleared "+lobbies.Count()+" lobbies.");
+			}catch(Exception ex){
+				log.Error("Failed to clear idle lobbies!", ex);
+			}
         }
     }
 }
