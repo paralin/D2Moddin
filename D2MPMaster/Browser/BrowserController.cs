@@ -21,6 +21,8 @@ using XSockets.Core.Common.Socket.Event.Interface;
 using XSockets.Core.XSocket;
 using XSockets.Core.XSocket.Helpers;
 using InstallMod = D2MPMaster.Browser.Methods.InstallMod;
+using System.Collections.Generic;
+using D2MPMaster.Matchmaking;
 
 
 namespace D2MPMaster.Browser
@@ -68,6 +70,7 @@ namespace D2MPMaster.Browser
                 }
             }
         }
+        public Matchmake matchmake = null;
 
         #endregion
 
@@ -169,6 +172,11 @@ namespace D2MPMaster.Browser
                                                           RespondError(jdata, "You are already in a lobby.");
                                                           return; //omfg
                                                       }
+                                                      if (matchmake != null)
+                                                      {
+                                                          RespondError(jdata, "You are already in a matchmaking queue.");
+                                                          return;
+                                                      }
                                                       //Parse the create lobby request
                                                       var req = jdata["req"].ToObject<CreateLobby>();
                                                       if (req.name == null)
@@ -205,6 +213,61 @@ namespace D2MPMaster.Browser
                                                       }
 
                                                       lobby = LobbyManager.CreateLobby(user, mod, req.name);
+                                                      break;
+                                                  }
+                                                  case "matchmake":
+                                                  {
+                                                      if (user == null)
+                                                      {
+                                                          RespondError(jdata, "You are not logged in!");
+                                                          return;
+                                                      }
+                                                      if (lobby != null)
+                                                      {
+                                                          RespondError(jdata, "You are already in a lobby.");
+                                                          return;
+                                                      }
+                                                      if (matchmake != null)
+                                                      {
+                                                          RespondError(jdata, "You are already in a matchmaking queue.");
+                                                          return;
+                                                      }
+                                                      // Parse the Matchmake request
+                                                      var req = jdata["req"].ToObject<doMatchmake>();
+                                                      if (req.mods == null)
+                                                      {
+                                                          RespondError(jdata, "You did not specify any mods.");
+                                                          return;
+                                                      }
+                                                      var clients = ClientsController.Find(m => m.UID == user.Id);
+                                                      List<Mod> mods = new List<Mod>();
+                                                      foreach (var reqMod in req.mods)
+                                                      {
+                                                          var mod = Mods.Mods.ByID(reqMod);
+                                                          mods.Add(mod);
+                                                          if (mod == null)
+                                                          {
+                                                              RespondError(jdata,
+                                                                  "Can't find one of the mods, you probably don't have access.");
+                                                              return;
+                                                          }
+                                                          // TODO: In the future, when mod downloading is browser independent, we can send an array of mods to install
+                                                          if (
+                                                          !clients.Any(
+                                                              m =>
+                                                                  m.Mods.Any(
+                                                                      c =>
+                                                                          c.name == mod.name && c.version == mod.version)))
+                                                          {
+                                                              var obj = new JObject();
+                                                              obj["msg"] = "modneeded";
+                                                              obj["name"] = mod.name;
+                                                              Send(obj.ToString(Formatting.None));
+                                                              return;
+                                                          }
+                                                      }
+                                                      matchmake = MatchmakeManager.CreateMatchmake(user, mods);
+
                                                       break;
                                                   }
                                                   case "switchteam":
@@ -447,6 +510,11 @@ namespace D2MPMaster.Browser
                                                           RespondError(jdata, "You are already in a lobby.");
                                                           return;
                                                       }
+                                                      if (matchmake != null)
+                                                      {
+                                                          RespondError(jdata, "You are already in a matchmaking queue.");
+                                                          return;
+                                                      }
                                                       var req = jdata["req"].ToObject<JoinLobby>();
                                                       //Find lobby
                                                       var lob =
@@ -505,6 +573,11 @@ namespace D2MPMaster.Browser
                                                       if (lobby != null)
                                                       {
                                                           RespondError(jdata, "You are already in a lobby.");
+                                                          return;
+                                                      }
+                                                      if (matchmake != null)
+                                                      {
+                                                          RespondError(jdata, "You are already in a matchmaking queue.");
                                                           return;
                                                       }
                                                       var req = jdata["req"].ToObject<JoinPasswordLobby>();
@@ -662,6 +735,7 @@ namespace D2MPMaster.Browser
         public void OnClosed(object sender, OnClientDisconnectArgs e)
         {
             LobbyManager.LeaveLobby(this);
+            MatchmakeManager.LeaveMatchmake(this);
         }
 
         public static ITextArgs ClearLobbyR()

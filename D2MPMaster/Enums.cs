@@ -58,4 +58,5 @@ namespace d2mpserver
         Configure=2,
         Play=3
     }
+
 }

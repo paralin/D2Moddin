@@ -23,6 +23,7 @@ using XSockets.Core.XSocket;
 using XSockets.Core.XSocket.Helpers;
 using PluginRange = XSockets.Plugin.Framework.PluginRange;
 using Query = MongoDB.Driver.Builders.Query;
+using D2MPMaster.Matchmaking;
 
 namespace D2MPMaster.Lobbies
 {
@@ -426,6 +427,7 @@ namespace D2MPMaster.Lobbies
                             devMode = false,
                             enableGG = true,
                             hasPassword = false,
+                            isRanked = false,
                             id = Utils.RandomString(17),
                             mod = mod.Id,
                             region=0,
@@ -448,6 +450,48 @@ namespace D2MPMaster.Lobbies
                 req => { });
             ClientsController.AsyncSendTo(m => m.SteamID == user.steam.steamid, ClientController.LaunchDota(), req => { });
 			log.InfoFormat("Lobby created, User: #{0}, Name: #{1}", user.profile.name, name);
+            return lob;
+        }
+
+        /// <summary>
+        /// Create a new ranked lobby, and put directly in queue.
+        /// </summary>
+        /// <param name="team1">Dire team.</param>
+        /// <param name="team2">Radiant team.</param>
+        /// <param name="mod">Mod.</param>
+        /// <returns></returns>
+        public static Lobby CreateMatchedLobby(Matchmake team1, Matchmake team2, string mod)
+        {
+            var lob = new Lobby()
+            {
+                dire = new Player[5],
+                radiant = new Player[5],
+                devMode = false,
+                enableGG = true,
+                hasPassword = false,
+                isRanked = true,
+                id = Utils.RandomString(17),
+                mod = mod,
+                region = 0,
+                name = "Ranked Lobby",
+                isPublic = true,
+                password = "",
+                state = GameState.Init,
+                requiresFullLobby = true,
+                serverIP = ""
+            };
+            foreach (var user in team1.users.ToArray())
+            {
+                lob.AddPlayer(lob.dire, Player.FromUser(user));
+            }
+            foreach (var user in team2.users.ToArray())
+            {
+                lob.AddPlayer(lob.radiant, Player.FromUser(user));
+            }
+            lob.status = LobbyStatus.Queue;
+            TransmitLobbyUpdate(lob, new[] { "status" });
+            SendLaunchDota(lob);
+            LobbyQueue.Add(lob);
             return lob;
         }
 

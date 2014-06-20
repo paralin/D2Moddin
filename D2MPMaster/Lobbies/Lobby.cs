@@ -30,6 +30,7 @@ namespace D2MPMaster.Lobbies
         public string serverIP { get; set; }
         public bool isPublic { get; set; }
         public bool requiresFullLobby { get; set; }
+        public bool isRanked { get; set; }
         public bool devMode { get; set; }
         public bool enableGG { get; set; }
         public GameState state { get; set; }
