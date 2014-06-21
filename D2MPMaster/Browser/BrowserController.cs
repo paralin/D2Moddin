@@ -239,11 +239,10 @@ namespace D2MPMaster.Browser
                                                           RespondError(jdata, "You did not specify any mods.");
                                                           return;
                                                       }
-                                                      var clients = ClientsController.Find(m => m.UID == user.Id);
-                                                      List<Mod> mods = new List<Mod>();
-                                                      foreach (var reqMod in req.mods)
+                                                      var client = ClientsController.Find(m => m.UID == user.Id).FirstOrDefault();
+                                                      var mods = new List<Mod>();
+                                                      foreach (var mod in req.mods.Select(Mods.Mods.ByID))
                                                       {
-                                                          var mod = Mods.Mods.ByID(reqMod);
                                                           mods.Add(mod);
                                                           if (mod == null)
                                                           {
@@ -252,12 +251,7 @@ namespace D2MPMaster.Browser
                                                               return;
                                                           }
                                                           // TODO: In the future, when mod downloading is browser independent, we can send an array of mods to install
-                                                          if (
-                                                          !clients.Any(
-                                                              m =>
-                                                                  m.Mods.Any(
-                                                                      c =>
-                                                                          c.name == mod.name && c.version == mod.version)))
+                                                          if (client == null || !client.Mods.Any(c => c.Equals(mod)))
                                                           {
                                                               var obj = new JObject();
                                                               obj["msg"] = "modneeded";
@@ -267,7 +261,6 @@ namespace D2MPMaster.Browser
                                                           }
                                                       }
                                                       matchmake = MatchmakeManager.CreateMatchmake(user, mods);
-
                                                       break;
                                                   }
                                                   case "switchteam":

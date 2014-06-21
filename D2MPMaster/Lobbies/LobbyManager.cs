@@ -477,7 +477,7 @@ namespace D2MPMaster.Lobbies
                 mod = mod,
                 region = 0,
                 name = "Ranked Lobby",
-                isPublic = true,
+                isPublic = false,
                 password = "",
                 state = GameState.Init,
                 requiresFullLobby = true,
