@@ -47,6 +47,8 @@ namespace D2MPMaster.Lobbies
         /// </summary>
         public static ObservableCollection<Lobby> PlayingLobbies = new ObservableCollection<Lobby>();
 
+        public static ObservableCollection<Lobby> rankedLobbies = new ObservableCollection<Lobby>();
+
         public static ConcurrentDictionary<string,Lobby> LobbyID = new ConcurrentDictionary<string,Lobby>(); 
 
         public static volatile bool Registered = false;
@@ -318,6 +320,16 @@ namespace D2MPMaster.Lobbies
             }
         }
 
+        public static void TransmitRankedLobbyUpdate(Lobby lobby, string[] fields)
+        {
+            //Generate message
+            var upd = new JObject();
+            upd["msg"] = "colupd";
+            upd["ops"] = new JArray { lobby.Update("rankedLobbies", fields) };
+            Browsers.AsyncSendTo(m => m.lobby != null && m.lobby.id == lobby.id, new TextArgs(upd.ToString(Formatting.None), "lobby"),
+                req => { });
+        }
+
         public static string RemoveFromTeam(Lobby lob, string steamid)
         {
             for (int i = 0; i < lob.radiant.Length; i++)
@@ -490,6 +502,16 @@ namespace D2MPMaster.Lobbies
             foreach (var user in team2.users.ToArray())
             {
                 lob.AddPlayer(lob.radiant, Player.FromUser(user));
+            }
+            rankedLobbies.Add(lob);
+            PlayingLobbies.Add(lob);
+
+            var allUsers = team1.users.ToArray().Concat(team2.users.ToArray());
+            var setMod = Mods.Mods.ByID(mod);
+            foreach (var user in allUsers)
+            {
+                Browsers.AsyncSendTo(m => m.user != null && m.user.Id == user.Id, BrowserController.LobbySnapshot(lob), req => { });
+                ClientsController.AsyncSendTo(m => m.SteamID == user.steam.steamid, ClientController.SetMod(setMod), req => { });
             }
             lob.status = LobbyStatus.Queue;
             TransmitLobbyUpdate(lob, new[] { "status" });
