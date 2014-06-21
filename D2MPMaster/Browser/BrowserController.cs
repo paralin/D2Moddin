@@ -696,7 +696,7 @@ namespace D2MPMaster.Browser
                                                           RespondError(jdata, "You are not allowed to do this.");
                                                           return;
                                                       }
-                                                      LobbyManager.ClearIdleLobbies();
+                                                      LobbyManager.ClearPendingLobbies();
                                                       break;
                                                   }
                                                   default:

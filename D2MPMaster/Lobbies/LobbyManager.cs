@@ -154,7 +154,9 @@ namespace D2MPMaster.Lobbies
                 var updates = new JArray();
                 while (PublicLobbyUpdateQueue.Count > 0)
                 {
-                    updates.Add(PublicLobbyUpdateQueue.Dequeue());
+                    var update = PublicLobbyUpdateQueue.Dequeue();
+                    if (update == null) continue;
+                    updates.Add(update);
                 }
                 if (updates.Count == 0) continue;
                 upd["msg"] = "colupd";
@@ -177,7 +179,8 @@ namespace D2MPMaster.Lobbies
                             m.IdleSince < DateTime.Now.Subtract(TimeSpan.FromMinutes(2)));
                 foreach (var lobby in lobbies)
                 {
-                    CloseLobby(lobby);
+                    CloseLobby(lobby); 
+                    log.DebugFormat("Cleared lobby {0} for inactivity.", lobby.id);
                 }
             }
         }
@@ -253,7 +256,7 @@ namespace D2MPMaster.Lobbies
         {
             foreach (var lobby in LobbyQueue.ToArray())
             {
-                var server = ServerManager.FindForLobby(lobby);
+                var server = ServerService.FindForLobby(lobby);
                 if (server == null) continue;
                 GameInstance instance = server.StartInstance(lobby);
                 lobby.status = LobbyStatus.Configure;
@@ -564,7 +567,7 @@ namespace D2MPMaster.Lobbies
 
         public static void ReturnToWait(Lobby lobby)
         {
-            if (!PlayingLobbies.Contains(lobby)) return;
+            if (!LobbyID.Values.Contains(lobby)) return;
             lobby.serverIP = "";
             lobby.status = LobbyStatus.Start;
             lobby.IdleSince = DateTime.Now;
@@ -572,11 +575,11 @@ namespace D2MPMaster.Lobbies
             var radiant = new List<Player>(5);
             var dire = new List<Player>(5);
             radiant.AddRange(from plyr in lobby.radiant
-                let hasBrowser = Browsers.Find(m => m.user != null && m.lobby != null && m.lobby.id == lobby.id).Any()
+                let hasBrowser = Browsers.Find(m => m.user != null && m.lobby != null && m.user.steam.steamid == plyr.steam && m.lobby.id == lobby.id).Any()
                 where hasBrowser
                 select plyr);
             dire.AddRange(from plyr in lobby.dire
-                let hasBrowser = Browsers.Find(m => m.user != null && m.lobby != null && m.lobby.id == lobby.id).Any()
+                let hasBrowser = Browsers.Find(m => m.user != null && m.lobby != null && m.user.steam.steamid == plyr.steam && m.lobby.id == lobby.id).Any()
                 where hasBrowser
                 select plyr);
             Player[] radiantt = new Player[5];
@@ -693,7 +696,7 @@ namespace D2MPMaster.Lobbies
             }
         }
 
-        public static void ClearIdleLobbies()
+        public static void ClearPendingLobbies()
         {
             var lobbies = PlayingLobbies.Where(m => m.status == LobbyStatus.Start);
             foreach (var lobby in lobbies)

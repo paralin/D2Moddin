@@ -112,7 +112,7 @@
     <Compile Include="Matchmaking\Matchmake.cs" />
     <Compile Include="Matchmaking\MatchmakeManager.cs" />
     <Compile Include="Model\MatchData.cs" />
-    <Compile Include="MatchData\MatchDataServer.cs" />
+    <Compile Include="WebHandler\MatchDataServer.cs" />
     <Compile Include="Model\ClientRecord.cs" />
     <Compile Include="Model\Mod.cs" />
     <Compile Include="Model\Session.cs" />
@@ -131,6 +131,7 @@
     <Compile Include="Server\ServerService.cs" />
     <Compile Include="Storage\S3Manager.cs" />
     <Compile Include="Utils.cs" />
+    <Compile Include="WebHandler\StatisticsPage.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config">

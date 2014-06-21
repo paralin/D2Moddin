@@ -6,10 +6,10 @@ using XSockets.Core.XSocket.Helpers;
 
 namespace D2MPMaster
 {
-    public static class ServerManager
+    public static class ServerService
     {
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
-        private static readonly ServerController Servers = new ServerController();
+        public static readonly ServerController Servers = new ServerController();
         public static ServerController FindForLobby(Lobby lobby)
         {
             //Params
