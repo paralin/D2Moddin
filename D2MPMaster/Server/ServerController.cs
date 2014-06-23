@@ -129,7 +129,7 @@ namespace D2MPMaster.Server
                            {
                                ID = IDCounter,
                                lobby = lobby,
-                               RconPass = Utils.RandomString(10),
+                               RconPass = lobby.id+"R",
                                Server = this,
                                state = GameState.Init,
                                port = portCounter

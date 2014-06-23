@@ -53,8 +53,10 @@ namespace D2MPMaster
 				IList<Uri> uris = new List<Uri>();
 #if DEBUG
                 uris.Add(new Uri("http://127.0.0.1:" + Settings.Default.WebserverBind));
-#endif
+                //uris.Add(new Uri("http://172.250.79.95:" + Settings.Default.WebserverBind));
+#else
 				uris.Add(new Uri("http://"+Settings.Default.WebAddress+":"+Settings.Default.WebserverBind));
+#endif
                 urilist = uris.ToArray();
             }
 			foreach(var uri in urilist){
