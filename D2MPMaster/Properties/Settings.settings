@@ -21,7 +21,7 @@
       <Value Profile="(Default)">http://ddp2.d2modd.in/gdataapi/matchres</Value>
     </Setting>
     <Setting Name="MongoURL" Type="System.String" Scope="User">
-      <Value Profile="(Default)">mongodb://D2MPMaster:AEdGZ2FKUzpBkHDPsyt3@capital.0.mongolayer.com:10048/d2moddin</Value>
+      <Value Profile="(Default)">mongodb://D2MPMaster:AEdGZ2FKUzpBkHDPsyt3@capital.1.mongolayer.com:10048/d2moddin</Value>
     </Setting>
     <Setting Name="WebserverBind" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">8080</Value>
