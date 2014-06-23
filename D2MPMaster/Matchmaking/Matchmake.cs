@@ -22,7 +22,7 @@ namespace D2MPMaster.Matchmaking
         public User[] users { get; set; }
         // Mod ids
         public string[] mods { get; set; }
-        public int rating { get; set; }
+        public Mmr[] rating { get; set; }
         public int matchTries { get; set; }
 
         public void MoveUsers(User[] source, User[] destination)

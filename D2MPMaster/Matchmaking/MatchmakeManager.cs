@@ -78,54 +78,63 @@ namespace D2MPMaster.Matchmaking
         {
             foreach (var m in inMatchmaking.ToArray())
             {
-                if (m.users == null) continue;
-                // Find match with a similar rating (search margin increases every try), enough free slots and a common mod
-                var match = inMatchmaking.Find(x => Math.Abs(x.rating - m.rating) < m.matchTries * ratingMargin && 5 - x.users.Count() >= m.users.Count() && x.mods.Intersect(m.mods).Any());
-                if (match != null)
+                bool matched = false;
+                foreach (var modMmr in m.rating)
                 {
-                    // Merge users to one matchmake
-                    match.MoveUsers(m.users, match.users);
-                    foreach (var browser in Browsers.Find(b => b.user != null && b.matchmake != null && b.matchmake.id == m.id))
+                    // Find match with a similar rating (search margin increases every try), enough free slots and a common mod
+                    var match = inMatchmaking.Find(x => x.rating.Any(
+                        y => y.Id == modMmr.Id && Math.Abs(y.mmr - modMmr.mmr) < m.matchTries * ratingMargin
+                        ) && 5 - x.users.Count() >= m.users.Count() && x.mods.Intersect(m.mods).Any());
+                    if (match != null)
                     {
-                        browser.matchmake = match;
-                    }
-                    m.users = null;
-                    match.mods = match.mods.Intersect(m.mods).ToArray();
-                    calculateMmr(match);
-                    inMatchmaking.Remove(m);
-                    log.InfoFormat("Matchmake merged from {0} players to {1} players after {2} tries. New rating: {3}", m.users.Count(), match.users.Count(), m.matchTries, match.rating);
-                    if (match.users.Count() == 5)
-                    {
-                        match.matchTries = 1;
-                        inTeamMatchmaking.Add(match);
-                        inMatchmaking.Remove(match);
+                        // Merge users to one matchmake
+                        match.MoveUsers(m.users, match.users);
+                        foreach (var browser in Browsers.Find(b => b.user != null && b.matchmake != null && b.matchmake.id == m.id))
+                        {
+                            browser.matchmake = match;
+                        }
+                        m.users = null;
+                        match.mods = match.mods.Intersect(m.mods).ToArray();
+                        calculateMmr(match);
+                        inMatchmaking.Remove(m);
+                        matched = true;
+                        log.InfoFormat("Matchmake merged from {0} players to {1} players after {2} tries. New rating: {3}", m.users.Count(), match.users.Count(), m.matchTries, match.rating);
+                        if (match.users.Count() == 5)
+                        {
+                            match.matchTries = 1;
+                            inTeamMatchmaking.Add(match);
+                            inMatchmaking.Remove(match);
+                        }
                     }
                 }
-                else
+                if (!matched)
                 {
                     m.matchTries++;
                 }
+
             }
             foreach (var m in inTeamMatchmaking.ToArray())
             {
-                var match = inTeamMatchmaking.Find(x => Math.Abs(x.rating - m.rating) < m.matchTries * ratingMargin && x.mods.Intersect(m.mods).Any());
-                if (match != null)
+                foreach (var modMmr in m.rating)
                 {
-                    Random rnd = new Random();
-                    var mods = match.mods.Intersect(m.mods).ToArray();
-                    var lobby = LobbyManager.CreateMatchedLobby(m, match, mods[rnd.Next(0, mods.Length)]);
-                    foreach (var browser in Browsers.Find(b => b.user != null && b.matchmake != null && (b.matchmake.id == m.id || b.matchmake.id == match.id)))
+                    var match = inMatchmaking.Find(x => x.rating.Any(
+                   y => y.Id == modMmr.Id && Math.Abs(y.mmr - modMmr.mmr) < m.matchTries * ratingMargin
+                   ) && x.mods.Intersect(m.mods).Any());
+                    if (match != null)
                     {
-                        browser.lobby = lobby;
-                        browser.matchmake = null;
+                        Random rnd = new Random();
+                        var mods = match.mods.Intersect(m.mods).ToArray();
+                        var lobby = LobbyManager.CreateMatchedLobby(m, match, mods[rnd.Next(0, mods.Length)]);
+                        foreach (var browser in Browsers.Find(b => b.user != null && b.matchmake != null && (b.matchmake.id == m.id || b.matchmake.id == match.id)))
+                        {
+                            browser.lobby = lobby;
+                            browser.matchmake = null;
+                        }
+                        inTeamMatchmaking.Remove(m);
+                        inTeamMatchmaking.Remove(match);
                     }
-                    inTeamMatchmaking.Remove(m);
-                    inTeamMatchmaking.Remove(match);
                 }
-                else
-                {
-                    m.matchTries++;
-                }
+               
             }
         }
 
@@ -136,7 +145,7 @@ namespace D2MPMaster.Matchmaking
                 id = Utils.RandomString(17),
                 users = new User[5],
                 mods = mods.Select(x => x.Id).ToArray(),
-                rating = user.profile.mmr,
+                rating = user.profile.mmr.Where(x => mods.Any(y => x.Id == y.Id)).ToArray(),
                 matchTries = 1
             };
             matchmake.users[0] = user;
@@ -171,7 +180,10 @@ namespace D2MPMaster.Matchmaking
 
         private static void calculateMmr(Matchmake m)
         {
-            m.rating = Convert.ToInt32(m.users.Select(x => x.profile.mmr).ToArray().Average());
+            foreach (var modMmr in m.rating)
+            {
+                modMmr.mmr = Convert.ToInt32(m.users.Select(x => x.profile.mmr.Where(y=> y.Id == modMmr.Id).Select(y=> y.mmr).ToArray().Average()));
+            }
         }
     }
 }

@@ -48,6 +48,12 @@ namespace D2MPMaster.Model
     public class Profile
     {
         public string name { get; set; }
+        public Mmr[] mmr { get; set; }
+    }
+
+    public class Mmr
+    {
+        public string Id { get; set; }
         public int mmr { get; set; }
     }
 }
