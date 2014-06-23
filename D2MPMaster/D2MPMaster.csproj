@@ -109,6 +109,7 @@
     <Compile Include="Lobbies\LobbyManager.cs" />
     <Compile Include="Lobbies\Player.cs" />
     <Compile Include="Model\MatchData.cs" />
+    <Compile Include="Model\MongoInviteQueue.cs" />
     <Compile Include="WebHandler\MatchDataServer.cs" />
     <Compile Include="Model\ClientRecord.cs" />
     <Compile Include="Model\Mod.cs" />
