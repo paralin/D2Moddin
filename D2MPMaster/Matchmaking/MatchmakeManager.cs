@@ -79,12 +79,12 @@ namespace D2MPMaster.Matchmaking
             foreach (var m in inMatchmaking.ToArray())
             {
                 bool matched = false;
-                foreach (var modMmr in m.rating)
+                foreach (KeyValuePair<string, int> modMmr in m.rating)
                 {
                     // Find match with a similar rating (search margin increases every try), enough free slots and a common mod
-                    var match = inMatchmaking.Find(x => x.rating.Any(
-                        y => y.Id == modMmr.Id && Math.Abs(y.mmr - modMmr.mmr) < m.matchTries * ratingMargin
-                        ) && 5 - x.users.Count() >= m.users.Count() && x.mods.Intersect(m.mods).Any());
+                    var match = inMatchmaking.Where(x => x.rating.Any(
+                        y => y.Key == modMmr.Key && Math.Abs(y.Value - modMmr.Value) < m.matchTries * ratingMargin
+                        ) && 5 - x.users.Count() >= m.users.Count() && x.mods.Intersect(m.mods).Any()).FirstOrDefault();
                     if (match != null)
                     {
                         // Merge users to one matchmake
@@ -116,11 +116,11 @@ namespace D2MPMaster.Matchmaking
             foreach (var m in inTeamMatchmaking.ToArray())
             {
                 bool matched = false;
-                foreach (var modMmr in m.rating)
+                foreach (KeyValuePair<string, int> modMmr in m.rating)
                 {
-                    var match = inMatchmaking.Find(x => x.rating.Any(
-                   y => y.Id == modMmr.Id && Math.Abs(y.mmr - modMmr.mmr) < m.matchTries * ratingMargin
-                   ) && x.mods.Intersect(m.mods).Any());
+                    var match = inMatchmaking.Where(x => x.rating.Any(
+                   y => y.Key == modMmr.Key && Math.Abs(y.Value - modMmr.Value) < m.matchTries * ratingMargin
+                   ) && x.mods.Intersect(m.mods).Any()).FirstOrDefault();
                     if (match != null)
                     {
                         Random rnd = new Random();
@@ -150,7 +150,7 @@ namespace D2MPMaster.Matchmaking
                 id = Utils.RandomString(17),
                 users = new User[5],
                 mods = mods.Select(x => x.Id).ToArray(),
-                rating = user.profile.mmr.Where(x => mods.Any(y => x.Id == y.Id)).ToArray(),
+                rating = user.profile.mmr.Where(x => mods.Any(y => x.Key == y.Id)).ToDictionary(x => x.Key, x=> x.Value),
                 matchTries = 1
             };
             matchmake.users[0] = user;
@@ -185,9 +185,9 @@ namespace D2MPMaster.Matchmaking
 
         private static void calculateMmr(Matchmake m)
         {
-            foreach (var modMmr in m.rating)
+            foreach (KeyValuePair<string, int> modMmr in m.rating)
             {
-                modMmr.mmr = Convert.ToInt32(m.users.Select(x => x.profile.mmr.Where(y=> y.Id == modMmr.Id).Select(y=> y.mmr).ToArray().Average()));
+                m.rating[modMmr.Key] = Convert.ToInt32(m.users.Select(x => x.profile.mmr.Where(y=> y.Key == modMmr.Key).Select(y=> y.Value).ToArray().Average()));
             }
         }
     }
