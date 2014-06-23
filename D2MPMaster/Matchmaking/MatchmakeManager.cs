@@ -115,6 +115,7 @@ namespace D2MPMaster.Matchmaking
             }
             foreach (var m in inTeamMatchmaking.ToArray())
             {
+                bool matched = false;
                 foreach (var modMmr in m.rating)
                 {
                     var match = inMatchmaking.Find(x => x.rating.Any(
@@ -132,9 +133,13 @@ namespace D2MPMaster.Matchmaking
                         }
                         inTeamMatchmaking.Remove(m);
                         inTeamMatchmaking.Remove(match);
+                        matched = true;
                     }
                 }
-               
+                if (!matched)
+                {
+                    m.matchTries++;
+                }               
             }
         }
 
