@@ -125,7 +125,7 @@ namespace D2MPMaster.Browser
                                                       {
                                                           var session =
                                                               Mongo.Sessions.FindOneAs<Session>(Query.EQ("_id", key));
-                                                          if (session == null || session.expires < DateTime.Now)
+                                                          if (session == null || session.expires < DateTime.UtcNow)
                                                           {
                                                               user = null;
                                                               this.SendJson("{\"status\": false}", "auth");
