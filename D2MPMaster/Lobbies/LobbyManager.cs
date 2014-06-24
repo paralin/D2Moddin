@@ -175,7 +175,7 @@ namespace D2MPMaster.Lobbies
                         m =>
                             m.status == LobbyStatus.Start &&
                             !m.hasPassword &&
-                            m.IdleSince < DateTime.Now.Subtract(TimeSpan.FromMinutes(2)));
+						m.IdleSince < DateTime.Now.Subtract(TimeSpan.FromMinutes(5)));
                 foreach (var lobby in lobbies)
                 {
                     CloseLobby(lobby); 
@@ -308,8 +308,9 @@ namespace D2MPMaster.Lobbies
                 lobby.password = password;
                 if (PublicLobbies.Contains(lobby)) PublicLobbies.Remove(lobby);
             }
-            if(hadPassword != lobby.hasPassword)
+			if(hadPassword != lobby.hasPassword)
                 TransmitLobbyUpdate(lobby, new []{"isPublic","hasPassword"});
+			lobby.IdleSince = DateTime.Now;
         }
 
         public static void TransmitLobbyUpdate(Lobby lobby, string[] fields)
@@ -588,7 +589,7 @@ namespace D2MPMaster.Lobbies
             {
                 ClientsController.AsyncSendTo(c => c.SteamID != null && c.SteamID == plyr.steam, ClientController.LaunchDota(),
                     req => { });
-            }
+			}
         }
 
         private static void SendConnectDota(Lobby lobby)
