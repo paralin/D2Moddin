@@ -36,6 +36,7 @@ namespace D2MPMaster.Lobbies
         public ServerRegion region { get; set; }
         public LobbyStatus status { get; set; }
         public DateTime IdleSince { get; set; }
+        public LobbyType LobbyType {get;set;}
 
         public int TeamCount(Player[] team)
         {
