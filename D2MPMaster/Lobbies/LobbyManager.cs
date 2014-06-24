@@ -242,8 +242,11 @@ namespace D2MPMaster.Lobbies
         /// <param name="lobby"></param>
         public static void CancelQueue(Lobby lobby)
         {
-            if (!LobbyQueue.Contains(lobby)) return;
-            LobbyQueue.Remove(lobby);
+            lock (LobbyQueue)
+            {
+                if (!LobbyQueue.Contains(lobby)) return;
+                LobbyQueue.Remove(lobby);
+            }
             lobby.status = LobbyStatus.Start;
             lobby.IdleSince = DateTime.Now;
             if(lobby.isPublic)
@@ -253,14 +256,17 @@ namespace D2MPMaster.Lobbies
 
         private static void CalculateQueue()
         {
-            foreach (var lobby in LobbyQueue.ToArray())
+            lock (LobbyQueue)
             {
-                var server = ServerService.FindForLobby(lobby);
-                if (server == null) continue;
-                GameInstance instance = server.StartInstance(lobby);
-                lobby.status = LobbyStatus.Configure;
-                TransmitLobbyUpdate(lobby, new []{"status"});
-                LobbyQueue.Remove(lobby);
+                foreach (var lobby in LobbyQueue)
+                {
+                    var server = ServerService.FindForLobby(lobby);
+                    if (server == null) continue;
+                    GameInstance instance = server.StartInstance(lobby);
+                    lobby.status = LobbyStatus.Configure;
+                    TransmitLobbyUpdate(lobby, new[] {"status"});
+                    LobbyQueue.Remove(lobby);
+                }
             }
         }
 
@@ -270,13 +276,16 @@ namespace D2MPMaster.Lobbies
         /// <param name="lobby"></param>
         public static void StartQueue(Lobby lobby)
         {
-            if (!LobbyQueue.Contains(lobby))
+            lock (LobbyQueue)
             {
-                lobby.status = LobbyStatus.Queue;
-                PublicLobbies.Remove(lobby);
-                TransmitLobbyUpdate(lobby, new[]{"status"});
-                SendLaunchDota(lobby);
-                LobbyQueue.Add(lobby);
+                if (!LobbyQueue.Contains(lobby))
+                {
+                    lobby.status = LobbyStatus.Queue;
+                    PublicLobbies.Remove(lobby);
+                    TransmitLobbyUpdate(lobby, new[] {"status"});
+                    SendLaunchDota(lobby);
+                    LobbyQueue.Add(lobby);
+                }
             }
         }
 
@@ -348,7 +357,10 @@ namespace D2MPMaster.Lobbies
             }
             PublicLobbies.Remove(lob);
             PlayingLobbies.Remove(lob);
-            LobbyQueue.Remove(lob);
+            lock (LobbyQueue)
+            {
+                LobbyQueue.Remove(lob);
+            }
         }
 
         public static void LeaveLobby(BrowserController controller)
