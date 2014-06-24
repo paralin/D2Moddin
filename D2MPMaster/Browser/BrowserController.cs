@@ -458,10 +458,13 @@ namespace D2MPMaster.Browser
                                                           return;
                                                       }
                                                       var req = jdata["req"].ToObject<JoinLobby>();
+                                                      Lobby lob = null;
                                                       //Find lobby
-                                                      var lob =
-                                                          LobbyManager.PublicLobbies.FirstOrDefault(
-                                                              m => m.id == req.LobbyID);
+                                                      lock(LobbyManager.PublicLobbies){
+                                                          lob =
+                                                              LobbyManager.PublicLobbies.FirstOrDefault(
+                                                                  m => m.id == req.LobbyID);
+                                                      }
                                                       if (lob == null)
                                                       {
                                                           RespondError(jdata, "Can't find that lobby.");
@@ -706,9 +709,12 @@ namespace D2MPMaster.Browser
             var ops = new JArray { DiffGenerator.RemoveAll("publicLobbies") };
             try
             {
-                foreach (var lobby in LobbyManager.PublicLobbies.ToArray())
-                {
-                    ops.Add(lobby.Add("publicLobbies"));
+                lock(LobbyManager.PublicLobbies){
+                    foreach (var lobby in LobbyManager.PublicLobbies)
+                    {
+                        if(lobby != null)
+                            ops.Add(lobby.Add("publicLobbies"));
+                    }
                 }
             }
             catch(Exception ex)
