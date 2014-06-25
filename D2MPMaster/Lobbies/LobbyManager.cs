@@ -695,14 +695,15 @@ namespace D2MPMaster.Lobbies
             if (!LobbyID.TryGetValue(toObject.match_id, out lob)) return;
             log.Debug("Match completed, " + lob.id);
 
-            if (lob.LobbyType == LobbyType.Normal)
+            if (lob.LobbyType == LobbyType.Matchmaking)
             {
-                CloseLobby(lob);
+                MatchmakeManager.CalculateAfterMatch(toObject);
             }
 
             if (lob.LobbyType != LobbyType.PlayerTest)
             {
-                MatchmakeManager.CalculateAfterMatch(toObject);
+                CloseLobby(lob);
+
                 try
                 {
                     Mongo.Results.Insert(toObject);
