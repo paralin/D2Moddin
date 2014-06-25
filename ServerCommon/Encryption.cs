@@ -9,7 +9,7 @@ namespace ServerCommon
 {
     public class Encryption
     {
-        public static RSACryptoServiceProvider rsa;
+        private RSACryptoServiceProvider rsa = new RSACryptoServiceProvider();
         public string rsaPath;// = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), Properties.Settings.Default.keyName);
 
         public Encryption(string path)
@@ -25,7 +25,7 @@ namespace ServerCommon
             }
         }
 
-        public void AssignNewKey()
+        private void AssignNewKey()
         {
             rsa = new RSACryptoServiceProvider(2048);
             
