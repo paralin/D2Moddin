@@ -260,7 +260,7 @@ namespace D2MPMaster.Lobbies
         {
             lock (LobbyQueue)
             {
-                foreach (var lobby in LobbyQueue)
+                foreach (var lobby in LobbyQueue.ToArray())
                 {
                     var server = ServerService.FindForLobby(lobby);
                     if (server == null) continue;
