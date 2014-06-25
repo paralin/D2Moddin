@@ -37,7 +37,7 @@ namespace D2MPMaster.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("AKIAIDO3KQPVQMEEFIUA")]
+        [global::System.Configuration.DefaultSettingValueAttribute("AKIAI4XTAZLO7GDDNSXA")]
         public string AWSKey {
             get {
                 return ((string)(this["AWSKey"]));
@@ -49,7 +49,7 @@ namespace D2MPMaster.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("fjawqe3XkLZlm2LGd+acPDsERgmxZA9yDaD5mgsR")]
+        [global::System.Configuration.DefaultSettingValueAttribute("wMTzr9Qq+tWPORlqhxwTeG01ScdwSwML3ZNggg1a")]
         public string AWSSecret {
             get {
                 return ((string)(this["AWSSecret"]));

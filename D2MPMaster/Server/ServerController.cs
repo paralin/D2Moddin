@@ -13,6 +13,8 @@ using ServerCommon.Methods;
 using XSockets.Core.Common.Socket.Event.Arguments;
 using XSockets.Core.XSocket;
 using XSockets.Core.XSocket.Helpers;
+using System.Timers;
+using System.Diagnostics;
 
 namespace D2MPMaster.Server
 {
@@ -31,7 +33,19 @@ namespace D2MPMaster.Server
         public ServerController()
         {
             ID = Utils.RandomString(10);
+            this.OnOpen += OnClientConnect;
             this.OnClose += OnClosed;
+        }
+
+        private void OnClientConnect(object sender, OnClientConnectArgs e)
+        {
+            // Ping server every 10 seconds.
+            var timer = new Timer(new TimeSpan(0, 0, 10).TotalMilliseconds);
+            timer.Elapsed += (o, args) =>
+            {
+                this.ProtocolInstance.Ping(System.Text.Encoding.UTF8.GetBytes("Ping!"));
+            };
+            timer.Start();
         }
 
         public void OnClosed(object sender, OnClientDisconnectArgs onClientDisconnectArgs)
@@ -67,7 +81,7 @@ namespace D2MPMaster.Server
                         if (msg.password != Init.Password)
                         {
                             //Wrong password
-                            Send("shutdown");
+                            Send("authFail");
                             return;
                         }
                         if (msg.version != Init.Version)
