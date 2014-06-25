@@ -2,6 +2,14 @@
 
 namespace d2mpserver
 {
+	[Serializable]
+	public enum LobbyType : int
+	{
+		Normal=0,
+		PlayerTest=1,
+		Matchmaking=2
+	}
+
     [Serializable]
     public enum ServerRegion : int
     {

@@ -260,8 +260,8 @@ namespace d2mpserver
             Server serv = new Server(serverProc, id, port, dev);
             if (Settings.Default.headlessSRCDS)
                 serverProc.OutputDataReceived += serv.OnOutputDataReceived;
-            serverProc.PriorityClass = ProcessPriorityClass.High;
             serverProc.Start();
+            serverProc.PriorityClass = ProcessPriorityClass.High;
             if (Settings.Default.headlessSRCDS)
             {
                 serverProc.BeginOutputReadLine();
