@@ -123,72 +123,78 @@ namespace D2MPMaster.Matchmaking
 
         private static void doMatchmake()
         {
-            foreach (var m in inMatchmaking.ToArray())
+            lock (inMatchmaking)
             {
-                bool matched = false;
-                foreach (KeyValuePair<string, int> modMmr in m.rating)
+                foreach (var m in inMatchmaking.ToArray())
                 {
-                    // Find match with a similar rating (search margin increases every try), enough free slots and a common mod
-                    var match = inMatchmaking.FirstOrDefault(x => x.rating.Any(
-                        y => y.Key == modMmr.Key && Math.Abs(y.Value - modMmr.Value) < m.matchTries * ratingMargin
-                        ) && 5 - x.users.Count() >= m.users.Count() && x.mods.Intersect(m.mods).Any());
-                    if (match != null)
+                    bool matched = false;
+                    foreach (KeyValuePair<string, int> modMmr in m.rating)
                     {
-                        // Merge users to one matchmake
-                        match.MoveUsers(m.users, match.users);
-                        foreach (var browser in Browsers.Find(b => b.user != null && b.matchmake != null && b.matchmake.id == m.id))
+                        // Find match with a similar rating (search margin increases every try), enough free slots and a common mod
+                        var match = inMatchmaking.FirstOrDefault(x => x != m && x.rating.Any(
+                            y => y.Key == modMmr.Key && Math.Abs(y.Value - modMmr.Value) < m.matchTries * ratingMargin
+                            ) && 5 - x.users.Count() >= m.users.Count() && x.mods.Intersect(m.mods).Any());
+                        if (match != null)
                         {
-                            browser.matchmake = match;
-                        }
-                        m.users = null;
-                        match.mods = match.mods.Intersect(m.mods).ToArray();
-                        calculateMmr(match);
-                        inMatchmaking.Remove(m);
-                        matched = true;
-                        log.InfoFormat("Matchmake merged from {0} players to {1} players after {2} tries. New rating: {3}", m.users.Count(), match.users.Count(), m.matchTries, match.rating);
-                        if (match.users.Count() == 5)
-                        {
-                            match.matchTries = 1;
-                            inTeamMatchmaking.Add(match);
-                            inMatchmaking.Remove(match);
+                            // Merge users to one matchmake
+                            match.MoveUsers(m.users, match.users);
+                            foreach (var browser in Browsers.Find(b => b.user != null && b.matchmake != null && b.matchmake.id == m.id))
+                            {
+                                browser.matchmake = match;
+                            }
+                            m.users = null;
+                            match.mods = match.mods.Intersect(m.mods).ToArray();
+                            calculateMmr(match);
+                            inMatchmaking.Remove(m);
+                            matched = true;
+                            log.InfoFormat("Matchmake merged from {0} players to {1} players after {2} tries. New rating: {3}", m.users.Count(), match.users.Count(), m.matchTries, match.rating);
+                            if (match.users.Count() == 5)
+                            {
+                                match.matchTries = 1;
+                                inTeamMatchmaking.Add(match);
+                                inMatchmaking.Remove(match);
+                            }
                         }
                     }
-                }
-                if (!matched)
-                {
-                    m.matchTries++;
+                    if (!matched)
+                    {
+                        m.matchTries++;
+                    }
                 }
             }
         }
 
         private static void doTeamMatchmake()
         {
-            foreach (var m in inTeamMatchmaking.ToArray())
+            lock (inTeamMatchmaking)
             {
-                bool matched = false;
-                foreach (KeyValuePair<string, int> modMmr in m.rating)
+                foreach (var m in inTeamMatchmaking.ToArray())
                 {
-                    var match = inMatchmaking.FirstOrDefault(x => x.rating.Any(
-                   y => y.Key == modMmr.Key && Math.Abs(y.Value - modMmr.Value) < m.matchTries * ratingMargin
-                   ) && x.mods.Intersect(m.mods).Any());
-                    if (match != null)
+                    bool matched = false;
+                    foreach (KeyValuePair<string, int> modMmr in m.rating)
                     {
-                        Random rnd = new Random();
-                        var mods = match.mods.Intersect(m.mods).ToArray();
-                        var lobby = LobbyManager.CreateMatchedLobby(m, match, mods[rnd.Next(0, mods.Length)]);
-                        foreach (var browser in Browsers.Find(b => b.user != null && b.matchmake != null && (b.matchmake.id == m.id || b.matchmake.id == match.id)))
+                        var match = inMatchmaking.FirstOrDefault(x => x != m && x.rating.Any(
+                       y => y.Key == modMmr.Key && Math.Abs(y.Value - modMmr.Value) < m.matchTries * ratingMargin
+                       ) && x.mods.Intersect(m.mods).Any());
+                        if (match != null)
                         {
-                            browser.lobby = lobby;
-                            browser.matchmake = null;
+                            Random rnd = new Random();
+                            var mods = match.mods.Intersect(m.mods).ToArray();
+                            var lobby = LobbyManager.CreateMatchedLobby(m, match, mods[rnd.Next(0, mods.Length)]);
+                            foreach (var browser in Browsers.Find(b => b.user != null && b.matchmake != null && (b.matchmake.id == m.id || b.matchmake.id == match.id)))
+                            {
+                                browser.lobby = lobby;
+                                browser.matchmake = null;
+                            }
+                            inTeamMatchmaking.Remove(m);
+                            inTeamMatchmaking.Remove(match);
+                            matched = true;
                         }
-                        inTeamMatchmaking.Remove(m);
-                        inTeamMatchmaking.Remove(match);
-                        matched = true;
                     }
-                }
-                if (!matched)
-                {
-                    m.matchTries++;
+                    if (!matched)
+                    {
+                        m.matchTries++;
+                    }
                 }
             }
         }
