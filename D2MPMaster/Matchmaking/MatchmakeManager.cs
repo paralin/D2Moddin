@@ -48,6 +48,7 @@ namespace D2MPMaster.Matchmaking
         public static volatile bool shutdown = false;
 
         public static Thread matchmakeThread;
+        public static Thread teammatchmakeThread;
 
         public MatchmakeManager()
         {
@@ -55,7 +56,9 @@ namespace D2MPMaster.Matchmaking
             {
                 Registered = true;
                 matchmakeThread = new Thread(matchmakeT);
+                teammatchmakeThread = new Thread(TeamMatchmakeT);
                 matchmakeThread.Start();
+                teammatchmakeThread.Start();
             }
         }
 
@@ -71,6 +74,15 @@ namespace D2MPMaster.Matchmaking
             {
                 Thread.Sleep(500);
                 doMatchmake();
+            }
+        }
+
+        private static void TeamMatchmakeT()
+        {
+            while (!shutdown)
+            {
+                Thread.Sleep(500);
+                doTeamMatchmake();
             }
         }
 
@@ -111,8 +123,11 @@ namespace D2MPMaster.Matchmaking
                 {
                     m.matchTries++;
                 }
-
             }
+        }
+
+        private static void doTeamMatchmake()
+        {
             foreach (var m in inTeamMatchmaking.ToArray())
             {
                 bool matched = false;
@@ -139,7 +154,7 @@ namespace D2MPMaster.Matchmaking
                 if (!matched)
                 {
                     m.matchTries++;
-                }               
+                }
             }
         }
 
