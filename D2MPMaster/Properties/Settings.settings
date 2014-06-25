@@ -35,5 +35,8 @@
     <Setting Name="WebAddress" Type="System.String" Scope="User">
       <Value Profile="(Default)">ddp2.d2modd.in</Value>
     </Setting>
+    <Setting Name="SteamAPIKey" Type="System.String" Scope="User">
+      <Value Profile="(Default)">CBD4B6FF1511AD17841196BCE6B1E3E4</Value>
+    </Setting>
   </Settings>
 </SettingsFile>
