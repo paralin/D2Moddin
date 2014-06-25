@@ -698,6 +698,26 @@ namespace D2MPMaster.Browser
                                                       LobbyManager.ClearPendingLobbies();
                                                       break;
                                                   }
+                                                  case "startLoadTest":
+                                                  {
+                                                      if (user == null)
+                                                      {
+                                                          RespondError(jdata, "You are not logged in yet.");
+                                                          return;
+                                                      }
+                                                      if (lobby != null)
+                                                      {
+                                                          RespondError(jdata, "You are in a lobby already.");
+                                                          return;
+                                                      }
+                                                      if (user.authItems.Contains("tested"))
+                                                      {
+                                                          RespondError(jdata, "You have already completed the test.");
+                                                          return;
+                                                      }
+                                                      lobby = LobbyManager.CreateTestLobby(user);
+                                                      break;
+                                                  }
                                                   default:
                                                       log.Debug(string.Format("Unknown command: {0}...",
                                                           command.Substring(0, 10)));

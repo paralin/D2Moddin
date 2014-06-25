@@ -475,6 +475,54 @@ namespace D2MPMaster.Lobbies
             return lob;
         }
 
+        /// <summary>
+        /// Start a load test
+        /// </summary>
+        /// <param name="user">User creating the lobby.</param>
+        /// <param name="mod">Mod.</param>
+        /// <param name="name">Name of the lobby.</param>
+        /// <returns></returns>
+        public static Lobby CreateTestLobby(User user)
+        {
+            foreach (var result in Browsers.Find(m => m.user != null && m.user.Id == user.Id && m.lobby != null))
+            {
+                LeaveLobby(result);
+            }
+            var mod = Mods.Mods.ByName("checker");
+            var lob = new Lobby()
+            {
+                creator = user.profile.name,
+                creatorid = user.Id,
+                banned = new string[0],
+                dire = new Player[5],
+                IdleSince = DateTime.Now,
+                radiant = new Player[5],
+                devMode = false,
+                enableGG = true,
+                hasPassword = false,
+                id = Utils.RandomString(17),
+                mod = mod.Id,
+                region = (int)ServerRegion.UNKNOWN,
+                name = "LOADTEST "+user.Id,
+                isPublic = false,
+                password = string.Empty,
+                state = GameState.Init,
+                LobbyType = LobbyType.PlayerTest,
+                requiresFullLobby = false,
+                serverIP = string.Empty
+            };
+            lob.radiant[0] = Player.FromUser(user);
+            PlayingLobbies.Add(lob);
+            Browsers.AsyncSendTo(m => m.user != null && m.user.Id == user.Id, BrowserController.LobbySnapshot(lob),
+                req => { });
+            ClientsController.AsyncSendTo(m => m.SteamID == user.steam.steamid, ClientController.SetMod(mod),
+                req => { });
+            ClientsController.AsyncSendTo(m => m.SteamID == user.steam.steamid, ClientController.LaunchDota(), req => { });
+            StartQueue(lob);
+            log.InfoFormat("Load test started, user: #{0}", user.profile.name);
+            return lob;
+        }
+
         public static void ChatMessage(Lobby lobby, string msg, string name)
         {
             string cmsg = name + ": " + msg;
