@@ -186,7 +186,7 @@ namespace d2mpserver
                     }
                     break;
                 case "authFail":
-                    log.Debug("Auth password: " + Settings.Default.connectPassword + " is invalid.");
+                    log.Debug("Auth password is invalid.");
                     log.Fatal("Server doesn't like our init info (we're probably out of date), shutting down...");
                     infoValid = false;
                     Environment.Exit(0);

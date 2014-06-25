@@ -109,18 +109,6 @@ namespace d2mpserver.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("kwxmMKDcuVjQNutZOwZy")]
-        public string connectPassword {
-            get {
-                return ((string)(this["connectPassword"]));
-            }
-            set {
-                this["connectPassword"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("")]
         public string devArgs {
             get {
