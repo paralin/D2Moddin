@@ -128,7 +128,7 @@ namespace D2MPMaster.Browser
                                                       {
                                                           var session =
                                                               Mongo.Sessions.FindOneAs<Session>(Query.EQ("_id", key));
-                                                          if (session == null || session.expires < DateTime.Now)
+                                                          if (session == null || session.expires < DateTime.UtcNow)
                                                           {
                                                               user = null;
                                                               this.SendJson("{\"status\": false}", "auth");
@@ -200,7 +200,7 @@ namespace D2MPMaster.Browser
                                                       }
                                                       //Find the mod
                                                       var mod = Mods.Mods.ByID(req.mod);
-                                                      if (mod == null)
+                                                      if (mod == null || !mod.isPublic)
                                                       {
                                                           RespondError(jdata,
                                                               "Can't find the mod, you probably don't have access.");
@@ -519,10 +519,13 @@ namespace D2MPMaster.Browser
                                                           return;
                                                       }
                                                       var req = jdata["req"].ToObject<JoinLobby>();
+                                                      Lobby lob = null;
                                                       //Find lobby
-                                                      var lob =
-                                                          LobbyManager.PublicLobbies.FirstOrDefault(
-                                                              m => m.id == req.LobbyID);
+                                                      lock(LobbyManager.PublicLobbies){
+                                                          lob =
+                                                              LobbyManager.PublicLobbies.FirstOrDefault(
+                                                                  m => m.id == req.LobbyID);
+                                                      }
                                                       if (lob == null)
                                                       {
                                                           RespondError(jdata, "Can't find that lobby.");
@@ -650,9 +653,12 @@ namespace D2MPMaster.Browser
                                                       }
                                                       var req = jdata["req"].ToObject<InstallMod>();
                                                       var mod = Mods.Mods.ByName(req.mod);
-                                                      if (mod == null)
+                                                      if (mod == null || !mod.playable)
                                                       {
-                                                          RespondError(jdata, "Can't find that mod in the database.");
+                                                          this.AsyncSendTo(x => x.user != null && x.user.Id == user.Id,
+                                                              InstallResponse("Can't find that mod, or it's not playable.",
+                                                                  true),
+                                                              rf => { });
                                                           return;
                                                       }
                                                       if (
@@ -773,9 +779,12 @@ namespace D2MPMaster.Browser
             var ops = new JArray { DiffGenerator.RemoveAll("publicLobbies") };
             try
             {
-                foreach (var lobby in LobbyManager.PublicLobbies.ToArray())
-                {
-                    ops.Add(lobby.Add("publicLobbies"));
+                lock(LobbyManager.PublicLobbies){
+                    foreach (var lobby in LobbyManager.PublicLobbies)
+                    {
+                        if(lobby != null)
+                            ops.Add(lobby.Add("publicLobbies"));
+                    }
                 }
             }
             catch(Exception ex)

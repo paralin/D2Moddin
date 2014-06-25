@@ -25,7 +25,8 @@ namespace D2MPMaster.WebHandler
             data["lobby_total"] = LobbyManager.LobbyID.Values.Count;
             data["lobby_wait"] = LobbyManager.LobbyID.Values.Count(m => m.status == LobbyStatus.Start);
             data["lobby_play"] = LobbyManager.LobbyID.Values.Count(m => m.status == LobbyStatus.Play);
-            data["lobby_queue"] = LobbyManager.LobbyQueue.Count;
+            lock (LobbyManager.LobbyQueue)
+                data["lobby_queue"] = LobbyManager.LobbyQueue.Count;
 
             JArray regions;
             data["regions"] = regions = new JArray();

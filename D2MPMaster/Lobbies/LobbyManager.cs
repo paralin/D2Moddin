@@ -178,7 +178,7 @@ namespace D2MPMaster.Lobbies
                         m =>
                             m.status == LobbyStatus.Start &&
                             !m.hasPassword &&
-                            m.IdleSince < DateTime.Now.Subtract(TimeSpan.FromMinutes(2)));
+						m.IdleSince < DateTime.Now.Subtract(TimeSpan.FromMinutes(5)));
                 foreach (var lobby in lobbies)
                 {
                     CloseLobby(lobby); 
@@ -245,25 +245,33 @@ namespace D2MPMaster.Lobbies
         /// <param name="lobby"></param>
         public static void CancelQueue(Lobby lobby)
         {
-            if (!LobbyQueue.Contains(lobby)) return;
-            LobbyQueue.Remove(lobby);
+            if(lobby == null) return;
+            lock (LobbyQueue)
+            {
+                if (!LobbyQueue.Contains(lobby)) return;
+                LobbyQueue.Remove(lobby);
+            }
             lobby.status = LobbyStatus.Start;
             lobby.IdleSince = DateTime.Now;
             if(lobby.isPublic)
-                PublicLobbies.Add(lobby);
+                lock(PublicLobbies)
+                    PublicLobbies.Add(lobby);
             TransmitLobbyUpdate(lobby, new []{"status"});
         }
 
         private static void CalculateQueue()
         {
-            foreach (var lobby in LobbyQueue.ToArray())
+            lock (LobbyQueue)
             {
-                var server = ServerService.FindForLobby(lobby);
-                if (server == null) continue;
-                GameInstance instance = server.StartInstance(lobby);
-                lobby.status = LobbyStatus.Configure;
-                TransmitLobbyUpdate(lobby, new []{"status"});
-                LobbyQueue.Remove(lobby);
+                foreach (var lobby in LobbyQueue)
+                {
+                    var server = ServerService.FindForLobby(lobby);
+                    if (server == null) continue;
+                    GameInstance instance = server.StartInstance(lobby);
+                    lobby.status = LobbyStatus.Configure;
+                    TransmitLobbyUpdate(lobby, new[] {"status"});
+                    LobbyQueue.Remove(lobby);
+                }
             }
         }
 
@@ -273,18 +281,23 @@ namespace D2MPMaster.Lobbies
         /// <param name="lobby"></param>
         public static void StartQueue(Lobby lobby)
         {
-            if (!LobbyQueue.Contains(lobby))
+            lock (LobbyQueue)
             {
-                lobby.status = LobbyStatus.Queue;
-                PublicLobbies.Remove(lobby);
-                TransmitLobbyUpdate(lobby, new[]{"status"});
-                SendLaunchDota(lobby);
-                LobbyQueue.Add(lobby);
+                if (!LobbyQueue.Contains(lobby))
+                {
+                    lock(PublicLobbies)
+                        lobby.status = LobbyStatus.Queue;
+                    PublicLobbies.Remove(lobby);
+                    TransmitLobbyUpdate(lobby, new[] {"status"});
+                    SendLaunchDota(lobby);
+                    LobbyQueue.Add(lobby);
+                }
             }
         }
 
         public static void SetPassword(Lobby lobby, string password)
         {
+            if(lobby == null) return;
             var hadPassword = lobby.hasPassword;
             if (password == null) password = "";
 
@@ -293,17 +306,20 @@ namespace D2MPMaster.Lobbies
                 lobby.hasPassword = false;
                 lobby.isPublic = true;
                 lobby.password = "";
-                if (!PublicLobbies.Contains(lobby)) PublicLobbies.Add(lobby);
+                lock(PublicLobbies)
+                    if (!PublicLobbies.Contains(lobby)) PublicLobbies.Add(lobby);
             }
             else
             {
                 lobby.hasPassword = true;
                 lobby.isPublic = false;
                 lobby.password = password;
-                if (PublicLobbies.Contains(lobby)) PublicLobbies.Remove(lobby);
+                lock(PublicLobbies)
+                    if (PublicLobbies.Contains(lobby)) PublicLobbies.Remove(lobby);
             }
-            if(hadPassword != lobby.hasPassword)
+			if(hadPassword != lobby.hasPassword)
                 TransmitLobbyUpdate(lobby, new []{"isPublic","hasPassword"});
+			lobby.IdleSince = DateTime.Now;
         }
 
         public static void TransmitLobbyUpdate(Lobby lobby, string[] fields)
@@ -355,13 +371,17 @@ namespace D2MPMaster.Lobbies
 
         public static void CloseLobby(Lobby lob)
         {
-            foreach (var browser in Browsers.Find(m => m.user != null && m.lobby != null && m.lobby.id == lob.id))
-            {
-                browser.lobby = null;
+            lock(PublicLobbies){
+                foreach (var browser in Browsers.Find(m => m.user != null && m.lobby != null && m.lobby.id == lob.id))
+                {
+                    browser.lobby = null;
+                }
+                PublicLobbies.Remove(lob);
+                lock(PlayingLobbies)
+                    PlayingLobbies.Remove(lob);
             }
-            PublicLobbies.Remove(lob);
-            PlayingLobbies.Remove(lob);
-            LobbyQueue.Remove(lob);
+            lock (LobbyQueue)
+                LobbyQueue.Remove(lob);
         }
 
         public static void LeaveLobby(BrowserController controller)
@@ -445,16 +465,17 @@ namespace D2MPMaster.Lobbies
                             isRanked = false,
                             id = Utils.RandomString(17),
                             mod = mod.Id,
-                            region=0,
+							region=(int)ServerRegion.UNKNOWN,
                             name = name,
                             isPublic = true,
-                            password = "",
+							password = string.Empty,
                             state = GameState.Init,
+							LobbyType = LobbyType.Normal,
                             requiresFullLobby =
                                 !(user.authItems != null &&
                                  (user.authItems.Contains("developer") || user.authItems.Contains("admin") ||
                                   user.authItems.Contains("moderator"))),
-                            serverIP = ""
+							serverIP = string.Empty
                         };
             lob.radiant[0] = Player.FromUser(user);
             PublicLobbies.Add(lob);
@@ -589,7 +610,7 @@ namespace D2MPMaster.Lobbies
 
         public static void ReturnToWait(Lobby lobby)
         {
-            if (!LobbyID.Values.Contains(lobby)) return;
+            if (lobby==null||!LobbyID.Values.Contains(lobby)) return;
             lobby.serverIP = "";
             lobby.status = LobbyStatus.Start;
             lobby.IdleSince = DateTime.Now;
@@ -627,7 +648,8 @@ namespace D2MPMaster.Lobbies
             else
             {
                 TransmitLobbyUpdate(lobby, new[] {"status", "radiant", "dire"});
-                if (lobby.isPublic) PublicLobbies.Add(lobby);
+                lock(PublicLobbies)
+                    if (lobby.isPublic) PublicLobbies.Add(lobby);
             }
         }
 
@@ -642,7 +664,7 @@ namespace D2MPMaster.Lobbies
             {
                 ClientsController.AsyncSendTo(c => c.SteamID != null && c.SteamID == plyr.steam, ClientController.LaunchDota(),
                     req => { });
-            }
+			}
         }
 
         private static void SendConnectDota(Lobby lobby)
@@ -670,14 +692,16 @@ namespace D2MPMaster.Lobbies
             Lobby lob;
             if (!LobbyID.TryGetValue(toObject.match_id, out lob)) return;
             log.Debug("Match completed, "+lob.id);
-            CloseLobby(lob);
-            try
-            {
-                Mongo.Results.Insert(toObject);
-            }
-            catch (Exception ex)
-            {
-                log.Error("Failed to store match result " + lob.id, ex);
+            if(lob.LobbyType == LobbyType.Normal){
+                CloseLobby(lob);
+                try
+                {
+                    Mongo.Results.Insert(toObject);
+                }
+                catch (Exception ex)
+                {
+                    log.Error("Failed to store match result " + lob.id, ex);
+                }
             }
         }
 
@@ -686,8 +710,10 @@ namespace D2MPMaster.Lobbies
             Lobby lob;
             if (!LobbyID.TryGetValue(matchid, out lob)) return;
             if (lob.status != LobbyStatus.Play) return;
-            log.Debug(matchid+" failed to load, returning to waiting stage.");
-            ReturnToWait(lob);
+            if(lob.LobbyType == LobbyType.Normal){
+                log.Debug(matchid+" failed to load, returning to waiting stage.");
+                ReturnToWait(lob);
+            }
         }
 
         public static void HandleEvent(GameEvents eventType, JToken data, Lobby lob)
@@ -722,12 +748,12 @@ namespace D2MPMaster.Lobbies
         {
 			log.Info("Clearing idle lobbies!");
 			try{
-			var lobbies = LobbyID.Values.Where(m => m.status == LobbyStatus.Start);
-            foreach (var lobby in lobbies)
-            {
-                CloseLobby(lobby);
-            }
-				log.Info("Cleared "+lobbies.Count()+" lobbies.");
+    			var lobbies = LobbyID.Values.Where(m => m.status == LobbyStatus.Start);
+                foreach (var lobby in lobbies)
+                {
+                    CloseLobby(lobby);
+                }
+                log.Info("Cleared "+lobbies.Count()+" lobbies.");
 			}catch(Exception ex){
 				log.Error("Failed to clear idle lobbies!", ex);
 			}
