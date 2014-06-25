@@ -36,6 +36,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Data\ServerAddon.cs" />
+    <Compile Include="Encryption.cs" />
     <Compile Include="Enums.cs" />
     <Compile Include="Methods\Init.cs" />
     <Compile Include="Methods\ServerEvents.cs" />

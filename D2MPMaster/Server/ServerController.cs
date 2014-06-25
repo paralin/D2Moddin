@@ -35,6 +35,8 @@ namespace D2MPMaster.Server
             ID = Utils.RandomString(10);
             this.OnOpen += OnClientConnect;
             this.OnClose += OnClosed;
+
+
         }
 
         private void OnClientConnect(object sender, OnClientConnectArgs e)

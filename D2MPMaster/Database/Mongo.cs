@@ -18,6 +18,7 @@ namespace D2MPMaster.Database
         public static MongoCollection Results;
         public static MongoCollection InviteQueue;
         public static MongoCollection InviteKeys;
+        public static MongoCollection ServerKeys;
 
         public static void Setup()
         {
@@ -38,12 +39,14 @@ namespace D2MPMaster.Database
 #else
             Database = Server.GetDatabase(Settings.Default.MongoDB);
 #endif
+
             Users = Database.GetCollection("users");
             Mods = Database.GetCollection("mods");
             Sessions = Database.GetCollection("sessions");
             Results = Database.GetCollection("matchResults");
             InviteQueue = Database.GetCollection("inviteQueue");
             InviteKeys = Database.GetCollection("inviteKeys");
+            ServerKeys = Database.GetCollection("serverKeys");
         }
     }
 }

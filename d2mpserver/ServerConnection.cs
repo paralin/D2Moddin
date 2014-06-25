@@ -37,6 +37,9 @@ namespace d2mpserver
 
         private void SetupClient()
         {
+            log.Info("Setting up keys...");
+            ServerCommon.Encryption encryption = new ServerCommon.Encryption(Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), Properties.Settings.Default.keyName));
+            log.Info(String.Format("Key location: {0}", encryption.rsaPath));
 #if DEBUG
             client = new XSocketClient("ws://localhost:4502/ServerController", "*");
 #else
