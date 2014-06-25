@@ -242,7 +242,7 @@ namespace D2MPMaster.Browser
                                                       }
                                                       //Find the mod
                                                       var mod = Mods.Mods.ByID(req.mod);
-                                                      if (mod == null)
+                                                      if (mod == null || !mod.isPublic)
                                                       {
                                                           RespondError(jdata,
                                                               "Can't find the mod, you probably don't have access.");
@@ -643,9 +643,12 @@ namespace D2MPMaster.Browser
                                                       }
                                                       var req = jdata["req"].ToObject<InstallMod>();
                                                       var mod = Mods.Mods.ByName(req.mod);
-                                                      if (mod == null)
+                                                      if (mod == null || !mod.playable)
                                                       {
-                                                          RespondError(jdata, "Can't find that mod in the database.");
+                                                          this.AsyncSendTo(x => x.user != null && x.user.Id == user.Id,
+                                                              InstallResponse("Can't find that mod, or it's not playable.",
+                                                                  true),
+                                                              rf => { });
                                                           return;
                                                       }
                                                       if (
