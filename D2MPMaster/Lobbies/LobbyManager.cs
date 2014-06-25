@@ -517,18 +517,18 @@ namespace D2MPMaster.Lobbies
                 requiresFullLobby = true,
                 serverIP = ""
             };
-            foreach (var user in team1.users.ToArray())
+            foreach (var user in team1.Users.ToArray())
             {
                 lob.AddPlayer(lob.dire, Player.FromUser(user));
             }
-            foreach (var user in team2.users.ToArray())
+            foreach (var user in team2.Users.ToArray())
             {
                 lob.AddPlayer(lob.radiant, Player.FromUser(user));
             }
             rankedLobbies.Add(lob);
             PlayingLobbies.Add(lob);
 
-            var allUsers = team1.users.ToArray().Concat(team2.users.ToArray());
+            var allUsers = team1.Users.ToArray().Concat(team2.Users.ToArray());
             var setMod = Mods.Mods.ByID(mod);
             foreach (var user in allUsers)
             {

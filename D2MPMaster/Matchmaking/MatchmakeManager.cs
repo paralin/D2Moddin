@@ -16,6 +16,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using MongoDB.Driver;
 using MongoDB.Driver.Builders;
 using XSockets.Core.Common.Globals;
 using XSockets.Core.Common.Socket;
@@ -34,11 +35,6 @@ namespace D2MPMaster.Matchmaking
             public int MaxMmr { get; set; }
             public int Factor { get; set; }
         }
-
-        /// <summary>
-        ///  Margin increases by this number every time doMatchmake executes.
-        /// </summary>
-        private const int ratingMargin = 10;
 
         /// <summary>
         /// Base MMR for new players
@@ -123,78 +119,97 @@ namespace D2MPMaster.Matchmaking
 
         private static void doMatchmake()
         {
-            lock (inMatchmaking)
+            foreach (var match in inMatchmaking.ToArray())
             {
-                foreach (var m in inMatchmaking.ToArray())
+                //if the match was moved to the other queue, simply ignore it
+                if (inTeamMatchmaking.Contains(match))
+                    continue;
+
+                // Find match with a similar rating (search margin increases every try), enough free slots and a common mod
+                var matchFound = inMatchmaking.FirstOrDefault(x => match.IsMatch(x));
+                if (matchFound != null)
                 {
-                    bool matched = false;
-                    foreach (KeyValuePair<string, int> modMmr in m.rating)
+                    // Merge everything to the new match
+                    matchFound.MergeMatches(match);
+                    // update the browsers with the new match
+                    foreach (var browser in Browsers.Find(b => b.user != null && b.matchmake != null && b.matchmake.Id == match.Id))
                     {
-                        // Find match with a similar rating (search margin increases every try), enough free slots and a common mod
-                        var match = inMatchmaking.FirstOrDefault(x => x != m && x.rating.Any(
-                            y => y.Key == modMmr.Key && Math.Abs(y.Value - modMmr.Value) < m.matchTries * ratingMargin
-                            ) && 5 - x.users.Count() >= m.users.Count() && x.mods.Intersect(m.mods).Any());
-                        if (match != null)
+                        browser.matchmake = matchFound;
+                    }
+
+                    log.InfoFormat("Matchmake merged from {0} players to {1} players after {2} tries. New rating: {3}",
+                        match.Users.Count(), matchFound.Users.Count(), match.TryCount, matchFound.Ratings);
+
+                    //emove the old match, we dont need it
+                    lock (inMatchmaking)
+                    {
+                        inMatchmaking.Remove(match);
+                    }
+
+                    //if we are crowded
+                    if (matchFound.Users.Length == 5)
+                    {
+                        //reset the tries and dont ignore it
+                        matchFound.TryCount = 1;
+                        matchFound.Ignore = false;
+
+                        //move to team MM
+                        lock (inMatchmaking)
                         {
-                            // Merge users to one matchmake
-                            match.MoveUsers(m.users, match.users);
-                            foreach (var browser in Browsers.Find(b => b.user != null && b.matchmake != null && b.matchmake.id == m.id))
-                            {
-                                browser.matchmake = match;
-                            }
-                            m.users = null;
-                            match.mods = match.mods.Intersect(m.mods).ToArray();
-                            calculateMmr(match);
-                            inMatchmaking.Remove(m);
-                            matched = true;
-                            log.InfoFormat("Matchmake merged from {0} players to {1} players after {2} tries. New rating: {3}", m.users.Count(), match.users.Count(), m.matchTries, match.rating);
-                            if (match.users.Count() == 5)
-                            {
-                                match.matchTries = 1;
-                                inTeamMatchmaking.Add(match);
-                                inMatchmaking.Remove(match);
-                            }
+                            inMatchmaking.Remove(matchFound);
+                        }
+                        lock (inTeamMatchmaking)
+                        {
+                            inTeamMatchmaking.Add(matchFound);
                         }
                     }
-                    if (!matched)
-                    {
-                        m.matchTries++;
-                    }
+                }
+                else
+                {
+                    //no match found, open the possibilities
+                    match.TryCount++;
                 }
             }
         }
 
         private static void doTeamMatchmake()
         {
-            lock (inTeamMatchmaking)
+            Random rnd = new Random();
+
+            foreach (var match in inTeamMatchmaking.ToArray())
             {
-                foreach (var m in inTeamMatchmaking.ToArray())
+                //dont process ignored match
+                if (match.Ignore)
+                    continue;
+
+                // Find match with a similar rating (search margin increases every try) and a common mod
+                var matchFound = inMatchmaking.FirstOrDefault(x => match.IsMatch(x, true));
+                if (matchFound != null)
                 {
-                    bool matched = false;
-                    foreach (KeyValuePair<string, int> modMmr in m.rating)
+                    //get available mods by rating
+                    var mods = match.GetMatchedMods(matchFound);
+                    //create a lobby with one of the mods
+                    var lobby = LobbyManager.CreateMatchedLobby(match, matchFound, mods[rnd.Next(0, mods.Length)]);
+                    //remove the matchmake from the browsers and set the lobby
+                    foreach (var browser in Browsers.Find(b => b.user != null && b.matchmake != null && (b.matchmake.Id == match.Id || b.matchmake.Id == matchFound.Id)))
                     {
-                        var match = inMatchmaking.FirstOrDefault(x => x != m && x.rating.Any(
-                       y => y.Key == modMmr.Key && Math.Abs(y.Value - modMmr.Value) < m.matchTries * ratingMargin
-                       ) && x.mods.Intersect(m.mods).Any());
-                        if (match != null)
-                        {
-                            Random rnd = new Random();
-                            var mods = match.mods.Intersect(m.mods).ToArray();
-                            var lobby = LobbyManager.CreateMatchedLobby(m, match, mods[rnd.Next(0, mods.Length)]);
-                            foreach (var browser in Browsers.Find(b => b.user != null && b.matchmake != null && (b.matchmake.id == m.id || b.matchmake.id == match.id)))
-                            {
-                                browser.lobby = lobby;
-                                browser.matchmake = null;
-                            }
-                            inTeamMatchmaking.Remove(m);
-                            inTeamMatchmaking.Remove(match);
-                            matched = true;
-                        }
+                        browser.lobby = lobby;
+                        browser.matchmake = null;
                     }
-                    if (!matched)
+
+                    //set this flag so it wont try to find during the array loop
+                    matchFound.Ignore = true;
+
+                    //remove the matches from the queue
+                    lock (inTeamMatchmaking)
                     {
-                        m.matchTries++;
+                        inTeamMatchmaking.Remove(match);
+                        inTeamMatchmaking.Remove(matchFound);
                     }
+                }
+                else
+                {
+                    match.TryCount++;
                 }
             }
         }
@@ -216,39 +231,75 @@ namespace D2MPMaster.Matchmaking
 
             var matchmake = new Matchmake()
             {
-                id = Utils.RandomString(17),
-                users = new User[5],
-                mods = mods.Select(x => x.Id).ToArray(),
-                rating = user.profile.mmr.Where(x => mods.Any(y => x.Key == y.Id)).ToDictionary(x => x.Key, x => x.Value),
-                matchTries = 1
+                Id = Utils.RandomString(17),
+                Users = new User[5],
+                Mods = mods.Select(x => x.Id).ToArray(),
+                Ratings = user.profile.mmr.Where(x => mods.Any(y => x.Key == y.Id)).ToDictionary(x => x.Key, x => x.Value),
+                TryCount = 1
             };
-            matchmake.users[0] = user;
-            inMatchmaking.Add(matchmake);
+
+            matchmake.Users[0] = user;
+
             log.InfoFormat("Matchmaking created User: #{0}", user.profile.name);
+
+            //add to the queue
+            lock (inMatchmaking)
+            {
+                inMatchmaking.Add(matchmake);
+            }
+
             return matchmake;
         }
 
         public static void LeaveMatchmake(BrowserController controller)
         {
-            if (controller.matchmake == null || controller.user == null) return;
+            if (controller.matchmake == null || controller.user == null)
+                return;
+
             var mm = controller.matchmake;
             controller.matchmake = null;
-            if (mm.users.Count() == 0 && inMatchmaking.Contains(mm))
+
+            //remove the user from the MM
+            for (int i = 0; i < mm.Users.Length; i++)
             {
-                inMatchmaking.Remove(mm);
-            }
-            else if (inTeamMatchmaking.Contains(mm))
-            {
-                inTeamMatchmaking.Remove(mm);
-                for (int i = 0; i < mm.users.Length; i++)
+                var user = mm.Users[i];
+                if (user != null && user.steam == controller.user.steam)
                 {
-                    var user = mm.users[i];
-                    if (user != null && user.steam == controller.user.steam)
+                    mm.Users[i] = null;
+                    mm.UpdateRating();
+                }
+            }
+
+            //if no users are left on it
+            if (mm.Users.Length == 0)
+            {
+                //check the queue
+                if (inMatchmaking.Contains(mm))
+                {
+                    lock (inMatchmaking)
                     {
-                        mm.users[i] = null;
+                        //and remove it
+                        inMatchmaking.Remove(mm);
                     }
                 }
-                inMatchmaking.Add(mm);
+            }
+            //if the match is in team with less than 5 players
+            else if (inTeamMatchmaking.Contains(mm))
+            {
+                //set ignore, no mistakes allowed
+                mm.Ignore = true;
+
+                //remove from here
+                lock (inTeamMatchmaking)
+                {
+                    inTeamMatchmaking.Remove(mm);
+                }
+
+                //add to here
+                lock (inMatchmaking)
+                {
+                    inMatchmaking.Add(mm);
+                }
             }
         }
 
@@ -302,14 +353,6 @@ namespace D2MPMaster.Matchmaking
                     player.profile.mmr[pMatchData.mod] = MmrFloor;
 
                 Mongo.Users.Save(player);
-            }
-        }
-
-        private static void calculateMmr(Matchmake m)
-        {
-            foreach (KeyValuePair<string, int> modMmr in m.rating)
-            {
-                m.rating[modMmr.Key] = Convert.ToInt32(m.users.Select(x => x.profile.mmr.Where(y => y.Key == modMmr.Key).Select(y => y.Value).ToArray().Average()));
             }
         }
     }

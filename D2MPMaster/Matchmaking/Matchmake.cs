@@ -18,23 +18,68 @@ namespace D2MPMaster.Matchmaking
     /// </summary>
     public class Matchmake
     {
-        public string id { get; set; }
-        public User[] users { get; set; }
-        // Mod ids
-        public string[] mods { get; set; }
-        public Dictionary<string, int> rating { get; set; }
-        public int matchTries { get; set; }
+        /// <summary>
+        ///  Margin increases by this number every time doMatchmake executes.
+        /// </summary>
+        private const int RatingMargin = 10;
 
-        public void MoveUsers(User[] source, User[] destination)
+        public string Id { get; set; }
+        public User[] Users { get; set; }
+        // Mod ids
+        public string[] Mods { get; set; }
+        public Dictionary<string, int> Ratings { get; set; }
+        public int TryCount { get; set; }
+        public bool Ignore { get; set; }
+
+        /// <summary>
+        /// Merge pMatch into this
+        /// </summary>
+        public void MergeMatches(Matchmake pMatch)
         {
-            foreach (var u in source)
+            this.Users = this.Users.Union(pMatch.Users).ToArray();
+            this.Mods = this.GetMatchedMods(pMatch);
+
+            this.UpdateRating();
+        }
+
+        /// <summary>
+        /// Check if the two matches match the criteria
+        /// </summary>
+        /// <param name="pTeam">Is this a team MM?</param>
+        public bool IsMatch(Matchmake pMatch, bool pTeam = false)
+        {
+            bool result = false;
+
+            //not the same match
+            if (this != pMatch &&
+                (pTeam || this.Users.Length <= (5 - pMatch.Users.Length))) //there is room for everybody
             {
-                for (var i = 0; i < destination.Length; i++)
-                {
-                    if (destination[i] != null) continue;
-                    destination[i] = u;
-                    return;
-                }
+                result = this.GetMatchedMods(pMatch).Length > 0;
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Get The matched mods
+        /// </summary>
+        public string[] GetMatchedMods(Matchmake pMatch)
+        {
+            //get intersection mods only
+            return this.Mods.Intersect(pMatch.Mods)
+                .Where(modName => Math.Abs(this.Ratings[modName] - pMatch.Ratings[modName]) < this.TryCount * RatingMargin)//and it has to fall in range
+                .ToArray();
+        }
+
+        /// <summary>
+        /// Update the current MM rating
+        /// </summary>
+        public void UpdateRating()
+        {
+            this.Ratings.Clear();
+            foreach (var mod in this.Mods)
+            {
+                this.Ratings.Add(mod, (int)this.Users.Average(user => user.profile.mmr[mod]));
             }
         }
     }
