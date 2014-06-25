@@ -515,7 +515,8 @@ namespace D2MPMaster.Lobbies
                 password = "",
                 state = GameState.Init,
                 requiresFullLobby = true,
-                serverIP = ""
+                serverIP = "",
+                LobbyType = LobbyType.Matchmaking
             };
             foreach (var user in team1.Users.ToArray())
             {
