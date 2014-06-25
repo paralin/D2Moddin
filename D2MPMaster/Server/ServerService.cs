@@ -14,7 +14,6 @@ namespace D2MPMaster
         {
             //Params
             ServerRegion region = lobby.region;
-            ServerController server = null;
             var available = Servers.Find(m => m.Inited && m.Instances.Count < m.InitData.serverCount).OrderBy(m=>m.Instances.Count);
             if (region == ServerRegion.UNKNOWN)
             {
