@@ -23,9 +23,6 @@
     <Setting Name="srcds" Type="System.String" Scope="User">
       <Value Profile="(Default)">https://s3-us-west-2.amazonaws.com/d2mpclient/srcds.exe</Value>
     </Setting>
-    <Setting Name="connectPassword" Type="System.String" Scope="User">
-      <Value Profile="(Default)">kwxmMKDcuVjQNutZOwZy</Value>
-    </Setting>
     <Setting Name="devArgs" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
     </Setting>

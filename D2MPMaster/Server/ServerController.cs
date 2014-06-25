@@ -67,7 +67,7 @@ namespace D2MPMaster.Server
                         if (msg.password != Init.Password)
                         {
                             //Wrong password
-                            Send("shutdown");
+                            Send("authFail");
                             return;
                         }
                         if (msg.version != Init.Version)
