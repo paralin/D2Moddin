@@ -154,7 +154,7 @@ namespace D2MPMaster.Lobbies
         {
             while (!shutdown)
             {
-                Thread.Sleep(15000);
+                Thread.Sleep(30000);
                 lock (TestLobbyQueue)
                 {
                     lock (LobbyQueue)
