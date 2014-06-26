@@ -48,7 +48,7 @@ namespace D2MPMaster.MatchData
                 }
                 else if (status == "load_failed")
                 {
-                    HandleLoadFail(matchid);
+                    HandleLoadFail(matchid); //parse the players property here for mroe reliable data
                 }
                 else
                 {

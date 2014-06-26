@@ -618,6 +618,11 @@ namespace D2MPMaster.Lobbies
                     {
                         lobby.AddPlayer(lobby.radiant, Player.FromUser(user));
                     }
+                    Browsers.AsyncSendTo(m => m.user != null && m.user.Id == user.Id, BrowserController.LobbySnapshot(lobby),
+                        req => { });
+                    ClientsController.AsyncSendTo(m => m.SteamID == user.steam.steamid, ClientController.SetMod(Mods.Mods.ByName("checker")),
+                        req => { });
+                    ClientsController.AsyncSendTo(m => m.SteamID == user.steam.steamid, ClientController.LaunchDota(), req => { });
                     return lobby;
                 }else{
                     lobby = CreateTestLobby(user);
