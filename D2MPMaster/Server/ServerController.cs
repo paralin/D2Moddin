@@ -18,6 +18,7 @@ using System.Diagnostics;
 using D2MPMaster.Database;
 using MongoDB.Driver.Builders;
 using D2MPMaster.Model;
+using Newtonsoft.Json;
 
 namespace D2MPMaster.Server
 {
@@ -32,7 +33,7 @@ namespace D2MPMaster.Server
         public int IDCounter;
         public ConcurrentDictionary<int, GameInstance> Instances = new ConcurrentDictionary<int, GameInstance>();
         public bool Inited { get; set; }
-        public ServerCommon.RSAEncryption encryptor;
+        public ServerCommon.Encryption encryptor;
         public string serverPubKey = null;
 
         public ServerController()
@@ -78,7 +79,7 @@ namespace D2MPMaster.Server
         {
             if (encryptor != null)
             {
-                this.SendJson(encryptor.encrypt(msg), "commands");
+                this.SendJson(JsonConvert.SerializeObject(encryptor.encrypt(msg)), "commands");
                 return;
             }
             this.SendJson(msg, "commands");
@@ -88,7 +89,7 @@ namespace D2MPMaster.Server
         {
             try
             {
-                var jdata = encryptor != null ? JObject.Parse(Program.decryptor.decrypt(textArgs.data)) : JObject.Parse(textArgs.data);
+                var jdata = encryptor != null ? JObject.Parse(Program.decryptor.decrypt(JObject.Parse(textArgs.data).ToObject<ServerCommon.EncryptModel>())) : JObject.Parse(textArgs.data);
                 var id = jdata["msg"];
                 if (id == null) return;
                 var command = id.Value<string>();
@@ -105,7 +106,7 @@ namespace D2MPMaster.Server
                                 Send("keyFail");
                                 return;
                             }
-                            encryptor = new ServerCommon.RSAEncryption(serverPubKey.pubKey, true);
+                            encryptor = new ServerCommon.Encryption(serverPubKey.pubKey, true);
                             Send("serverPubKey|" + Program.decryptor.getPublicKey());
                             if (msg.password != Init.Password)
                             {

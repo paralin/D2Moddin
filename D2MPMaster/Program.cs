@@ -28,7 +28,7 @@ namespace D2MPMaster
         public static S3Manager S3;
         public static volatile bool shutdown;
 
-        public static ServerCommon.RSAEncryption decryptor;
+        public static ServerCommon.Encryption decryptor;
 
         public static void Main(string[] args)
         {
@@ -51,7 +51,7 @@ namespace D2MPMaster
             S3 = new S3Manager();
 
             log.Info("Initializing Private key...");
-            decryptor = new ServerCommon.RSAEncryption(Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), Settings.Default.keyName));
+            decryptor = new ServerCommon.Encryption(Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), Settings.Default.keyName));
 
 			log.Info("Initializing match result server...");
             Uri[] urilist = null;

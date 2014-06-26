@@ -18,8 +18,8 @@ namespace d2mpserver
         public bool infoValid = true;
         private ServerManager manager;
         private XSocketClient client;
-        private ServerCommon.RSAEncryption decryptor;
-        private ServerCommon.RSAEncryption encryptor;
+        private ServerCommon.Encryption decryptor;
+        private ServerCommon.Encryption encryptor;
         private System.Timers.Timer timeoutTimer; 
 
         public ServerConnection(ServerManager manager)
@@ -40,8 +40,8 @@ namespace d2mpserver
         private void SetupClient()
         {
             log.Info("Setting up keys...");
-            decryptor = new ServerCommon.RSAEncryption(Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), Properties.Settings.Default.keyName));
-            log.Info(String.Format("Key location: {0}", decryptor.rsaPath));
+            decryptor = new ServerCommon.Encryption(Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), Properties.Settings.Default.keyName));
+            log.Info(String.Format("Key location: {0}", decryptor.getKeyPath()));
 #if DEBUG
             client = new XSocketClient("ws://localhost:4502/ServerController", "*");
 #else
@@ -56,9 +56,10 @@ namespace d2mpserver
             client.Bind("commands", e =>
             {
                 log.Debug("Server message: " + e.data);
+                var m = JObject.Parse(e.data).ToObject<ServerCommon.EncryptModel>();
                 try
                 {
-                    ProcessMessage(decryptor.decrypt(e.data));
+                    ProcessMessage(decryptor.decrypt(m));
                 }
                 catch (FormatException)
                 {
@@ -257,7 +258,7 @@ namespace d2mpserver
                 case "serverPubKey":
                     {
                         log.Debug("Received public server key");
-                        encryptor = new ServerCommon.RSAEncryption(command[1], true);
+                        encryptor = new ServerCommon.Encryption(command[1], true);
                         break;
                     }
                 case "outOfDate":
@@ -282,7 +283,7 @@ namespace d2mpserver
         {
             if (encryptor != null)
             {
-                client.Send(new TextArgs(encryptor.encrypt(message), "data"));
+                client.Send(new TextArgs(JsonConvert.SerializeObject(encryptor.encrypt(message)), "data"));
                 return;
             }
             client.Send(new TextArgs(message, "data"));

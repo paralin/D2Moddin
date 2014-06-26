@@ -121,13 +121,18 @@ namespace ServerCommon
                 swEncrypt.Write(data);
             }
 
-            return new EncryptModel() { cipherData = Convert.ToBase64String(msEncrypt.ToArray()), encryptedSymSalt = rsa.encrypt(Convert.ToBase64String(Crypto.Key)) };
+            return new EncryptModel() { cipherData = Convert.ToBase64String(msEncrypt.ToArray()), encryptedSymSalt = rsa.encrypt(salt) };
         }
         public static string decryptString(EncryptModel m, RSAEncryption rsa)
         {
             string data;
+            string salt = rsa.decrypt(m.encryptedSymSalt);
+            var saltBytes = Encoding.ASCII.GetBytes(salt);
+            var key = new Rfc2898DeriveBytes(Inputkey, saltBytes);
+
             RijndaelManaged Crypto = new RijndaelManaged();
-            Crypto.Key = Convert.FromBase64String(rsa.decrypt(m.encryptedSymSalt));
+            Crypto.Key = key.GetBytes(Crypto.KeySize / 8);
+            Crypto.IV = key.GetBytes(Crypto.BlockSize / 8);
             var decryptor = Crypto.CreateDecryptor(Crypto.Key, Crypto.IV);
             using (var msDecrypt = new MemoryStream(Convert.FromBase64String(m.cipherData)))
             {
@@ -157,12 +162,17 @@ namespace ServerCommon
         {
             return AESEncryption.encryptString(data, rsa);
         }
-        public string decrypt(EncryptModel m){
+        public string decrypt(EncryptModel m)
+        {
             return AESEncryption.decryptString(m, rsa);
         }
         public string getPublicKey()
         {
             return rsa.getPublicKey();
+        }
+        public string getKeyPath()
+        {
+            return rsa.rsaPath;
         }
     }
     public class EncryptModel
