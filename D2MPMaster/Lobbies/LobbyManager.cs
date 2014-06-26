@@ -856,18 +856,33 @@ namespace D2MPMaster.Lobbies
                             lob);
                     if (plyr != null)
                     {
-                        plyr.player.failedConnect = false;
-                        log.Debug(lob.id+" -> player connected: "+plyr.player.name);
+                        log.Debug(lob.id + " -> player connected: " + plyr.player.name);
+                        if (lob.state == GameState.WaitLoad)
+                        {
+                            plyr.player.failedConnect = false;
+                        }
                     }
                     break;
                 }
                 case GameEvents.PlayerDisconnect:
                 {
-                    var plyr = FindPlayerLocation(new User() { steam = new SteamService() { steamid = data.Value<int>("player").ToSteamID64() } }, lob);
+                    var plyr =
+                        FindPlayerLocation(
+                            new User()
+                            {
+                                steam =
+                                    new SteamService()
+                                    {
+                                        steamid = data.Value<int>("player").ToSteamID64()
+                                    }
+                            }, lob);
                     if (plyr != null)
                     {
-                        plyr.player.failedConnect = true;
                         log.Debug(lob.id + " -> player disconnected: " + plyr.player.name);
+                        if (lob.state == GameState.WaitLoad)
+                        {
+                            plyr.player.failedConnect = true;
+                        }
                     }
                     break;
                 }
