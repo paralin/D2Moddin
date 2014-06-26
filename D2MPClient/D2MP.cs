@@ -617,6 +617,19 @@ namespace d2mp
                             var existing = modController.clientMods.FirstOrDefault(m => m.name == op.Mod.name);
                             if (existing != null) modController.clientMods.Remove(existing);
                             modController.clientMods.Add(op.Mod);
+
+                            activeMod = GetActiveMod();
+                            if (activeMod.name == op.Mod.name)
+                            {
+                                try
+                                {
+                                    Directory.Delete(modDir, true);
+                                }
+                                finally
+                                {
+                                    activeMod = GetActiveMod();
+                                }
+                            }
                         }
                         isInstalling = false;
                     };
