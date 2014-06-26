@@ -82,8 +82,12 @@ namespace d2mpserver
                 {
                     log.Info("Setting up working directory...");
                     ourPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+#if !DEBUG
                     workingdir = Settings.Default.workingDir.Replace("{{exeloc}}",
                         ourPath).Replace('\\', '/');
+#else
+                    workingdir = @"D:\dotaserver\D2Moddin\dotaserver";
+#endif
                     if (!Directory.Exists(workingdir))
                     {
                         Directory.CreateDirectory(workingdir);

@@ -35,5 +35,8 @@
     <Setting Name="WebAddress" Type="System.String" Scope="User">
       <Value Profile="(Default)">ddp2.d2modd.in</Value>
     </Setting>
+    <Setting Name="keyName" Type="System.String" Scope="User">
+      <Value Profile="(Default)">MasterKey.xml</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

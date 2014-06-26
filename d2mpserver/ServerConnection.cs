@@ -18,6 +18,8 @@ namespace d2mpserver
         public bool infoValid = true;
         private ServerManager manager;
         private XSocketClient client;
+        private ServerCommon.Encryption decryptor;
+        private ServerCommon.Encryption encryptor;
         private System.Timers.Timer timeoutTimer; 
 
         public ServerConnection(ServerManager manager)
@@ -38,8 +40,8 @@ namespace d2mpserver
         private void SetupClient()
         {
             log.Info("Setting up keys...");
-            ServerCommon.Encryption encryption = new ServerCommon.Encryption(Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), Properties.Settings.Default.keyName));
-            log.Info(String.Format("Key location: {0}", encryption.rsaPath));
+            decryptor = new ServerCommon.Encryption(Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), Properties.Settings.Default.keyName));
+            log.Info(String.Format("Key location: {0}", decryptor.rsaPath));
 #if DEBUG
             client = new XSocketClient("ws://localhost:4502/ServerController", "*");
 #else
@@ -54,7 +56,15 @@ namespace d2mpserver
             client.Bind("commands", e =>
             {
                 log.Debug("Server message: " + e.data);
-                ProcessMessage(e.data);
+                try
+                {
+                    ProcessMessage(decryptor.decrypt(e.data));
+                }
+                catch (FormatException)
+                {
+                    log.Warn("Message didn't get decrypted. Maybe an error message from the server?");
+                    ProcessMessage(e.data);
+                }
             });
             client.OnOpen += (sender, args) =>
             {
@@ -103,14 +113,38 @@ namespace d2mpserver
             request.UserAgent = "curl"; // this simulate curl linux command
             string publicIPAddress;
             request.Method = "GET";
-            using (WebResponse response = request.GetResponse())
+            try
             {
-                using (var reader = new StreamReader(response.GetResponseStream()))
+                using (WebResponse response = request.GetResponse())
                 {
-                    publicIPAddress = reader.ReadToEnd();
+                    using (var reader = new StreamReader(response.GetResponseStream()))
+                    {
+                        publicIPAddress = reader.ReadToEnd();
+                        return publicIPAddress.Replace("\n", "");
+                    }
                 }
             }
-            return publicIPAddress.Replace("\n", "");
+            catch (WebException)
+            {
+                log.Info(request.RequestUri.ToString() + " is down. Trying mirror...");
+            }
+            try
+            {
+                request = (HttpWebRequest)HttpWebRequest.Create("http://checkip.dyndns.org");
+                using (WebResponse response = request.GetResponse())
+                {
+                    string text = new StreamReader(response.GetResponseStream()).ReadToEnd();
+                    text = text.Substring(text.IndexOf(":") + 2);
+                    text = text.Substring(0, text.IndexOf("<"));
+                    return text;
+                }
+            }
+            catch (WebException)
+            {
+                log.Fatal("Cannot determine external ip. All mirrors are down.");
+                Environment.Exit(1);
+            }
+            return null;
         }
 
         private void PerformAddonOps(object state)
@@ -213,6 +247,19 @@ namespace d2mpserver
                     infoValid = false;
                     Environment.Exit(0);
                     break;
+                case "keyFail":
+                    {
+                        log.Debug("Your ip or hostname is not recognized by the server.");
+                        infoValid = false;
+                        Environment.Exit(0);
+                        break;
+                    }
+                case "serverPubKey":
+                    {
+                        log.Debug("Received public server key");
+                        encryptor = new ServerCommon.Encryption(command[1], true);
+                        break;
+                    }
                 case "outOfDate":
                     log.Info("Server is out of date (current version is " + Init.Version + "), updating...");
                     if (!Settings.Default.disableUpdate)
@@ -233,6 +280,11 @@ namespace d2mpserver
 
         void Send(string message)
         {
+            if (encryptor != null)
+            {
+                client.Send(new TextArgs(encryptor.encrypt(message), "data"));
+                return;
+            }
             client.Send(new TextArgs(message, "data"));
         }
 

@@ -15,6 +15,9 @@ using XSockets.Core.XSocket;
 using XSockets.Core.XSocket.Helpers;
 using System.Timers;
 using System.Diagnostics;
+using D2MPMaster.Database;
+using MongoDB.Driver.Builders;
+using D2MPMaster.Model;
 
 namespace D2MPMaster.Server
 {
@@ -29,6 +32,8 @@ namespace D2MPMaster.Server
         public int IDCounter;
         public ConcurrentDictionary<int, GameInstance> Instances = new ConcurrentDictionary<int, GameInstance>();
         public bool Inited { get; set; }
+        public ServerCommon.Encryption encryptor;
+        public string serverPubKey = null;
 
         public ServerController()
         {
@@ -45,7 +50,11 @@ namespace D2MPMaster.Server
             var timer = new Timer(new TimeSpan(0, 0, 10).TotalMilliseconds);
             timer.Elapsed += (o, args) =>
             {
-                this.ProtocolInstance.Ping(System.Text.Encoding.UTF8.GetBytes("Ping!"));
+                try
+                {
+                    this.ProtocolInstance.Ping(System.Text.Encoding.UTF8.GetBytes("Ping!"));
+                }
+                catch { };
             };
             timer.Start();
         }
@@ -63,6 +72,11 @@ namespace D2MPMaster.Server
 
         public void Send(string msg)
         {
+            if (encryptor != null)
+            {
+                this.SendJson(encryptor.encrypt(msg), "commands");
+                return;
+            }
             this.SendJson(msg, "commands");
         }
 
@@ -70,7 +84,7 @@ namespace D2MPMaster.Server
         {
             try
             {
-                var jdata = JObject.Parse(textArgs.data);
+                var jdata = encryptor != null? JObject.Parse(Program.decryptor.decrypt(textArgs.data)) : JObject.Parse(textArgs.data);
                 var id = jdata["msg"];
                 if (id == null) return;
                 var command = id.Value<string>();
@@ -80,6 +94,15 @@ namespace D2MPMaster.Server
                     {
                         if (Inited) return;
                         var msg = jdata.ToObject<Init>();
+                        var serverPubKey = Mongo.ServerKeys.FindOneAs<ServerKey>(Query.EQ("_id", msg.publicIP));
+                        if (serverPubKey == null)
+                        {
+                            // Public key not in database
+                            Send("keyFail");
+                            return;
+                        }
+                        encryptor = new ServerCommon.Encryption(serverPubKey.pubKey, true);
+                        Send("serverPubKey|" + Program.decryptor.getPublicKey());
                         if (msg.password != Init.Password)
                         {
                             //Wrong password
