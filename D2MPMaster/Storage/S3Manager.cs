@@ -23,7 +23,7 @@ namespace D2MPMaster.Storage
         {
             return Client.GetPreSignedURL(new GetPreSignedUrlRequest
             {
-                Expires = DateTime.Now + TimeSpan.FromMinutes(30),
+                Expires = DateTime.Now + TimeSpan.FromMinutes(15),
                 BucketName = Settings.Default.Bucket,
                 Key = bundle
             });
