@@ -14,7 +14,7 @@ namespace D2MPMaster
         {
             //Params
             ServerRegion region = lobby.region;
-            var available = Servers.Find(m => m.Inited && m.Instances.Count < m.InitData.serverCount).OrderBy(m=>m.Instances.Count/m.InitData.serverCount);
+            var available = Servers.Find(m => m.Inited && m.Instances.Count < m.InitData.serverCount).OrderBy(m=>m.Instances.Count);// fraction not working properly m.InitData.serverCount);
             if (region == ServerRegion.UNKNOWN)
             {
                 return available.FirstOrDefault();
