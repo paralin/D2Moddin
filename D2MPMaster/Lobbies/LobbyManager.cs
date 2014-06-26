@@ -59,6 +59,7 @@ namespace D2MPMaster.Lobbies
         public static Thread LobbyUpdateThread;
         public static Thread CalculateQueueThread;
         public static Thread IdleLobbyThread;
+        public static Thread TestLobbyThread;
 
         public static volatile bool shutdown = false;
 
@@ -73,6 +74,8 @@ namespace D2MPMaster.Lobbies
                 LobbyUpdateThread.Start();
                 CalculateQueueThread = new Thread(CalculateQueueT);
                 CalculateQueueThread.Start();
+                TestLobbyThread = new Thread(TestLobbyProc);
+                TestLobbyThread.Start();
                 PublicLobbies.CollectionChanged += TransmitLobbiesChange;
                 PlayingLobbies.CollectionChanged += UpdateLobbyIDDict;
             }
@@ -145,6 +148,27 @@ namespace D2MPMaster.Lobbies
                     }
             }
 
+        }
+
+        public void TestLobbyProc()
+        {
+            while (!shutdown)
+            {
+                Thread.Sleep(15000);
+                lock (TestLobbyQueue)
+                {
+                    lock (LobbyQueue)
+                    {
+                        foreach (var lobby in TestLobbyQueue)
+                        {
+                            LobbyQueue.Add(lobby);
+                            lobby.status = LobbyStatus.Queue;
+                            TransmitLobbyUpdate(lobby, new []{"status"});
+                        }
+                        TestLobbyQueue.Clear();
+                    }
+                }
+            }
         }
 
         public void LobbyUpdateProc()
@@ -391,6 +415,54 @@ namespace D2MPMaster.Lobbies
             }
         }
 
+        public static void ForceLeaveLobby(BrowserController controller)
+        {
+            if (controller.lobby == null || controller.user == null) return;
+            var lob = controller.lobby;
+            controller.lobby = null;
+            if (lob.LobbyType == LobbyType.PlayerTest && TestLobbyQueue.Contains(lob))
+            {
+                RemoveFromTeam(lob, controller.user.steam.steamid);
+                if (lob.TeamCount(lob.radiant) + lob.TeamCount(lob.dire) == 0)
+                {
+                    lock (TestLobbyQueue)
+                    {
+                        lock (PlayingLobbies)
+                        {
+                            TestLobbyQueue.Remove(lob);
+                            PlayingLobbies.Remove(lob);
+                            LobbyQueue.Remove(lob);
+                            return;
+                        }
+                    }
+                }
+                else
+                {
+                    lock (LobbyQueue)
+                    {
+                        if (LobbyQueue.Contains(lob))
+                        {
+                            LobbyQueue.Remove(lob);
+                            lock(TestLobbyQueue)
+                                TestLobbyQueue.Add(lob);
+                            lob.status = LobbyStatus.Start;
+                            TransmitLobbyUpdate(lob, new []{"status"});
+                        }
+                    }
+                }           
+            }
+            if (lob.status > LobbyStatus.Queue) return; //will be auto handled later
+            //Find the player
+            var team = RemoveFromTeam(lob, controller.user.steam.steamid);
+            lob.status = LobbyStatus.Start;
+            if (team != null)
+                TransmitLobbyUpdate(lob, new[] { team, "status" });
+            if ((lob.TeamCount(lob.dire) == 0 && lob.TeamCount(lob.radiant) == 0) || lob.creatorid == controller.user.Id)
+            {
+                CloseLobby(lob);
+            }
+        }
+
         public static void JoinLobby(Lobby lobby, User user, BrowserController controller)
         {
             if (lobby==null || user == null) return;
@@ -467,8 +539,10 @@ namespace D2MPMaster.Lobbies
 							serverIP = string.Empty
                         };
             lob.radiant[0] = Player.FromUser(user);
-            PublicLobbies.Add(lob);
-            PlayingLobbies.Add(lob);
+            lock(PublicLobbies)
+                PublicLobbies.Add(lob);
+            lock(PlayingLobbies)
+                PlayingLobbies.Add(lob);
             Browsers.AsyncSendTo(m => m.user != null && m.user.Id == user.Id, BrowserController.LobbySnapshot(lob),
                 req => { });
             ClientsController.AsyncSendTo(m => m.SteamID == user.steam.steamid, ClientController.SetMod(mod),
@@ -515,7 +589,10 @@ namespace D2MPMaster.Lobbies
                 serverIP = string.Empty
             };
             lob.radiant[0] = Player.FromUser(user);
-            PlayingLobbies.Add(lob);
+            lock (PlayingLobbies)
+            {
+                PlayingLobbies.Add(lob);
+            }
             Browsers.AsyncSendTo(m => m.user != null && m.user.Id == user.Id, BrowserController.LobbySnapshot(lob),
                 req => { });
             ClientsController.AsyncSendTo(m => m.SteamID == user.steam.steamid, ClientController.SetMod(mod),
@@ -525,7 +602,7 @@ namespace D2MPMaster.Lobbies
             return lob;
         }
 
-        public static void StartPlayerTest(User user)
+        public static Lobby StartPlayerTest(User user)
         {
             //Find a lobby that isn't full
             lock(TestLobbyQueue){
@@ -712,6 +789,18 @@ namespace D2MPMaster.Lobbies
                     log.Error("Failed to store match result " + lob.id, ex);
                 }
             }
+            else if (lob.LobbyType == LobbyType.PlayerTest)
+            {
+                foreach (var browser in lob.radiant.Where(player => player != null).Select(player => Browsers.Find(m => m.user != null && m.user.steam.steamid == player.steam).FirstOrDefault()).Where(browser => browser != null))
+                {
+                    browser.SetTested(true);
+                }
+                foreach (var browser in lob.dire.Where(player => player != null).Select(player => Browsers.Find(m => m.user != null && m.user.steam.steamid == player.steam).FirstOrDefault()).Where(browser => browser != null))
+                {
+                    browser.SetTested(true);
+                }
+                CloseLobby(lob);
+            }
         }
 
         public static void OnLoadFail(string matchid)
@@ -722,6 +811,28 @@ namespace D2MPMaster.Lobbies
             if(lob.LobbyType == LobbyType.Normal){
                 log.Debug(matchid+" failed to load, returning to waiting stage.");
                 ReturnToWait(lob);
+            }
+            else if (lob.LobbyType == LobbyType.PlayerTest)
+            {
+                foreach (var player in lob.radiant)
+                {
+                    if (player == null) continue;
+                    var browser = Browsers.Find(m => m.user != null && m.user.steam.steamid == player.steam).FirstOrDefault();
+                    if (browser != null)
+                    {
+                        browser.SetTested(!player.failedConnect);
+                    }
+                }
+                foreach (var player in lob.dire)
+                {
+                    if (player == null) continue;
+                    var browser = Browsers.Find(m => m.user != null && m.user.steam.steamid == player.steam).FirstOrDefault();
+                    if (browser != null)
+                    {
+                        browser.SetTested(!player.failedConnect);
+                    }
+                }
+                CloseLobby(lob);
             }
         }
 
@@ -747,6 +858,16 @@ namespace D2MPMaster.Lobbies
                     {
                         plyr.player.failedConnect = false;
                         log.Debug(lob.id+" -> player connected: "+plyr.player.name);
+                    }
+                    break;
+                }
+                case GameEvents.PlayerDisconnect:
+                {
+                    var plyr = FindPlayerLocation(new User() { steam = new SteamService() { steamid = data.Value<int>("player").ToSteamID64() } }, lob);
+                    if (plyr != null)
+                    {
+                        plyr.player.failedConnect = true;
+                        log.Debug(lob.id + " -> player disconnected: " + plyr.player.name);
                     }
                     break;
                 }

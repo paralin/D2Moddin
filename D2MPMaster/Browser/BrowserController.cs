@@ -117,6 +117,7 @@ namespace D2MPMaster.Browser
                         i++;
                     }
                     arr[user.authItems.Length] = "tested";
+                    user.authItems = arr;
                     SaveUser();
                 }
             }else{
@@ -710,11 +711,11 @@ namespace D2MPMaster.Browser
                                                           RespondError(jdata, "You are in a lobby already.");
                                                           return;
                                                       }
-                                                      if (user.authItems.Contains("tested"))
+                                                      /*if (user.authItems.Contains("tested"))
                                                       {
                                                           RespondError(jdata, "You have already completed the test.");
                                                           return;
-                                                      }
+                                                      }*/
                                                       lobby = LobbyManager.StartPlayerTest(user);
                                                       break;
                                                   }
@@ -753,7 +754,7 @@ namespace D2MPMaster.Browser
 
         public void OnClosed(object sender, OnClientDisconnectArgs e)
         {
-            LobbyManager.LeaveLobby(this);
+            LobbyManager.ForceLeaveLobby(this);
         }
 
         public static ITextArgs ClearLobbyR()
