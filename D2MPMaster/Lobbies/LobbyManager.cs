@@ -827,6 +827,15 @@ namespace D2MPMaster.Lobbies
             }
             if(lob.LobbyType == LobbyType.Normal){
                 log.Debug(matchid+" failed to load, returning to waiting stage.");
+                foreach(var steam in failed)
+                {
+                    var browser = Browsers.Find(m => m.user != null && m.user.steam.steamid == steam).FirstOrDefault();
+                    if (browser != null)
+                    {
+                        browser.SetTested(false);
+                        log.Debug(matchid+" -> marked "+steam+" as FAIL");
+                    }
+                }
                 ReturnToWait(lob);
             }
             else if (lob.LobbyType == LobbyType.PlayerTest)
