@@ -808,11 +808,23 @@ namespace D2MPMaster.Lobbies
             }
         }
 
-        public static void OnLoadFail(string matchid)
+        public static void OnLoadFail(string matchid, JArray failedPlayers)
         {
             Lobby lob;
             if (!LobbyID.TryGetValue(matchid, out lob)) return;
             if (lob.status != LobbyStatus.Play) return;
+            List<string> failed = new List<string>(10);
+            foreach(var player in failedPlayers){
+                failed.Add(player.Value<long>()+"");
+            }
+            foreach(var player in lob.radiant){
+                if(player == null) continue;
+                player.failedConnect = failed.Contains(player.steam);
+            }
+            foreach(var player in lob.dire){
+                if(player == null) continue;
+                player.failedConnect = failed.Contains(player.steam);
+            }
             if(lob.LobbyType == LobbyType.Normal){
                 log.Debug(matchid+" failed to load, returning to waiting stage.");
                 ReturnToWait(lob);
@@ -862,10 +874,6 @@ namespace D2MPMaster.Lobbies
                     if (plyr != null)
                     {
                         log.Debug(lob.id + " -> player connected: " + plyr.player.name);
-                        if (lob.state == GameState.WaitLoad)
-                        {
-                            plyr.player.failedConnect = false;
-                        }
                     }
                     break;
                 }
@@ -884,10 +892,6 @@ namespace D2MPMaster.Lobbies
                     if (plyr != null)
                     {
                         log.Debug(lob.id + " -> player disconnected: " + plyr.player.name);
-                        if (lob.state == GameState.WaitLoad)
-                        {
-                            plyr.player.failedConnect = true;
-                        }
                     }
                     break;
                 }

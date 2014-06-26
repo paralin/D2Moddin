@@ -48,7 +48,7 @@ namespace D2MPMaster.MatchData
                 }
                 else if (status == "load_failed")
                 {
-                    HandleLoadFail(matchid); //parse the players property here for mroe reliable data
+                    HandleLoadFail(matchid, baseData.Value<JArray>("failed_players")); //parse the players property here for mroe reliable data
                 }
                 else
                 {
@@ -60,9 +60,9 @@ namespace D2MPMaster.MatchData
             return "fail";
         }
 
-        private static void HandleLoadFail(string matchid)
+        private static void HandleLoadFail(string matchid, JArray failedPlayers)
         {
-            LobbyManager.OnLoadFail(matchid);
+            LobbyManager.OnLoadFail(matchid, failedPlayers);
         }
 
 		private static void HandleMatchComplete(Model.MatchData toObject, Lobby lob)
