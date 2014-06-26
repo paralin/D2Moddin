@@ -183,7 +183,6 @@ namespace ServerCommon
         public string cipherData { get; set; }
         /// <summary>
         /// The RSA-encrypted symetric salt encoded in Base64 to encrypt and decrypt the cipherData
-        /// The key itself is also encoded in Base64
         /// </summary>
         public string encryptedSymSalt { get; set; }
     }
