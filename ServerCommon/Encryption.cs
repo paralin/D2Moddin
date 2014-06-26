@@ -103,11 +103,16 @@ namespace ServerCommon
     }
     public class AESEncryption
     {
-        private static const byte[] IV = new Byte[0];
+        internal const string Inputkey = "E6D8B7DC-E3CE-49BD-B22A-F23D6ED073A3";
         public static EncryptModel encryptString(string data, RSAEncryption rsa)
         {
+            string salt = Guid.NewGuid().ToString();
+            var saltBytes = Encoding.ASCII.GetBytes(salt);
+            var key = new Rfc2898DeriveBytes(Inputkey, saltBytes);
+
             RijndaelManaged Crypto = new RijndaelManaged();
-            Crypto.IV = IV;
+            Crypto.Key = key.GetBytes(Crypto.KeySize / 8);
+            Crypto.IV = key.GetBytes(Crypto.BlockSize / 8);
             var encryptor = Crypto.CreateEncryptor(Crypto.Key, Crypto.IV);
             var msEncrypt = new MemoryStream();
             using (var csEncrypt = new CryptoStream(msEncrypt, encryptor, CryptoStreamMode.Write))
@@ -116,13 +121,13 @@ namespace ServerCommon
                 swEncrypt.Write(data);
             }
 
-            return new EncryptModel() { cipherData = Convert.ToBase64String(msEncrypt.ToArray()), encryptedSymKey = rsa.encrypt(Convert.ToBase64String(Crypto.Key)) };
+            return new EncryptModel() { cipherData = Convert.ToBase64String(msEncrypt.ToArray()), encryptedSymSalt = rsa.encrypt(Convert.ToBase64String(Crypto.Key)) };
         }
         public static string decryptString(EncryptModel m, RSAEncryption rsa)
         {
             string data;
             RijndaelManaged Crypto = new RijndaelManaged();
-            Crypto.Key = Convert.FromBase64String(rsa.decrypt(m.encryptedSymKey));
+            Crypto.Key = Convert.FromBase64String(rsa.decrypt(m.encryptedSymSalt));
             var decryptor = Crypto.CreateDecryptor(Crypto.Key, Crypto.IV);
             using (var msDecrypt = new MemoryStream(Convert.FromBase64String(m.cipherData)))
             {
@@ -167,9 +172,9 @@ namespace ServerCommon
         /// </summary>
         public string cipherData { get; set; }
         /// <summary>
-        /// The RSA-encrypted symetric key encoded in Base64 to encrypt and decrypt the cipherData
+        /// The RSA-encrypted symetric salt encoded in Base64 to encrypt and decrypt the cipherData
         /// The key itself is also encoded in Base64
         /// </summary>
-        public string encryptedSymKey { get; set; }
+        public string encryptedSymSalt { get; set; }
     }
 }
