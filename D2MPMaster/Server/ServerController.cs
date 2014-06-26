@@ -32,7 +32,7 @@ namespace D2MPMaster.Server
         public int IDCounter;
         public ConcurrentDictionary<int, GameInstance> Instances = new ConcurrentDictionary<int, GameInstance>();
         public bool Inited { get; set; }
-        public ServerCommon.Encryption encryptor;
+        public ServerCommon.RSAEncryption encryptor;
         public string serverPubKey = null;
 
         public ServerController()
@@ -101,7 +101,7 @@ namespace D2MPMaster.Server
                             Send("keyFail");
                             return;
                         }
-                        encryptor = new ServerCommon.Encryption(serverPubKey.pubKey, true);
+                        encryptor = new ServerCommon.RSAEncryption(serverPubKey.pubKey, true);
                         Send("serverPubKey|" + Program.decryptor.getPublicKey());
                         if (msg.password != Init.Password)
                         {

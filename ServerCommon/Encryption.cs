@@ -13,7 +13,7 @@ using System.Text;
 
 namespace ServerCommon
 {
-    public class Encryption
+    public class RSAEncryption
     {
         private RSACryptoServiceProvider rsa = new RSACryptoServiceProvider();
         public string rsaPath;
@@ -22,7 +22,7 @@ namespace ServerCommon
         /// Constructs Encryption object: reads private key from file or creates a new one if it does not exist
         /// </summary>
         /// <param name="privKeyPath">Path of the private key to read or create</param>
-        public Encryption(string privKeyPath)
+        public RSAEncryption(string privKeyPath)
         {
             rsaPath = privKeyPath;
             if (File.Exists(rsaPath))
@@ -39,7 +39,7 @@ namespace ServerCommon
         /// </summary>
         /// <param name="publicKeyXml">XML string containing public key</param>
         /// <param name="onlyPublic">Overload constructor parameter</param>
-        public Encryption(string publicKeyXml, bool onlyPublic)
+        public RSAEncryption(string publicKeyXml, bool onlyPublic)
         {
             ReadKey(publicKeyXml);
         }
@@ -48,7 +48,7 @@ namespace ServerCommon
         /// </summary>
         private void AssignNewKey()
         {
-            rsa = new RSACryptoServiceProvider(16384);
+            rsa = new RSACryptoServiceProvider(2048);
 
             string publicPrivateKeyXML = rsa.ToXmlString(true);
             string publicOnlyKeyXML = rsa.ToXmlString(false);
@@ -100,5 +100,76 @@ namespace ServerCommon
         {
             return rsa.ToXmlString(false);
         }
+    }
+    public class AESEncryption
+    {
+        private static const byte[] IV = new Byte[0];
+        public static EncryptModel encryptString(string data, RSAEncryption rsa)
+        {
+            RijndaelManaged Crypto = new RijndaelManaged();
+            Crypto.IV = IV;
+            var encryptor = Crypto.CreateEncryptor(Crypto.Key, Crypto.IV);
+            var msEncrypt = new MemoryStream();
+            using (var csEncrypt = new CryptoStream(msEncrypt, encryptor, CryptoStreamMode.Write))
+            using (var swEncrypt = new StreamWriter(csEncrypt))
+            {
+                swEncrypt.Write(data);
+            }
+
+            return new EncryptModel() { cipherData = Convert.ToBase64String(msEncrypt.ToArray()), encryptedSymKey = rsa.encrypt(Convert.ToBase64String(Crypto.Key)) };
+        }
+        public static string decryptString(EncryptModel m, RSAEncryption rsa)
+        {
+            string data;
+            RijndaelManaged Crypto = new RijndaelManaged();
+            Crypto.Key = Convert.FromBase64String(rsa.decrypt(m.encryptedSymKey));
+            var decryptor = Crypto.CreateDecryptor(Crypto.Key, Crypto.IV);
+            using (var msDecrypt = new MemoryStream(Convert.FromBase64String(m.cipherData)))
+            {
+                using (var csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read))
+                {
+                    using (var srDecrypt = new StreamReader(csDecrypt))
+                    {
+                        data = srDecrypt.ReadToEnd();
+                    }
+                }
+            }
+            return data;
+        }
+    }
+    public class Encryption
+    {
+        private RSAEncryption rsa;
+        public Encryption(string privKeyPath)
+        {
+            rsa = new RSAEncryption(privKeyPath);
+        }
+        public Encryption(string publicKeyXml, bool onlyPublic)
+        {
+            rsa = new RSAEncryption(publicKeyXml, onlyPublic);
+        }
+        public EncryptModel encrypt(string data)
+        {
+            return AESEncryption.encryptString(data, rsa);
+        }
+        public string decrypt(EncryptModel m){
+            return AESEncryption.decryptString(m, rsa);
+        }
+        public string getPublicKey()
+        {
+            return rsa.getPublicKey();
+        }
+    }
+    public class EncryptModel
+    {
+        /// <summary>
+        /// The AES-ciphered data encoded in Base64
+        /// </summary>
+        public string cipherData { get; set; }
+        /// <summary>
+        /// The RSA-encrypted symetric key encoded in Base64 to encrypt and decrypt the cipherData
+        /// The key itself is also encoded in Base64
+        /// </summary>
+        public string encryptedSymKey { get; set; }
     }
 }

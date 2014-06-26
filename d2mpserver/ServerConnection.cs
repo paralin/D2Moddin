@@ -18,8 +18,8 @@ namespace d2mpserver
         public bool infoValid = true;
         private ServerManager manager;
         private XSocketClient client;
-        private ServerCommon.Encryption decryptor;
-        private ServerCommon.Encryption encryptor;
+        private ServerCommon.RSAEncryption decryptor;
+        private ServerCommon.RSAEncryption encryptor;
         private System.Timers.Timer timeoutTimer; 
 
         public ServerConnection(ServerManager manager)
@@ -40,7 +40,7 @@ namespace d2mpserver
         private void SetupClient()
         {
             log.Info("Setting up keys...");
-            decryptor = new ServerCommon.Encryption(Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), Properties.Settings.Default.keyName));
+            decryptor = new ServerCommon.RSAEncryption(Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location), Properties.Settings.Default.keyName));
             log.Info(String.Format("Key location: {0}", decryptor.rsaPath));
 #if DEBUG
             client = new XSocketClient("ws://localhost:4502/ServerController", "*");
@@ -257,7 +257,7 @@ namespace d2mpserver
                 case "serverPubKey":
                     {
                         log.Debug("Received public server key");
-                        encryptor = new ServerCommon.Encryption(command[1], true);
+                        encryptor = new ServerCommon.RSAEncryption(command[1], true);
                         break;
                     }
                 case "outOfDate":
