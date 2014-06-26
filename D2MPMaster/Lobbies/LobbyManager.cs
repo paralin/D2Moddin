@@ -46,6 +46,9 @@ namespace D2MPMaster.Lobbies
         /// </summary>
         public static ObservableCollection<Lobby> PlayingLobbies = new ObservableCollection<Lobby>();
 
+        //Test lobbies being batched together before being put into the main lobby queue
+        public static List<Lobby> TestLobbyQueue = new List<Lobby>();
+
         public static ConcurrentDictionary<string,Lobby> LobbyID = new ConcurrentDictionary<string,Lobby>(); 
 
         public static volatile bool Registered = false;
@@ -518,9 +521,33 @@ namespace D2MPMaster.Lobbies
             ClientsController.AsyncSendTo(m => m.SteamID == user.steam.steamid, ClientController.SetMod(mod),
                 req => { });
             ClientsController.AsyncSendTo(m => m.SteamID == user.steam.steamid, ClientController.LaunchDota(), req => { });
-            StartQueue(lob);
-            log.InfoFormat("Load test started, user: #{0}", user.profile.name);
+            log.InfoFormat("Load test lobby created w/ user: #{0}", user.profile.name);
             return lob;
+        }
+
+        public static void StartPlayerTest(User user)
+        {
+            //Find a lobby that isn't full
+            lock(TestLobbyQueue){
+                var lobby = TestLobbyQueue.FirstOrDefault(m=>m.LobbyType==LobbyType.PlayerTest&&m.TeamCount(m.radiant)+m.TeamCount(m.dire)<10);
+                if(lobby != null){
+                    var direCount = lobby.TeamCount(lobby.dire);
+                    var radCount = lobby.TeamCount(lobby.radiant);
+                    if (direCount < radCount || direCount == radCount)
+                    {
+                        lobby.AddPlayer(lobby.dire, Player.FromUser(user));
+                    }
+                    else
+                    {
+                        lobby.AddPlayer(lobby.radiant, Player.FromUser(user));
+                    }
+                    return lobby;
+                }else{
+                    lobby = CreateTestLobby(user);
+                    TestLobbyQueue.Add(lobby);
+                    return lobby;
+                }
+            }
         }
 
         public static void ChatMessage(Lobby lobby, string msg, string name)

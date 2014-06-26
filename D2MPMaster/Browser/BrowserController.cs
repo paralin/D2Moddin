@@ -715,7 +715,7 @@ namespace D2MPMaster.Browser
                                                           RespondError(jdata, "You have already completed the test.");
                                                           return;
                                                       }
-                                                      lobby = LobbyManager.CreateTestLobby(user);
+                                                      lobby = LobbyManager.StartPlayerTest(user);
                                                       break;
                                                   }
                                                   default:
