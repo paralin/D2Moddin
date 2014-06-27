@@ -15,7 +15,7 @@
       <Value Profile="(Default)">d2mpclient</Value>
     </Setting>
     <Setting Name="ServerAddons" Type="System.String" Scope="User">
-      <Value Profile="(Default)">[{"name":"d2fixups","version":"0.2","bundle":"serv_d2fixups.zip"},{"name":"metamod","version":"0.3.4","bundle":"metamod.zip"},{"name":"lobby","version":"1.4","bundle":"lobby.zip"},{"name":"dst","version":"0.1","bundle":"dst.zip"}]</Value>
+      <Value Profile="(Default)">[{"name":"d2fixups","version":"0.2","bundle":"serv_d2fixups.zip"},{"name":"metamod","version":"0.3.4","bundle":"metamod.zip"},{"name":"lobby","version":"1.5","bundle":"lobby.zip"},{"name":"dst","version":"0.1","bundle":"dst.zip"}]</Value>
     </Setting>
     <Setting Name="MongoURL" Type="System.String" Scope="User">
       <Value Profile="(Default)">mongodb://d2mpsys:aucCXtn7d8twSEm4C28G@internal.d2modd.in/d2moddin</Value>
