@@ -527,7 +527,24 @@ namespace d2mp
         {
             var op = state as DeleteMod;
             string targetDir = Path.Combine(d2mpDir, op.Mod.name);
+
             if (Directory.Exists(targetDir)) Directory.Delete(targetDir, true);
+
+            //close dota before removing active mod, otherwise we might crash
+            if (activeMod.name == op.Mod.name)
+            {
+                if (Dota2Running()) KillDota2();
+
+                try
+                {
+                    Directory.Delete(modDir, true);
+                }
+                finally
+                {
+                    activeMod = GetActiveMod();
+                }
+            }
+
             log.Debug("Server/user requested that we delete mod " + op.Mod.name + ".");
             var msg = new OnDeletedMod
             {
@@ -551,12 +568,6 @@ namespace d2mp
             isInstalling = true;
             notifier.Notify(5, "Downloading mod", "Downloading " + op.Mod.name + "...");
             //icon.DisplayBubble("Attempting to download "+op.Mod.name+"...");
-
-            //close dota before update, otherwise we crash
-            if (Dota2Running())
-            {
-                KillDota2();
-            }
 
             log.Info("Server requested that we install mod " + op.Mod.name + " from download " + op.url);
 
@@ -584,45 +595,59 @@ namespace d2mp
                     wc.DownloadDataCompleted += (sender, e) =>
                     {
                         byte[] buffer = { 0 };
+                        bool success = false;
                         try
                         {
                             buffer = e.Result;
+                            success = true;
                         }
                         catch
                         {
                             notifier.Notify(4, "Error downloading mod", "The connection forcibly closed by the remote host. Please try again.");
                         }
-                        notifier.Notify(2, "Extracting mod", "Download completed, extracting files...");
-                        Stream s = new MemoryStream(buffer);
-                        if (UnzipFromStream(s, targetDir))
-                        {
-                            refreshMods();
-                            log.Info("Mod installed!");
-                            notifier.Notify(1, "Mod installed",
-                                "The following mod has been installed successfully: " + op.Mod.name);
-                            //icon.DisplayBubble("Mod downloaded successfully: " + op.Mod.name + ".");
-                            var msg = new OnInstalledMod()
-                            {
-                                Mod = op.Mod
-                            };
-                            Send(JObject.FromObject(msg).ToString(Formatting.None));
-                            var existing = modController.clientMods.FirstOrDefault(m => m.name == op.Mod.name);
-                            if (existing != null) modController.clientMods.Remove(existing);
-                            modController.clientMods.Add(op.Mod);
 
-                            activeMod = GetActiveMod();
-                            if (activeMod.name == op.Mod.name)
+                        if (success)
+                        {
+                            //close dota before installing, otherwise we crash
+                            if (activeMod.name == op.Mod.name && Dota2Running())
                             {
-                                try
+                                notifier.Notify(2, "Extracting mod", "Closing Dota");
+                                KillDota2();
+                            }
+
+                            notifier.Notify(2, "Extracting mod", "Download completed, extracting files...");
+                            Stream s = new MemoryStream(buffer);
+                            if (UnzipFromStream(s, targetDir))
+                            {
+                                refreshMods();
+                                log.Info("Mod installed!");
+                                notifier.Notify(1, "Mod installed",
+                                    "The following mod has been installed successfully: " + op.Mod.name);
+                                //icon.DisplayBubble("Mod downloaded successfully: " + op.Mod.name + ".");
+                                var msg = new OnInstalledMod()
                                 {
-                                    Directory.Delete(modDir, true);
-                                }
-                                finally
+                                    Mod = op.Mod
+                                };
+                                Send(JObject.FromObject(msg).ToString(Formatting.None));
+                                var existing = modController.clientMods.FirstOrDefault(m => m.name == op.Mod.name);
+                                if (existing != null) modController.clientMods.Remove(existing);
+                                modController.clientMods.Add(op.Mod);
+
+                                activeMod = GetActiveMod();
+                                if (activeMod.name == op.Mod.name)
                                 {
-                                    activeMod = GetActiveMod();
+                                    try
+                                    {
+                                        Directory.Delete(modDir, true);
+                                    }
+                                    finally
+                                    {
+                                        activeMod = GetActiveMod();
+                                    }
                                 }
                             }
                         }
+
                         isInstalling = false;
                     };
                     wc.DownloadDataAsync(new Uri(op.url));
