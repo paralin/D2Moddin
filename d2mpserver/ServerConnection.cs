@@ -53,15 +53,19 @@ namespace d2mpserver
             client.Bind("commands", e =>
             {
                 log.Debug("Server message: " + e.data);
-                var m = JObject.Parse(e.data).ToObject<ServerCommon.EncryptModel>();
                 try
                 {
+                    var m = JObject.Parse(e.data).ToObject<ServerCommon.EncryptModel>();
                     ProcessMessage(decryptor.decrypt(m));
+                }
+                catch (JsonReaderException)
+                {
+                    log.Warn("Message isn't an EncryptModel. Our server is possibly not recognized by the server.");
+                    ProcessMessage(e.data);
                 }
                 catch (FormatException)
                 {
-                    log.Warn("Message didn't get decrypted. Maybe an error message from the server?");
-                    ProcessMessage(e.data);
+                    log.Fatal("Message didn't get decrypted, but is formatted in an EncryptModel. This should be reported to the devs.");
                 }
             });
             client.OnOpen += (sender, args) =>
