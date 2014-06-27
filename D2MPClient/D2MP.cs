@@ -177,6 +177,8 @@ namespace d2mp
 
         private static void HandleClose()
         {
+            if (shutDown) return;
+
             if (hasConnected)
             {
                 notifier.Notify(3, "Lost connection", "Attempting to reconnect...");
@@ -226,32 +228,42 @@ namespace d2mp
                     }
                     zipEntry = zipInputStream.GetNextEntry();
                 }
-            }
-            catch (Exception ex)
-            {
-                log.Error("Error extracted files to temporary folder.", ex);
-                notifier.Notify(4, "Mod installation failed", "Error extracted files to temporary folder.");
-            }
-
-            try
-            {
-                foreach (var file in Directory.EnumerateFiles(Path.Combine(outFolder, "temp"), "*", System.IO.SearchOption.AllDirectories))
-                {
-                    string destinationPath = Path.Combine(outFolder, file.Substring(outFolder.Length + 6, file.Length - outFolder.Length - 6));
-                    if (!Directory.Exists(Path.GetDirectoryName(destinationPath)))
-                        Directory.CreateDirectory(Path.GetDirectoryName(destinationPath));
-                    File.Move(file, destinationPath);
-                }
-                if (Directory.Exists(Path.Combine(outFolder, "temp")))
-                    Directory.Delete(Path.Combine(outFolder, "temp"), true);
 
                 result = true;
             }
+            catch (ZipException ex)
+            {
+                log.Error(string.Format("Error on zip file. File may be corrupted. [{0}]", ex.Message));
+                notifier.Notify(4, "Mod installation failed", "Downloaded mod may be corrupted. Try again.");
+            }
             catch (Exception ex)
             {
-                log.Error("Error moving extracted files from temporary folder.", ex);
-                notifier.Notify(4, "Mod installation failed", "Error moving extracted files from temporary folder.");
+                log.Error("Error extracting files to temporary folder.", ex);
+                notifier.Notify(4, "Mod installation failed", "Error extracting files to temporary folder.");
             }
+
+            if (result)
+            {
+                try
+                {
+                    foreach (var file in Directory.EnumerateFiles(Path.Combine(outFolder, "temp"), "*", System.IO.SearchOption.AllDirectories))
+                    {
+                        string destinationPath = Path.Combine(outFolder, file.Substring(outFolder.Length + 6, file.Length - outFolder.Length - 6));
+                        if (!Directory.Exists(Path.GetDirectoryName(destinationPath)))
+                            Directory.CreateDirectory(Path.GetDirectoryName(destinationPath));
+                        File.Move(file, destinationPath);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    result = false;
+                    log.Error("Error moving extracted files from temporary folder.", ex);
+                    notifier.Notify(4, "Mod installation failed", "Error moving extracted files from temporary folder.");
+                }
+            }
+
+            if (Directory.Exists(Path.Combine(outFolder, "temp")))
+                Directory.Delete(Path.Combine(outFolder, "temp"), true);
 
             return result;
         }
