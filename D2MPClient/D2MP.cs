@@ -620,13 +620,6 @@ namespace d2mp
 
                         if (success)
                         {
-                            //close dota before installing, otherwise we crash
-                            if (activeMod.name == op.Mod.name && Dota2Running())
-                            {
-                                notifier.Notify(2, "Extracting mod", "Closing Dota");
-                                KillDota2();
-                            }
-
                             notifier.Notify(2, "Extracting mod", "Download completed, extracting files...");
                             Stream s = new MemoryStream(buffer);
                             if (UnzipFromStream(s, targetDir))
