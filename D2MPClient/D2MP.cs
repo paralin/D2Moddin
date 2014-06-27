@@ -45,7 +45,7 @@ namespace d2mp
 #if DEBUG
         private static string server = "ws://localhost:4502/ClientController";
 #else
-        private static string server = "ws://ddp2.d2modd.in:4502/ClientController";
+        private static string server = "ws://net1.d2modd.in:4502/ClientController";
 #endif
         public static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
         private static string addonsDir;
@@ -198,7 +198,7 @@ namespace d2mp
                 hasConnected = false;
             }
             SetupClient();
-            Thread.Sleep(5000);
+            Thread.Sleep(10000);
             try
             {
                 client.Open();
