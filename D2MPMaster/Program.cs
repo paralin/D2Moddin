@@ -35,6 +35,7 @@ namespace D2MPMaster
             log.Info("Master server starting v."+version+".");
 
             log.Info("Initializing database...");
+            log.Debug(Settings.Default.MongoURL);
             Mongo.Setup();
 
             log.Info("Caching mods...");
@@ -55,7 +56,8 @@ namespace D2MPMaster
                 uris.Add(new Uri("http://127.0.0.1:" + Settings.Default.WebserverBind));
                 //uris.Add(new Uri("http://172.250.79.95:" + Settings.Default.WebserverBind));
 #else
-				uris.Add(new Uri("http://"+Settings.Default.WebAddress+":"+Settings.Default.WebserverBind));
+                //uris.Add(new Uri("http://net1.d2modd.in:" + Settings.Default.WebserverBind));
+                uris.Add(new Uri("http://"+Settings.Default.WebAddress+":"+Settings.Default.WebserverBind));
 #endif
                 urilist = uris.ToArray();
             }
