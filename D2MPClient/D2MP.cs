@@ -155,6 +155,8 @@ namespace d2mp
                 }
             });
 
+            client.OnError += (sender, args) => log.Error(string.Format("Controller [{0}] sent us error [{1}] on event [{2}].", args.controller, args.data, args.@event));
+
             client.OnClose += (sender, args) =>
             {
                 log.Info("Disconnected from the server.");

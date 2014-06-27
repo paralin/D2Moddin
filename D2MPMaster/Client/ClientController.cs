@@ -31,10 +31,16 @@ namespace D2MPMaster.Client
         {
             this.OnOpen += OnClientConnect;
             this.OnClose += DeregisterClient;
+            this.OnError += OnClientError;
         }
 
         private void OnClientConnect(object sender, OnClientConnectArgs e)
         {
+        }
+
+        private void OnClientError(object sender, OnErrorArgs args)
+        {
+            log.Error(args.Message, args.Exception);
         }
 
         void DeregisterClient(object se, OnClientDisconnectArgs e)
