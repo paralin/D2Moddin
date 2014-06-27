@@ -87,18 +87,6 @@ namespace D2MPMaster.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("http://ddp2.d2modd.in/gdataapi/matchres")]
-        public string PostURL {
-            get {
-                return ((string)(this["PostURL"]));
-            }
-            set {
-                this["PostURL"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("mongodb://d2mpsys:aucCXtn7d8twSEm4C28G@internal.d2modd.in/d2moddin")]
         public string MongoURL {
             get {

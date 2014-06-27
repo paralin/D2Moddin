@@ -157,7 +157,7 @@ namespace D2MPMaster.Server
 #if DEBUG
                 "match_post_url \"http://127.0.0.1:8080/gdataapi/matchres\"",
 #else
-                "match_post_url \"" + Settings.Default.PostURL + "\"",
+                "match_post_url \"http://" + Settings.Default.WebAddress + "/gdataapi/matchres\"",
 #endif
                 "set_match_id \"" + lobby.id + "\""
             };
