@@ -33,7 +33,7 @@
       <Value Profile="(Default)">d2mpdev</Value>
     </Setting>
     <Setting Name="WebAddress" Type="System.String" Scope="User">
-      <Value Profile="(Default)">ddp2.d2modd.in</Value>
+      <Value Profile="(Default)">net1.d2modd.in</Value>
     </Setting>
   </Settings>
 </SettingsFile>

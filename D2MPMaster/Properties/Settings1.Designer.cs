@@ -147,7 +147,7 @@ namespace D2MPMaster.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("ddp2.d2modd.in")]
+        [global::System.Configuration.DefaultSettingValueAttribute("net1.d2modd.in")]
         public string WebAddress {
             get {
                 return ((string)(this["WebAddress"]));
