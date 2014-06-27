@@ -167,7 +167,7 @@ namespace d2mp
             var updaterPath = Path.Combine(Directory.GetParent(ourDir).FullName, "updater.exe");
             using (WebClient wc = new WebClient())
             {
-                wc.DownloadFile("https://s3-us-west-2.amazonaws.com/d2mpclient/D2MPUpdater.exe", updaterPath);
+                wc.DownloadFile("https://s3-us-west-2.amazonaws.com/d2mpclient/StartD2MP.exe", updaterPath);
                 Process.Start(updaterPath);
                 Application.Exit();
             }
@@ -549,6 +549,12 @@ namespace d2mp
             isInstalling = true;
             notifier.Notify(5, "Downloading mod", "Downloading " + op.Mod.name + "...");
             //icon.DisplayBubble("Attempting to download "+op.Mod.name+"...");
+
+            //close dota before update, otherwise we crash
+            if (Dota2Running())
+            {
+                KillDota2();
+            }
 
             log.Info("Server requested that we install mod " + op.Mod.name + " from download " + op.url);
 
