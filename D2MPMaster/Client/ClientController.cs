@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading.Tasks;
 using ClientCommon.Data;
 using ClientCommon.Methods;
 using D2MPMaster.Browser;
@@ -26,6 +27,8 @@ namespace D2MPMaster.Client
         public string UID;
         public string SteamID;
         public bool Inited { get; set; }
+
+        private object MsgLock = new object();
 
         public ClientController()
         {
@@ -96,40 +99,55 @@ namespace D2MPMaster.Client
                 var id = jdata["msg"];
                 if (id == null) return;
                 var command = id.Value<string>();
-                switch (command)
+                Task.Factory.StartNew(() =>
                 {
-                    case OnInstalledMod.Msg:
+                    lock (MsgLock)
+                    {
+                        try
                         {
-                            var msg = jdata.ToObject<OnInstalledMod>();
-                            log.Debug(SteamID + " -> installed " + msg.Mod.name + ".");
-                            Mods.Add(msg.Mod);
-                            Browser.AsyncSendTo(x => x.user != null && x.user.steam.steamid == SteamID, BrowserController.InstallResponse("The mod has been installed.", true), rf => { });
-                            break;
-                        }
-                    case OnDeletedMod.Msg:
-                        {
-                            var msg = jdata.ToObject<OnDeletedMod>();
-                            log.Debug(SteamID + " -> removed " + msg.Mod.name + ".");
-                            var localMod = Mods.FirstOrDefault(m => Equals(msg.Mod, m));
-                            if (localMod != null) Mods.Remove(localMod);
-                            break;
-                        }
-                    case Init.Msg:
-                        {
-                            var msg = jdata.ToObject<Init>();
-                            InitData = msg;
-                            if (msg.Version != Version.ClientVersion)
+                            switch (command)
                             {
-                                this.SendJson(JObject.FromObject(new Shutdown()).ToString(Formatting.None), "commands");
-                                return;
+                                case OnInstalledMod.Msg:
+                                {
+                                    var msg = jdata.ToObject<OnInstalledMod>();
+                                    log.Debug(SteamID + " -> installed " + msg.Mod.name + ".");
+                                    Mods.Add(msg.Mod);
+                                    Browser.AsyncSendTo(x => x.user != null && x.user.steam.steamid == SteamID,
+                                        BrowserController.InstallResponse("The mod has been installed.", true),
+                                        rf => { });
+                                    break;
+                                }
+                                case OnDeletedMod.Msg:
+                                {
+                                    var msg = jdata.ToObject<OnDeletedMod>();
+                                    log.Debug(SteamID + " -> removed " + msg.Mod.name + ".");
+                                    var localMod = Mods.FirstOrDefault(m => Equals(msg.Mod, m));
+                                    if (localMod != null) Mods.Remove(localMod);
+                                    break;
+                                }
+                                case Init.Msg:
+                                {
+                                    var msg = jdata.ToObject<Init>();
+                                    InitData = msg;
+                                    if (msg.Version != Version.ClientVersion)
+                                    {
+                                        this.SendJson(JObject.FromObject(new Shutdown()).ToString(Formatting.None),
+                                            "commands");
+                                        return;
+                                    }
+                                    foreach (var mod in msg.Mods.Where(mod => mod.name != null && mod.version != null))
+                                        Mods.Add(mod);
+                                    //Insert the client into the DB
+                                    RegisterClient();
+                                    break;
+                                }
                             }
-                            foreach (var mod in msg.Mods.Where(mod => mod.name != null && mod.version != null)) Mods.Add(mod);
-                            //Insert the client into the DB
-                            RegisterClient();
-                            break;
                         }
-                }
-
+                        catch (Exception ex)
+                        {
+                        }
+                    }
+                });
             }
             catch (Exception ex)
             {
