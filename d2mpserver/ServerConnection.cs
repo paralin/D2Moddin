@@ -18,7 +18,6 @@ namespace d2mpserver
         public bool infoValid = true;
         private ServerManager manager;
         private XSocketClient client;
-        private System.Timers.Timer timeoutTimer; 
 
         public ServerConnection(ServerManager manager)
         {
@@ -45,8 +44,6 @@ namespace d2mpserver
             client.OnClose += (sender, args) => log.Debug("Disconnected from the server");
             client.OnError += (sender, args) => log.Error("Socket error: " + args.data);
             client.OnPing += OnPing;
-            timeoutTimer = new System.Timers.Timer(30000);
-            timeoutTimer.Elapsed += pingTimeout;
 
             client.Bind("commands", e =>
             {
@@ -65,17 +62,8 @@ namespace d2mpserver
             };
         }
 
-        private void pingTimeout(object sender, System.Timers.ElapsedEventArgs e)
-        {
-            timeoutTimer.Stop();
-            log.Info("Server ping timeout.");
-            AttemptReconnect();
-        }
-
         void OnPing(object sender, BinaryArgs e)
         {
-            timeoutTimer.Stop();
-            timeoutTimer.Start();
         }
 
 
