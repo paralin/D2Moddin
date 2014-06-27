@@ -45,7 +45,7 @@ namespace d2mp
 #if DEBUG
         private static string server = "ws://localhost:4502/ClientController";
 #else
-        private static string server = "ws://ddp2.d2modd.in:4502/ClientController";
+        private static string server = "ws://net1.d2modd.in:4502/ClientController";
 #endif
         public static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
         private static string addonsDir;
@@ -61,7 +61,6 @@ namespace d2mp
         private static bool hasConnected = false;
         private static XSocketClient client;
         private static List<string> steamids;
-        private static System.Timers.Timer timeoutTimer;
 
         private static void SteamCommand(string command)
         {
@@ -93,15 +92,6 @@ namespace d2mp
         private static void SetupClient()
         {
             client = new XSocketClient(server, "*");
-
-            timeoutTimer = new System.Timers.Timer(60000);
-            timeoutTimer.Elapsed += (sender, args) =>
-            {
-                timeoutTimer.Stop();
-                log.Info("Server ping timeout.");
-                HandleClose();
-            };
-
             client.OnOpen += (sender, args) =>
             {
                 notifier.Notify(1, hasConnected ? "Reconnected" : "Connected", hasConnected ? "Connection to the server has been reestablished" : "Client has been connected to the server.");
@@ -165,12 +155,6 @@ namespace d2mp
                 }
             });
 
-            client.OnPing += (sender, args) =>
-            {
-                timeoutTimer.Stop();
-                timeoutTimer.Start();
-            };
-
             client.OnClose += (sender, args) =>
             {
                 log.Info("Disconnected from the server.");
@@ -198,7 +182,7 @@ namespace d2mp
                 hasConnected = false;
             }
             SetupClient();
-            Thread.Sleep(5000);
+            Thread.Sleep(10000);
             try
             {
                 client.Open();

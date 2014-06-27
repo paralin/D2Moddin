@@ -13,7 +13,6 @@ using ServerCommon.Methods;
 using XSockets.Core.Common.Socket.Event.Arguments;
 using XSockets.Core.XSocket;
 using XSockets.Core.XSocket.Helpers;
-using System.Timers;
 using System.Diagnostics;
 using D2MPMaster.Database;
 using MongoDB.Driver.Builders;
@@ -47,20 +46,6 @@ namespace D2MPMaster.Server
 
         private void OnClientConnect(object sender, OnClientConnectArgs e)
         {
-            var timer = new Timer(new TimeSpan(0, 0, 10).TotalMilliseconds);
-            timer.Elapsed += (o, args) =>
-                             {
-                                 if (ProtocolInstance == null)
-                                 {
-                                     timer.Stop();
-                                     timer.Close();
-                                     timer.Dispose();
-                                     OnClosed(this, new OnClientDisconnectArgs(this));
-                                     return;
-                                 }
-                                 ProtocolInstance.Ping(System.Text.Encoding.UTF8.GetBytes("ping"));
-                             };
-            timer.Start();
         }
 
         public void OnClosed(object sender, OnClientDisconnectArgs onClientDisconnectArgs)
@@ -194,7 +179,7 @@ namespace D2MPMaster.Server
 #if DEBUG
                 "match_post_url \"http://127.0.0.1:8080/gdataapi/matchres\"",
 #else
-                "match_post_url \"" + Settings.Default.PostURL + "\"",
+                "match_post_url \"http://" + Settings.Default.WebAddress + "/gdataapi/matchres\"",
 #endif
                 "set_match_id \"" + lobby.id + "\""
             };

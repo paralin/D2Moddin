@@ -3,7 +3,7 @@
   <Profiles />
   <Settings>
     <Setting Name="serverIP" Type="System.String" Scope="User">
-      <Value Profile="(Default)">ws://ddp2.d2modd.in:4502/ServerController</Value>
+      <Value Profile="(Default)">ws://net1.d2modd.in:4502/ServerController</Value>
     </Setting>
     <Setting Name="serverCount" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">10</Value>

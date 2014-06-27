@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Timers;
 using ClientCommon.Data;
 using ClientCommon.Methods;
 using D2MPMaster.Browser;
@@ -15,7 +14,6 @@ using XSockets.Core.XSocket;
 using XSockets.Core.XSocket.Helpers;
 using Query = MongoDB.Driver.Builders.Query;
 using Version = ClientCommon.Version;
-using XSocketHelper = XSockets.Core.XSocket.Helpers.XSocketHelper;
 
 namespace D2MPMaster.Client
 {
@@ -37,20 +35,6 @@ namespace D2MPMaster.Client
 
         private void OnClientConnect(object sender, OnClientConnectArgs e)
         {
-            var timer = new Timer(30000);
-            timer.Elapsed += (o, args) =>
-            {
-                if (ProtocolInstance == null)
-                {
-                    timer.Stop();
-                    timer.Close();
-                    timer.Dispose();
-                    DeregisterClient(this, new OnClientDisconnectArgs(this));
-                    return;
-                }
-                ProtocolInstance.Ping(System.Text.Encoding.UTF8.GetBytes("ping"));
-            };
-            timer.Start();
         }
 
         void DeregisterClient(object se, OnClientDisconnectArgs e)

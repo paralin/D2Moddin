@@ -501,10 +501,13 @@ namespace D2MPMaster.Lobbies
         /// <returns></returns>
         public static Lobby CreateLobby(User user, Mod mod, string name)
         {
+            /*
             foreach (var result in Browsers.Find(m => m.user != null && m.user.Id == user.Id && m.lobby!=null))
             {
                 LeaveLobby(result);
             }
+            */
+
             //Filter lobby name to alphanumeric only
             name = Regex.Replace(name, "^[\\w \\.\"'[]\\{\\}\\(\\)]+", "");
             //Constrain lobby name length to 40 characters
@@ -548,7 +551,7 @@ namespace D2MPMaster.Lobbies
             ClientsController.AsyncSendTo(m => m.SteamID == user.steam.steamid, ClientController.SetMod(mod),
                 req => { });
             ClientsController.AsyncSendTo(m => m.SteamID == user.steam.steamid, ClientController.LaunchDota(), req => { });
-			log.InfoFormat("Lobby created, User: #{0}, Name: #{1}", user.profile.name, name);
+            log.InfoFormat("Lobby created, User: #{0}, Name: #{1}, Id: {2}", user.profile.name, name, user.Id);
             return lob;
         }
 
