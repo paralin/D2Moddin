@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
@@ -59,22 +60,36 @@ namespace D2MPMaster.Client
         void RegisterClient()
         {
             //Figure out UID
-            User user = null;
+            var users = new List<User>();
             foreach (var steamid in InitData.SteamIDs.Where(steamid => steamid.Length == 17))
             {
                 SteamID = steamid;
-                user = Mongo.Users.FindOneAs<User>(Query.EQ("steam.steamid", steamid));
-                if (user != null) break;
+                var user = Mongo.Users.FindOneAs<User>(Query.EQ("steam.steamid", steamid));
+                if (user != null) users.Add(user);
             }
 
-            if (user == null) return;
-            UID = user.Id;
+            if (users.Count == 0)
+            {
+                this.AsyncSend(Uninstall(), ar => { });
+                log.Debug("Can't find any users for client.");
+                return;
+            }
+
+            var tbrowser = users.Select(user => Browser.Find(m => m.user != null && m.user.Id == user.Id).FirstOrDefault()).FirstOrDefault(browser => browser != null);
+
+            if (tbrowser != null)
+                UID = tbrowser.user.Id;
+            else
+            {
+                var usr = users.FirstOrDefault();
+                if (usr != null) UID = usr.Id;
+            }
 
             Inited = true;
 
             //Find if the user is online
-            var browsers = Browser.Find(e => e.user != null && e.user.Id == UID);
-            foreach (var browser in browsers)
+            var browsersn = Browser.Find(e => e.user != null && e.user.Id == UID);
+            foreach (var browser in browsersn)
             {
                 browser.SendManagerStatus(true);
             }
@@ -169,6 +184,11 @@ namespace D2MPMaster.Client
         public static ITextArgs Shutdown()
         {
             return new TextArgs(JObject.FromObject(new ClientCommon.Methods.Shutdown()).ToString(), "commands");
+        }
+        
+        public static ITextArgs Uninstall()
+        {
+            return new TextArgs(JObject.FromObject(new ClientCommon.Methods.Uninstall()).ToString(), "commands");
         }
     }
 }
