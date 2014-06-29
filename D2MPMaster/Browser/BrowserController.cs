@@ -27,6 +27,7 @@ namespace D2MPMaster.Browser
 {
     public class BrowserController : XSocketController
     {
+        #region Variables
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         private static readonly ClientController ClientsController = new ClientController();
 
@@ -34,13 +35,6 @@ namespace D2MPMaster.Browser
 
         public string ID;
 
-        public BrowserController()
-        {
-            this.OnClose += OnClosed;
-            ID = Utils.RandomString(10);
-        }
-
-        #region Variables
         //Chat flood prevention
         private string lastMsg = "";
         private DateTime lastMsgTime = DateTime.UtcNow;
@@ -53,7 +47,7 @@ namespace D2MPMaster.Browser
             get { return _lobby; }
             set
             {
-                _lobby = value; 
+                _lobby = value;
                 if (value != null)
                 {
                     this.AsyncSendTo(m => m.user != null && m.user.Id == user.Id, ClearPublicLobbies(),
@@ -70,6 +64,12 @@ namespace D2MPMaster.Browser
         }
 
         #endregion
+
+        public BrowserController()
+        {
+            this.OnClose += OnClosed;
+            ID = Utils.RandomString(10);
+        }   
 
         #region Helpers
         public static void CheckLobby(BrowserController controller)
@@ -734,6 +734,7 @@ namespace D2MPMaster.Browser
         }
         #endregion
 
+        #region Send Various
         public void Send(string msg)
         {
             this.SendJson(msg, "lobby");
@@ -756,7 +757,9 @@ namespace D2MPMaster.Browser
         {
             LobbyManager.ForceLeaveLobby(this);
         }
+        #endregion
 
+        #region Static Message Declarations
         public static ITextArgs ClearLobbyR()
         {
             var upd = new JObject();
@@ -832,5 +835,6 @@ namespace D2MPMaster.Browser
             upd["message"] = message;
             return new TextArgs(upd.ToString(Formatting.None), "lobby");
         }
+        #endregion
     }
 }
