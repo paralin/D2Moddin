@@ -13,4 +13,10 @@
         public int id { get; set; }
         public string msg = Msg;
     }
+
+    public class MasterKeyRequest
+    {
+        public const string Msg = "masterkeyrequest";
+        public string msg = Msg;
+    }
 }

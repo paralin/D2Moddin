@@ -43,8 +43,6 @@ namespace D2MPMaster.Server
             ID = Utils.RandomString(10);
             this.OnOpen += OnClientConnect;
             this.OnClose += OnClosed;
-
-
         }
 
         private void OnClientConnect(object sender, OnClientConnectArgs e)
@@ -77,7 +75,20 @@ namespace D2MPMaster.Server
         {
             try
             {
-                var jdata = encryptor != null ? JObject.Parse(Program.decryptor.decrypt(JObject.Parse(textArgs.data).ToObject<ServerCommon.EncryptModel>())) : JObject.Parse(textArgs.data);
+                JObject jdata = new JObject();
+                try
+                {
+                    jdata = JObject.Parse(Program.decryptor.decrypt(JObject.Parse(textArgs.data).ToObject<ServerCommon.EncryptModel>()));
+                }
+                catch (ArgumentNullException)
+                {
+                    log.Warn("Received an unencrypted message. Probabably received mastey key request.");
+                    jdata = JObject.Parse(textArgs.data);
+                }
+                catch (FormatException ex)
+                {
+                    log.Fatal("Message didn't get decrypted, but is formatted in an EncryptModel. This should be reported to the devs.", ex);
+                }
                 var id = jdata["msg"];
                 if (id == null) return;
                 var command = id.Value<string>();
@@ -87,19 +98,27 @@ namespace D2MPMaster.Server
                     {
                         switch (command)
                         {
+                            case MasterKeyRequest.Msg:
+                                Send("serverPubKey|" + Program.decryptor.getPublicKey());
+                                break;
                             case Init.Msg:
                                 {
                                     if (Inited) return;
                                     var msg = jdata.ToObject<Init>();
-                                    var serverPubKey = Mongo.ServerKeys.FindOneAs<ServerKey>(Query.EQ("_id", msg.publicIP));
+                                    log.Info(String.Format("Server trying to connect: hwGuid: {0} ip: {1}", msg.hwGuid, msg.publicIP));
+                                    var serverPubKey = Mongo.ServerKeys.FindOneAs<ServerKey>(Query.EQ("_id", msg.hwGuid));
                                     if (serverPubKey == null)
                                     {
                                         // Public key not in database
                                         Send("keyFail");
                                         return;
                                     }
+                                    else
+                                    {
+                                        log.Info("Server got accepted!");
+                                        Send("keySuccess");
+                                    }
                                     encryptor = new ServerCommon.Encryption(serverPubKey.pubKey, true);
-                                    Send("serverPubKey|" + Program.decryptor.getPublicKey());
                                     if (msg.password != Init.Password)
                                     {
                                         //Wrong password

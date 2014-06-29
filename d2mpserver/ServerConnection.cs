@@ -60,18 +60,22 @@ namespace d2mpserver
                 }
                 catch (JsonReaderException)
                 {
-                    log.Warn("Message isn't an EncryptModel. Our server is possibly not recognized by the server.");
+                    log.Warn("Received an unencrypted message. Probabably received mastey key.");
                     ProcessMessage(e.data);
                 }
-                catch (FormatException)
+                catch (FormatException ex)
                 {
-                    log.Fatal("Message didn't get decrypted, but is formatted in an EncryptModel. This should be reported to the devs.");
+                    log.Fatal("Message didn't get decrypted, but is formatted in an EncryptModel. This should be reported to the devs.", ex);
                 }
             });
             client.OnOpen += (sender, args) =>
             {
                 log.Info("Connected to the server.");
-                SendInit();
+                if (encryptor == null)
+                {
+                    Send(JObject.FromObject(new MasterKeyRequest()).ToString(Formatting.None));
+                    log.Info("Waiting for public key from server...");
+                }
             };
             client.OnClose += (sender, args) =>
             {
@@ -102,9 +106,24 @@ namespace d2mpserver
 
         private string GetPublicIpAddress()
         {
-            var request = (HttpWebRequest)WebRequest.Create("http://ifconfig.me");
-            request.UserAgent = "curl"; // this simulate curl linux command
             string publicIPAddress;
+            var request = (HttpWebRequest)HttpWebRequest.Create("http://checkip.dyndns.org");
+            try
+            {
+                using (WebResponse response = request.GetResponse())
+                {
+                    publicIPAddress = new StreamReader(response.GetResponseStream()).ReadToEnd();
+                    publicIPAddress = publicIPAddress.Substring(publicIPAddress.IndexOf(":") + 2);
+                    publicIPAddress = publicIPAddress.Substring(0, publicIPAddress.IndexOf("<"));
+                    return publicIPAddress;
+                }
+            }
+            catch (WebException)
+            {
+                log.Info(request.RequestUri.ToString() + " is down. Trying mirror...");
+            }
+            request = (HttpWebRequest)WebRequest.Create("http://ifconfig.me");
+            request.UserAgent = "curl"; // this simulate curl linux command
             request.Method = "GET";
             try
             {
@@ -119,24 +138,10 @@ namespace d2mpserver
             }
             catch (WebException)
             {
-                log.Info(request.RequestUri.ToString() + " is down. Trying mirror...");
-            }
-            try
-            {
-                request = (HttpWebRequest)HttpWebRequest.Create("http://checkip.dyndns.org");
-                using (WebResponse response = request.GetResponse())
-                {
-                    string text = new StreamReader(response.GetResponseStream()).ReadToEnd();
-                    text = text.Substring(text.IndexOf(":") + 2);
-                    text = text.Substring(0, text.IndexOf("<"));
-                    return text;
-                }
-            }
-            catch (WebException)
-            {
                 log.Fatal("Cannot determine external ip. All mirrors are down.");
                 Environment.Exit(1);
             }
+            
             return null;
         }
 
@@ -242,15 +247,32 @@ namespace d2mpserver
                     break;
                 case "keyFail":
                     {
-                        log.Debug("Your ip or hostname is not recognized by the server.");
+                        log.Fatal("Your hardware identifier is not recognized by the server. Please provide the \"hwguid.txt\" file to the D2Moddin staff.\nPress any key to exit...");
+                        File.WriteAllText("hwguid.txt", HardwareGuid.getHardwareGuid());
                         infoValid = false;
+                        Console.ReadKey();
                         Environment.Exit(0);
+                        break;
+                    }
+                case "keySuccess":
+                    {
+                        log.Info("Our server got accepted by the master server. Waiting for commands...");
+                        try
+                        {
+                            if (File.Exists("hwguid.txt"))
+                                File.Delete("hwguid.txt");
+                        }
+                        catch (Exception)
+                        {
+                            log.Warn("Could not delete the hwguid.txt file. It is recommended that you delete this manually.");
+                        }
                         break;
                     }
                 case "serverPubKey":
                     {
-                        log.Debug("Received public server key");
+                        log.Debug("Received public server key.");
                         encryptor = new ServerCommon.Encryption(command[1], true);
+                        SendInit();
                         break;
                     }
                 case "outOfDate":
@@ -358,6 +380,7 @@ namespace d2mpserver
         {
             var data = new Init()
                        {
+                           hwGuid = HardwareGuid.getHardwareGuid(),
                            addons = manager.GetAddonVersions(),
                            region = (ServerCommon.ServerRegion)((int)Settings.Default.serverRegion),
                            name = Settings.Default.serverName,

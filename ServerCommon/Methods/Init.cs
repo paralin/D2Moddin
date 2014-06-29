@@ -6,6 +6,7 @@ namespace ServerCommon.Methods
     {
         public const string Msg = "init";
         public string msg = Msg;
+        public string hwGuid { get; set; }
         public static string Password = "4go5zFnkoyxbX2wC97mOcqhuqWEQK20fs3RxeXLpzrrxJpuM6idT6zsAOhr7TokRfgLFwhsjmq1Cf8Suz1eK6DGsbHB0Tkf1AfSOPE24VPM8";
         public string password = Password;
         public int serverCount { get; set; }

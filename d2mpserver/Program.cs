@@ -63,6 +63,7 @@ namespace d2mpserver
             System.Net.ServicePointManager.ServerCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true;
             
             log.Info("D2MP server version "+Init.Version+" starting...");
+
             log.Debug("Connection address: " + Settings.Default.serverIP);
             var configPath = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.PerUserRoaming).FilePath;
             log.Info("Server config path: "+configPath);
