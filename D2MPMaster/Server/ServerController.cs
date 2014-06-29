@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using D2MPMaster.Lobbies;
 using D2MPMaster.Properties;
 using d2mpserver;
@@ -13,7 +14,6 @@ using ServerCommon.Methods;
 using XSockets.Core.Common.Socket.Event.Arguments;
 using XSockets.Core.XSocket;
 using XSockets.Core.XSocket.Helpers;
-using System.Timers;
 using System.Diagnostics;
 
 namespace D2MPMaster.Server
@@ -30,6 +30,8 @@ namespace D2MPMaster.Server
         public ConcurrentDictionary<int, GameInstance> Instances = new ConcurrentDictionary<int, GameInstance>();
         public bool Inited { get; set; }
 
+        private object MsgLock = new object();
+
         public ServerController()
         {
             ID = Utils.RandomString(10);
@@ -39,21 +41,15 @@ namespace D2MPMaster.Server
 
         private void OnClientConnect(object sender, OnClientConnectArgs e)
         {
-            // Ping server every 10 seconds.
-            var timer = new Timer(new TimeSpan(0, 0, 10).TotalMilliseconds);
-            timer.Elapsed += (o, args) =>
-            {
-                this.ProtocolInstance.Ping(System.Text.Encoding.UTF8.GetBytes("Ping!"));
-            };
-            timer.Start();
         }
 
         public void OnClosed(object sender, OnClientDisconnectArgs onClientDisconnectArgs)
         {
             //Delete all lobbies
-            foreach(var instance in Instances.Values)
+            if (Instances == null) return;
+            foreach (var instance in Instances.Values)
             {
-                 LobbyManager.OnServerShutdown(instance);
+                LobbyManager.OnServerShutdown(instance);
             }
             Instances = null;
             Inited = false;
@@ -72,61 +68,77 @@ namespace D2MPMaster.Server
                 var id = jdata["msg"];
                 if (id == null) return;
                 var command = id.Value<string>();
-                switch (command)
+                Task.Factory.StartNew(() =>
                 {
-                    case Init.Msg:
+                    lock (MsgLock)
                     {
-                        if (Inited) return;
-                        var msg = jdata.ToObject<Init>();
-                        if (msg.password != Init.Password)
+                        switch (command)
                         {
-                            //Wrong password
-                            Send("authFail");
-                            return;
+                            case Init.Msg:
+                            {
+                                if (Inited) return;
+                                var msg = jdata.ToObject<Init>();
+                                if (msg.password != Init.Password)
+                                {
+                                    //Wrong password
+                                    Send("authFail");
+                                    return;
+                                }
+                                if (msg.version != Init.Version)
+                                {
+                                    Send("outOfDate|" + Program.S3.GenerateBundleURL("s" + Init.Version + ".zip"));
+                                    return;
+                                }
+                                //Build server addon operation 
+                                var add = (from addon in ServerAddons.Addons
+                                    let exist =
+                                        msg.addons.FirstOrDefault(
+                                            m => m.name == addon.name && m.version == addon.version)
+                                    where exist == null
+                                    select
+                                        addon.name + ">" + addon.version + ">" +
+                                        Program.S3.GenerateBundleURL(addon.bundle).Replace('|', ' ')).ToList();
+                                var del = (from addon in msg.addons
+                                    let exist = ServerAddons.Addons.FirstOrDefault(m => m.name == addon.name)
+                                    where exist == null
+                                    select addon.name).ToList();
+                                if ((add.Count + del.Count) == 0)
+                                {
+                                    portCounter = msg.portRangeStart;
+                                    InitData = msg;
+                                    Address = InitData.publicIP;
+                                    Inited = true;
+                                }
+                                else
+                                {
+                                    Send("addonOps|" + string.Join(",", add) + "|" + string.Join(",", del));
+                                }
+                                break;
+                            }
+                            case OnServerLaunched.Msg:
+                            {
+                                var msg = jdata.ToObject<OnServerLaunched>();
+                                if (Instances.ContainsKey(msg.id))
+                                {
+                                    var instance = Instances[msg.id];
+                                    LobbyManager.OnServerReady(instance);
+                                }
+                                break;
+                            }
+                            case OnServerShutdown.Msg:
+                            {
+                                var msg = jdata.ToObject<OnServerShutdown>();
+                                if (Instances.ContainsKey(msg.id))
+                                {
+                                    GameInstance instance;
+                                    Instances.TryRemove(msg.id, out instance);
+                                    LobbyManager.OnServerShutdown(instance);
+                                }
+                                break;
+                            }
                         }
-                        if (msg.version != Init.Version)
-                        {
-                            Send("outOfDate|"+Program.S3.GenerateBundleURL("s"+Init.Version+".zip"));
-                            return;
-                        }
-                        //Build server addon operation 
-                        var add = (from addon in ServerAddons.Addons let exist = msg.addons.FirstOrDefault(m => m.name == addon.name && m.version == addon.version) where exist == null select addon.name + ">" + addon.version + ">" + Program.S3.GenerateBundleURL(addon.bundle).Replace('|', ' ')).ToList();
-                        var del = (from addon in msg.addons let exist = ServerAddons.Addons.FirstOrDefault(m => m.name == addon.name) where exist == null select addon.name).ToList();
-                        if ((add.Count + del.Count) == 0)
-                        {
-                            portCounter = msg.portRangeStart;
-                            InitData = msg;
-                            Address = InitData.publicIP;
-                            Inited = true;
-                        }
-                        else
-                        {
-                            Send("addonOps|"+string.Join(",", add)+"|"+string.Join(",", del));
-                        }
-                        break;
                     }
-                    case OnServerLaunched.Msg:
-                    {
-                        var msg = jdata.ToObject<OnServerLaunched>();
-                        if (Instances.ContainsKey(msg.id))
-                        {
-                            var instance = Instances[msg.id];
-                            LobbyManager.OnServerReady(instance);
-                        }
-                        break;
-                    }
-                    case OnServerShutdown.Msg:
-                    {
-                        var msg = jdata.ToObject<OnServerShutdown>();
-                        if (Instances.ContainsKey(msg.id))
-                        {
-                            GameInstance instance;
-                            Instances.TryRemove(msg.id, out instance);
-                            LobbyManager.OnServerShutdown(instance);
-                        }
-                        break;
-                    }
-                }
+                });
             }
             catch (Exception ex)
             {
@@ -143,7 +155,7 @@ namespace D2MPMaster.Server
                            {
                                ID = IDCounter,
                                lobby = lobby,
-                               RconPass = lobby.id+"R",
+                               RconPass = lobby.id + "R",
                                Server = this,
                                state = GameState.Init,
                                port = portCounter
@@ -162,18 +174,18 @@ namespace D2MPMaster.Server
             {
                 "d2lobby_gg_time " + (lobby.enableGG ? "5" : "-1"),
 #if DEBUG
-                "match_post_url \"http://localhost/gdataapi/matchres\"",
+                "match_post_url \"http://127.0.0.1:8080/gdataapi/matchres\"",
 #else
-                "match_post_url \"" + Settings.Default.PostURL + "\"",
+                "match_post_url \"http://" + Settings.Default.WebAddress + "/gdataapi/matchres\"",
 #endif
                 "set_match_id \"" + lobby.id + "\""
             };
             cmds.AddRange(from plyr in lobby.radiant
-                where plyr != null
-                select string.Format("add_radiant_player \"{0}\" \"{1}\"", plyr.steam, Regex.Replace(plyr.name, "[^a-zA-Z0-9 -]", "")));
+                          where plyr != null
+                          select string.Format("add_radiant_player \"{0}\" \"{1}\"", plyr.steam, Regex.Replace(plyr.name, "[^a-zA-Z0-9 -]", "")));
             cmds.AddRange(from plyr in lobby.dire
-                where plyr != null
-                select string.Format("add_dire_player \"{0}\" \"{1}\"", plyr.steam, Regex.Replace(plyr.name, "[^a-zA-Z0-9 -]", "")));
+                          where plyr != null
+                          select string.Format("add_dire_player \"{0}\" \"{1}\"", plyr.steam, Regex.Replace(plyr.name, "[^a-zA-Z0-9 -]", "")));
             return cmds.ToArray();
         }
     }

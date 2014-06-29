@@ -47,9 +47,11 @@ namespace D2MPMaster.Lobbies
         /// </summary>
         public static ObservableCollection<Lobby> PlayingLobbies = new ObservableCollection<Lobby>();
 
-        public static ObservableCollection<Lobby> rankedLobbies = new ObservableCollection<Lobby>();
+        //Test lobbies being batched together before being put into the main lobby queue
+        public static List<Lobby> TestLobbyQueue = new List<Lobby>();
 
-        public static ConcurrentDictionary<string, Lobby> LobbyID = new ConcurrentDictionary<string, Lobby>();
+        public static ConcurrentDictionary<string,Lobby> LobbyID = new ConcurrentDictionary<string,Lobby>(); 
+        public static ObservableCollection<Lobby> rankedLobbies = new ObservableCollection<Lobby>();
 
         public static volatile bool Registered = false;
 
@@ -59,6 +61,7 @@ namespace D2MPMaster.Lobbies
         public static Thread LobbyUpdateThread;
         public static Thread CalculateQueueThread;
         public static Thread IdleLobbyThread;
+        public static Thread TestLobbyThread;
 
         public static volatile bool shutdown = false;
 
@@ -73,6 +76,8 @@ namespace D2MPMaster.Lobbies
                 LobbyUpdateThread.Start();
                 CalculateQueueThread = new Thread(CalculateQueueT);
                 CalculateQueueThread.Start();
+                TestLobbyThread = new Thread(TestLobbyProc);
+                TestLobbyThread.Start();
                 PublicLobbies.CollectionChanged += TransmitLobbiesChange;
                 PlayingLobbies.CollectionChanged += UpdateLobbyIDDict;
             }
@@ -145,6 +150,27 @@ namespace D2MPMaster.Lobbies
                     }
             }
 
+        }
+
+        public void TestLobbyProc()
+        {
+            while (!shutdown)
+            {
+                Thread.Sleep(30000);
+                lock (TestLobbyQueue)
+                {
+                    lock (LobbyQueue)
+                    {
+                        foreach (var lobby in TestLobbyQueue)
+                        {
+                            LobbyQueue.Add(lobby);
+                            lobby.status = LobbyStatus.Queue;
+                            TransmitLobbyUpdate(lobby, new []{"status"});
+                        }
+                        TestLobbyQueue.Clear();
+                    }
+                }
+            }
         }
 
         public void LobbyUpdateProc()
@@ -402,6 +428,54 @@ namespace D2MPMaster.Lobbies
             }
         }
 
+        public static void ForceLeaveLobby(BrowserController controller)
+        {
+            if (controller.lobby == null || controller.user == null) return;
+            var lob = controller.lobby;
+            controller.lobby = null;
+            if (lob.LobbyType == LobbyType.PlayerTest && TestLobbyQueue.Contains(lob))
+            {
+                RemoveFromTeam(lob, controller.user.steam.steamid);
+                if (lob.TeamCount(lob.radiant) + lob.TeamCount(lob.dire) == 0)
+                {
+                    lock (TestLobbyQueue)
+                    {
+                        lock (PlayingLobbies)
+                        {
+                            TestLobbyQueue.Remove(lob);
+                            PlayingLobbies.Remove(lob);
+                            LobbyQueue.Remove(lob);
+                            return;
+                        }
+                    }
+                }
+                else
+                {
+                    lock (LobbyQueue)
+                    {
+                        if (LobbyQueue.Contains(lob))
+                        {
+                            LobbyQueue.Remove(lob);
+                            lock(TestLobbyQueue)
+                                TestLobbyQueue.Add(lob);
+                            lob.status = LobbyStatus.Start;
+                            TransmitLobbyUpdate(lob, new []{"status"});
+                        }
+                    }
+                }           
+            }
+            if (lob.status > LobbyStatus.Queue) return; //will be auto handled later
+            //Find the player
+            var team = RemoveFromTeam(lob, controller.user.steam.steamid);
+            lob.status = LobbyStatus.Start;
+            if (team != null)
+                TransmitLobbyUpdate(lob, new[] { team, "status" });
+            if ((lob.TeamCount(lob.dire) == 0 && lob.TeamCount(lob.radiant) == 0) || lob.creatorid == controller.user.Id)
+            {
+                CloseLobby(lob);
+            }
+        }
+
         public static void JoinLobby(Lobby lobby, User user, BrowserController controller)
         {
             if (lobby == null || user == null) return;
@@ -440,10 +514,13 @@ namespace D2MPMaster.Lobbies
         /// <returns></returns>
         public static Lobby CreateLobby(User user, Mod mod, string name)
         {
-            foreach (var result in Browsers.Find(m => m.user != null && m.user.Id == user.Id && m.lobby != null))
+            /*
+            foreach (var result in Browsers.Find(m => m.user != null && m.user.Id == user.Id && m.lobby!=null))
             {
                 LeaveLobby(result);
             }
+            */
+
             //Filter lobby name to alphanumeric only
             name = Regex.Replace(name, "^[\\w \\.\"'[]\\{\\}\\(\\)]+", "");
             //Constrain lobby name length to 40 characters
@@ -479,15 +556,97 @@ namespace D2MPMaster.Lobbies
                             serverIP = string.Empty
                         };
             lob.radiant[0] = Player.FromUser(user);
-            PublicLobbies.Add(lob);
-            PlayingLobbies.Add(lob);
+            lock(PublicLobbies)
+                PublicLobbies.Add(lob);
+            lock(PlayingLobbies)
+                PlayingLobbies.Add(lob);
             Browsers.AsyncSendTo(m => m.user != null && m.user.Id == user.Id, BrowserController.LobbySnapshot(lob),
                 req => { });
             ClientsController.AsyncSendTo(m => m.SteamID == user.steam.steamid, ClientController.SetMod(mod),
                 req => { });
             ClientsController.AsyncSendTo(m => m.SteamID == user.steam.steamid, ClientController.LaunchDota(), req => { });
-            log.InfoFormat("Lobby created, User: #{0}, Name: #{1}", user.profile.name, name);
+            log.InfoFormat("Lobby created, User: #{0}, Name: #{1}, Id: {2}", user.profile.name, name, user.Id);
             return lob;
+        }
+
+        /// <summary>
+        /// Start a load test
+        /// </summary>
+        /// <param name="user">User creating the lobby.</param>
+        /// <param name="mod">Mod.</param>
+        /// <param name="name">Name of the lobby.</param>
+        /// <returns></returns>
+        public static Lobby CreateTestLobby(User user)
+        {
+            foreach (var result in Browsers.Find(m => m.user != null && m.user.Id == user.Id && m.lobby != null))
+            {
+                LeaveLobby(result);
+            }
+            var mod = Mods.Mods.ByName("checker");
+            var lob = new Lobby()
+            {
+                creator = user.profile.name,
+                creatorid = user.Id,
+                banned = new string[0],
+                dire = new Player[5],
+                IdleSince = DateTime.Now,
+                radiant = new Player[5],
+                devMode = false,
+                enableGG = true,
+                hasPassword = false,
+                id = Utils.RandomString(17),
+                mod = mod.Id,
+                region = (int)ServerRegion.UNKNOWN,
+                name = "LOADTEST "+user.Id,
+                isPublic = false,
+                password = string.Empty,
+                state = GameState.Init,
+                LobbyType = LobbyType.PlayerTest,
+                requiresFullLobby = false,
+                serverIP = string.Empty
+            };
+            lob.radiant[0] = Player.FromUser(user);
+            lock (PlayingLobbies)
+            {
+                PlayingLobbies.Add(lob);
+            }
+            Browsers.AsyncSendTo(m => m.user != null && m.user.Id == user.Id, BrowserController.LobbySnapshot(lob),
+                req => { });
+            ClientsController.AsyncSendTo(m => m.SteamID == user.steam.steamid, ClientController.SetMod(mod),
+                req => { });
+            ClientsController.AsyncSendTo(m => m.SteamID == user.steam.steamid, ClientController.LaunchDota(), req => { });
+            log.InfoFormat("Load test lobby created w/ user: #{0}", user.profile.name);
+            return lob;
+        }
+
+        public static Lobby StartPlayerTest(User user)
+        {
+            //Find a lobby that isn't full
+            lock(TestLobbyQueue){
+                var lobby = TestLobbyQueue.FirstOrDefault(m=>m.LobbyType==LobbyType.PlayerTest&&m.TeamCount(m.radiant)+m.TeamCount(m.dire)<10);
+                if(lobby != null){
+                    var direCount = lobby.TeamCount(lobby.dire);
+                    var radCount = lobby.TeamCount(lobby.radiant);
+                    if (direCount < radCount || direCount == radCount)
+                    {
+                        lobby.AddPlayer(lobby.dire, Player.FromUser(user));
+                    }
+                    else
+                    {
+                        lobby.AddPlayer(lobby.radiant, Player.FromUser(user));
+                    }
+                    Browsers.AsyncSendTo(m => m.user != null && m.user.Id == user.Id, BrowserController.LobbySnapshot(lobby),
+                        req => { });
+                    ClientsController.AsyncSendTo(m => m.SteamID == user.steam.steamid, ClientController.SetMod(Mods.Mods.ByName("checker")),
+                        req => { });
+                    ClientsController.AsyncSendTo(m => m.SteamID == user.steam.steamid, ClientController.LaunchDota(), req => { });
+                    return lobby;
+                }else{
+                    lobby = CreateTestLobby(user);
+                    TestLobbyQueue.Add(lobby);
+                    return lobby;
+                }
+            }
         }
 
         /// <summary>
@@ -713,17 +872,71 @@ namespace D2MPMaster.Lobbies
                     log.Error("Failed to store match result " + lob.id, ex);
                 }
             }
+            else if (lob.LobbyType == LobbyType.PlayerTest)
+            {
+                foreach (var browser in lob.radiant.Where(player => player != null).Select(player => Browsers.Find(m => m.user != null && m.user.steam.steamid == player.steam).FirstOrDefault()).Where(browser => browser != null))
+                {
+                    browser.SetTested(true);
+                }
+                foreach (var browser in lob.dire.Where(player => player != null).Select(player => Browsers.Find(m => m.user != null && m.user.steam.steamid == player.steam).FirstOrDefault()).Where(browser => browser != null))
+                {
+                    browser.SetTested(true);
+                }
+                CloseLobby(lob);
+            }
         }
 
-        public static void OnLoadFail(string matchid)
+        public static void OnLoadFail(string matchid, JArray failedPlayers)
         {
             Lobby lob;
             if (!LobbyID.TryGetValue(matchid, out lob)) return;
             if (lob.status != LobbyStatus.Play) return;
-            if (lob.LobbyType == LobbyType.Normal)
-            {
-                log.Debug(matchid + " failed to load, returning to waiting stage.");
+            List<string> failed = new List<string>(10);
+            foreach(var player in failedPlayers){
+                failed.Add(player.Value<long>()+"");
+            }
+            foreach(var player in lob.radiant){
+                if(player == null) continue;
+                player.failedConnect = failed.Contains(player.steam);
+            }
+            foreach(var player in lob.dire){
+                if(player == null) continue;
+                player.failedConnect = failed.Contains(player.steam);
+            }
+            if(lob.LobbyType == LobbyType.Normal){
+                log.Debug(matchid+" failed to load, returning to waiting stage.");
+                foreach(var steam in failed)
+                {
+                    var browser = Browsers.Find(m => m.user != null && m.user.steam.steamid == steam).FirstOrDefault();
+                    if (browser != null)
+                    {
+                        browser.SetTested(false);
+                        log.Debug(matchid+" -> marked "+steam+" as FAIL");
+                    }
+                }
                 ReturnToWait(lob);
+            }
+            else if (lob.LobbyType == LobbyType.PlayerTest)
+            {
+                foreach (var player in lob.radiant)
+                {
+                    if (player == null) continue;
+                    var browser = Browsers.Find(m => m.user != null && m.user.steam.steamid == player.steam).FirstOrDefault();
+                    if (browser != null)
+                    {
+                        browser.SetTested(!player.failedConnect);
+                    }
+                }
+                foreach (var player in lob.dire)
+                {
+                    if (player == null) continue;
+                    var browser = Browsers.Find(m => m.user != null && m.user.steam.steamid == player.steam).FirstOrDefault();
+                    if (browser != null)
+                    {
+                        browser.SetTested(!player.failedConnect);
+                    }
+                }
+                CloseLobby(lob);
             }
         }
 
@@ -752,6 +965,24 @@ namespace D2MPMaster.Lobbies
                         }
                         break;
                     }
+                case GameEvents.PlayerDisconnect:
+                {
+                    var plyr =
+                        FindPlayerLocation(
+                            new User()
+                            {
+                                steam =
+                                    new SteamService()
+                                    {
+                                        steamid = data.Value<int>("player").ToSteamID64()
+                                    }
+                            }, lob);
+                    if (plyr != null)
+                    {
+                        log.Debug(lob.id + " -> player disconnected: " + plyr.player.name);
+                    }
+                    break;
+                }
             }
         }
 

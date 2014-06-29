@@ -45,7 +45,7 @@ namespace d2mp
 #if DEBUG
         private static string server = "ws://localhost:4502/ClientController";
 #else
-        private static string server = "ws://ddp2.d2modd.in:4502/ClientController";
+        private static string server = "ws://net1.d2modd.in:4502/ClientController";
 #endif
         public static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
         private static string addonsDir;
@@ -92,7 +92,6 @@ namespace d2mp
         private static void SetupClient()
         {
             client = new XSocketClient(server, "*");
-
             client.OnOpen += (sender, args) =>
             {
                 notifier.Notify(1, hasConnected ? "Reconnected" : "Connected", hasConnected ? "Connection to the server has been reestablished" : "Client has been connected to the server.");
@@ -155,8 +154,14 @@ namespace d2mp
                         break;
                 }
             });
-            client.OnClose += (sender, args)=>
+
+            client.OnError += (sender, args) => log.Error(string.Format("Controller [{0}] sent us error [{1}] on event [{2}].", args.controller, args.data, args.@event));
+
+            client.OnClose += (sender, args) =>
+            {
+                log.Info("Disconnected from the server.");
                 HandleClose();
+            };
         }
 
         private static void updateClient()
@@ -164,7 +169,7 @@ namespace d2mp
             var updaterPath = Path.Combine(Directory.GetParent(ourDir).FullName, "updater.exe");
             using (WebClient wc = new WebClient())
             {
-                wc.DownloadFile("https://s3-us-west-2.amazonaws.com/d2mpclient/D2MPUpdater.exe", updaterPath);
+                wc.DownloadFile("https://s3-us-west-2.amazonaws.com/d2mpclient/StartD2MP.exe", updaterPath);
                 Process.Start(updaterPath);
                 Application.Exit();
             }
@@ -172,6 +177,8 @@ namespace d2mp
 
         private static void HandleClose()
         {
+            if (shutDown) return;
+
             if (hasConnected)
             {
                 notifier.Notify(3, "Lost connection", "Attempting to reconnect...");
@@ -179,62 +186,86 @@ namespace d2mp
                 hasConnected = false;
             }
             SetupClient();
-            Thread.Sleep(5000);
+            Thread.Sleep(10000);
             try
             {
                 client.Open();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 HandleClose();
             }
         }
 
         //Pipe a zip download directly through the decompressor
-        private static void UnzipFromStream(Stream zipStream, string outFolder)
+        private static bool UnzipFromStream(Stream zipStream, string outFolder)
         {
-            var zipInputStream = new ZipInputStream(zipStream);
-            ZipEntry zipEntry = zipInputStream.GetNextEntry();
-            while (zipEntry != null)
-            {
-                String entryFileName = zipEntry.Name;
-                log.Debug("CRC:" + zipEntry.Crc + " --> " + entryFileName);
-                var buffer = new byte[4096];
-                String fullZipToPath = Path.Combine(outFolder, "temp", entryFileName);
-                string directoryName = Path.GetDirectoryName(fullZipToPath);
-                if (directoryName.Length > 0)
-                {
-                    Directory.CreateDirectory(directoryName);
-                    Thread.Sleep(30);
-                }
-
-                if (Path.GetFileName(fullZipToPath) != String.Empty)
-                {
-                    using (FileStream streamWriter = File.Create(fullZipToPath))
-                    {
-                        StreamUtils.Copy(zipInputStream, streamWriter, buffer);
-                    }
-                }
-                zipEntry = zipInputStream.GetNextEntry();
-            }
+            bool result = false;
 
             try
             {
-                foreach (var file in Directory.EnumerateFiles(Path.Combine(outFolder, "temp"), "*", System.IO.SearchOption.AllDirectories))
+                var zipInputStream = new ZipInputStream(zipStream);
+                ZipEntry zipEntry = zipInputStream.GetNextEntry();
+                while (zipEntry != null)
                 {
-                    string destinationPath = Path.Combine(outFolder, file.Substring(outFolder.Length + 6, file.Length - outFolder.Length - 6));
-                    if (!Directory.Exists(Path.GetDirectoryName(destinationPath)))
-                        Directory.CreateDirectory(Path.GetDirectoryName(destinationPath));
-                    File.Move(file, destinationPath);
+                    String entryFileName = zipEntry.Name;
+                    log.Debug("CRC:" + zipEntry.Crc + " --> " + entryFileName);
+                    var buffer = new byte[4096];
+                    String fullZipToPath = Path.Combine(outFolder, "temp", entryFileName);
+                    string directoryName = Path.GetDirectoryName(fullZipToPath);
+                    if (directoryName.Length > 0)
+                    {
+                        Directory.CreateDirectory(directoryName);
+                        Thread.Sleep(30);
+                    }
+
+                    if (Path.GetFileName(fullZipToPath) != String.Empty)
+                    {
+                        using (FileStream streamWriter = File.Create(fullZipToPath))
+                        {
+                            StreamUtils.Copy(zipInputStream, streamWriter, buffer);
+                        }
+                    }
+                    zipEntry = zipInputStream.GetNextEntry();
                 }
-                if (Directory.Exists(Path.Combine(outFolder, "temp")))
-                    Directory.Delete(Path.Combine(outFolder, "temp"), true);
+
+                result = true;
             }
-            catch (Exception)
+            catch (ZipException ex)
             {
-                notifier.Notify(4, "Mod installation failed", "Error moving extracted files from temporary folder.");
+                log.Error(string.Format("Error on zip file. File may be corrupted. [{0}]", ex.Message));
+                notifier.Notify(4, "Mod installation failed", "Downloaded mod may be corrupted. Try again.");
+            }
+            catch (Exception ex)
+            {
+                log.Error("Error extracting files to temporary folder.", ex);
+                notifier.Notify(4, "Mod installation failed", "Error extracting files to temporary folder.");
             }
 
+            if (result)
+            {
+                try
+                {
+                    foreach (var file in Directory.EnumerateFiles(Path.Combine(outFolder, "temp"), "*", System.IO.SearchOption.AllDirectories))
+                    {
+                        string destinationPath = Path.Combine(outFolder, file.Substring(outFolder.Length + 6, file.Length - outFolder.Length - 6));
+                        if (!Directory.Exists(Path.GetDirectoryName(destinationPath)))
+                            Directory.CreateDirectory(Path.GetDirectoryName(destinationPath));
+                        File.Move(file, destinationPath);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    result = false;
+                    log.Error("Error moving extracted files from temporary folder.", ex);
+                    notifier.Notify(4, "Mod installation failed", "Error moving extracted files from temporary folder.");
+                }
+            }
+
+            if (Directory.Exists(Path.Combine(outFolder, "temp")))
+                Directory.Delete(Path.Combine(outFolder, "temp"), true);
+
+            return result;
         }
 
         static void Send(string json)
@@ -273,7 +304,7 @@ namespace d2mp
                                             using (icon = new ProcessIcon())
                                             {
                                                 icon.Display();
-                                                icon.showNotification = ()=> notifier.Invoke(new MethodInvoker(()=>{ notifier.Fade(1); notifier.hideTimer.Start(); }));
+                                                icon.showNotification = () => notifier.Invoke(new MethodInvoker(() => { notifier.Fade(1); notifier.hideTimer.Start(); }));
                                                 Application.Run();
                                             }
                                         });
@@ -284,14 +315,14 @@ namespace d2mp
             try
             {
                 var steam = new SteamFinder();
-                if (!steam.checkProtocol()) 
+                if (!steam.checkProtocol())
                 {
                     log.Error("Steam protocol not found. Trying to repair...");
                     var steamDir = steam.FindSteam(true, false);
                     var steamservicePath = Path.Combine(steamDir, @"bin\steamservice.exe");
                     if (File.Exists(steamservicePath))
                     {
-                        Process process = new Process() { StartInfo = { FileName = steamservicePath, Arguments = "/repair"} };
+                        Process process = new Process() { StartInfo = { FileName = steamservicePath, Arguments = "/repair" } };
                         try
                         {
                             process.Start();
@@ -377,7 +408,7 @@ namespace d2mp
                     SetupClient();
                     client.Open();
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     notifier.Notify(4, "Server error", "Can't connect to the lobby server!");
                     Thread.Sleep(5000);
@@ -508,7 +539,24 @@ namespace d2mp
         {
             var op = state as DeleteMod;
             string targetDir = Path.Combine(d2mpDir, op.Mod.name);
+
             if (Directory.Exists(targetDir)) Directory.Delete(targetDir, true);
+
+            //close dota before removing active mod, otherwise we might crash
+            if (activeMod.name == op.Mod.name)
+            {
+                if (Dota2Running()) KillDota2();
+
+                try
+                {
+                    Directory.Delete(modDir, true);
+                }
+                finally
+                {
+                    activeMod = GetActiveMod();
+                }
+            }
+
             log.Debug("Server/user requested that we delete mod " + op.Mod.name + ".");
             var msg = new OnDeletedMod
             {
@@ -553,35 +601,58 @@ namespace d2mp
                         if (e.ProgressPercentage % 5 == 0 && e.ProgressPercentage > lastProgress)
                         {
                             lastProgress = e.ProgressPercentage;
-                            log.Info(String.Format("Downloading mod: {0}% complete.", e.ProgressPercentage.ToString()));
+                            log.Info(String.Format("Downloading mod: {0}% complete.", e.ProgressPercentage));
                         }
                     };
                     wc.DownloadDataCompleted += (sender, e) =>
                     {
-                        byte[] buffer;
+                        byte[] buffer = { 0 };
+                        bool success = false;
                         try
                         {
                             buffer = e.Result;
+                            success = true;
                         }
-                        catch{
-                            notifier.Notify(4, "Error downloading mod", "The connection forcibly closed by the remote host. Please try again.");
-                            throw;
-                        }
-                        notifier.Notify(2, "Extracting mod", "Download completed, extracting files...");
-                        Stream s = new MemoryStream(buffer);
-                        UnzipFromStream(s, targetDir);
-                        refreshMods();
-                        log.Info("Mod installed!");
-                        notifier.Notify(1, "Mod installed", "The following mod has been installed successfully: " + op.Mod.name);
-                        //icon.DisplayBubble("Mod downloaded successfully: " + op.Mod.name + ".");
-                        var msg = new OnInstalledMod()
+                        catch
                         {
-                            Mod = op.Mod
-                        };
-                        Send(JObject.FromObject(msg).ToString(Formatting.None));
-                        var existing = modController.clientMods.FirstOrDefault(m => m.name == op.Mod.name);
-                        if (existing != null) modController.clientMods.Remove(existing);
-                        modController.clientMods.Add(op.Mod);
+                            notifier.Notify(4, "Error downloading mod", "The connection forcibly closed by the remote host. Please try again.");
+                        }
+
+                        if (success)
+                        {
+                            notifier.Notify(2, "Extracting mod", "Download completed, extracting files...");
+                            Stream s = new MemoryStream(buffer);
+                            if (UnzipFromStream(s, targetDir))
+                            {
+                                refreshMods();
+                                log.Info("Mod installed!");
+                                notifier.Notify(1, "Mod installed",
+                                    "The following mod has been installed successfully: " + op.Mod.name);
+                                //icon.DisplayBubble("Mod downloaded successfully: " + op.Mod.name + ".");
+                                var msg = new OnInstalledMod()
+                                {
+                                    Mod = op.Mod
+                                };
+                                Send(JObject.FromObject(msg).ToString(Formatting.None));
+                                var existing = modController.clientMods.FirstOrDefault(m => m.name == op.Mod.name);
+                                if (existing != null) modController.clientMods.Remove(existing);
+                                modController.clientMods.Add(op.Mod);
+
+                                activeMod = GetActiveMod();
+                                if (activeMod.name == op.Mod.name)
+                                {
+                                    try
+                                    {
+                                        Directory.Delete(modDir, true);
+                                    }
+                                    finally
+                                    {
+                                        activeMod = GetActiveMod();
+                                    }
+                                }
+                            }
+                        }
+
                         isInstalling = false;
                     };
                     wc.DownloadDataAsync(new Uri(op.url));
@@ -590,8 +661,8 @@ namespace d2mp
             catch (Exception ex)
             {
                 isInstalling = false;
+                log.Error("Failed to download mod " + op.Mod.name + ".", ex);
                 notifier.Notify(4, "Error downloading mod", "Failed to download mod " + op.Mod.name + ".");
-                //icon.DisplayBubble("Failed to download mod " + op.Mod.name + ".");
                 return;
             }
         }
@@ -789,7 +860,7 @@ namespace d2mp
                 {
                     var commandKey = regKey.OpenSubKey(@"Shell\Open\Command");
                     if (commandKey != null && commandKey.GetValue(null) != null)
-                    return true;
+                        return true;
                 }
             }
             return false;

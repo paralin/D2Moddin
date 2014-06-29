@@ -89,6 +89,51 @@ namespace D2MPMaster.Browser
             Send(resp.ToString(Formatting.None));
         }
 
+        /// <summary>
+        /// Reload the user object from the database
+        /// </summary>
+        public void RefreshUser(){
+            if(user == null) return;
+            user = Mongo.Users.FindOneByIdAs<User>(user.Id);
+        }
+
+        /// <summary>
+        /// Save any user changes in the DB
+        /// </summary>
+        public void SaveUser(){
+            if(user == null) return;
+            Mongo.Users.Save(user);
+        }
+
+        /// <summary>
+        /// Has the user completed the test procedure?
+        /// </summary>
+        /// <param name="isTested">If set to <c>true</c> is tested.</param>
+        public void SetTested(bool isTested){
+            if(user == null) return;
+            if(isTested){
+                if(!user.authItems.Contains("tested")){
+                    var arr = new string[user.authItems.Length+1];
+                    int i = 0;
+                    foreach(var auth in user.authItems){
+                        arr[i] = auth;
+                        i++;
+                    }
+                    arr[user.authItems.Length] = "tested";
+                    user.authItems = arr;
+                    SaveUser();
+                }
+            }else{
+                if(user.authItems.Contains("tested")){
+                    user.authItems = user.authItems.Where(m=>m!="tested").ToArray();
+                    SaveUser();
+                }
+            }
+            foreach(var browser in this.Find(m=>m.user != null&&m.user.Id==user.Id&&m!=this)){
+                browser.RefreshUser();
+            }
+        }
+
         #endregion
 
         #region Message Handling
@@ -181,6 +226,12 @@ namespace D2MPMaster.Browser
                                                       {
                                                           RespondError(jdata, "You are already in a lobby.");
                                                           return; //omfg
+                                                      }
+                                                      if(!user.authItems.Contains("tested")){
+                                                          var obj = new JObject();
+                                                          obj["msg"] = "testneeded";
+                                                          Send(obj.ToString(Formatting.None));
+                                                          return;
                                                       }
                                                       if (matchmake != null)
                                                       {
@@ -513,6 +564,12 @@ namespace D2MPMaster.Browser
                                                           RespondError(jdata, "You are already in a lobby.");
                                                           return;
                                                       }
+                                                      if(!user.authItems.Contains("tested")){
+                                                          var obj = new JObject();
+                                                          obj["msg"] = "testneeded";
+                                                          Send(obj.ToString(Formatting.None));
+                                                          return;
+                                                        }
                                                       if (matchmake != null)
                                                       {
                                                           RespondError(jdata, "You are already in a matchmaking queue.");
@@ -708,6 +765,26 @@ namespace D2MPMaster.Browser
                                                       LobbyManager.ClearPendingLobbies();
                                                       break;
                                                   }
+                                                  case "startLoadTest":
+                                                  {
+                                                      if (user == null)
+                                                      {
+                                                          RespondError(jdata, "You are not logged in yet.");
+                                                          return;
+                                                      }
+                                                      if (lobby != null)
+                                                      {
+                                                          RespondError(jdata, "You are in a lobby already.");
+                                                          return;
+                                                      }
+                                                      /*if (user.authItems.Contains("tested"))
+                                                      {
+                                                          RespondError(jdata, "You have already completed the test.");
+                                                          return;
+                                                      }*/
+                                                      lobby = LobbyManager.StartPlayerTest(user);
+                                                      break;
+                                                  }
                                                   default:
                                                       log.Debug(string.Format("Unknown command: {0}...",
                                                           command.Substring(0, 10)));
@@ -743,7 +820,7 @@ namespace D2MPMaster.Browser
 
         public void OnClosed(object sender, OnClientDisconnectArgs e)
         {
-            LobbyManager.LeaveLobby(this);
+            LobbyManager.ForceLeaveLobby(this);
             MatchmakeManager.LeaveMatchmake(this);
         }
 

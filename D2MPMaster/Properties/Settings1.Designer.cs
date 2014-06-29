@@ -74,7 +74,7 @@ namespace D2MPMaster.Properties {
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("[{\"name\":\"d2fixups\",\"version\":\"0.2\",\"bundle\":\"serv_d2fixups.zip\"},{\"name\":\"metamo" +
-            "d\",\"version\":\"0.3.4\",\"bundle\":\"metamod.zip\"},{\"name\":\"lobby\",\"version\":\"1.4\",\"bu" +
+            "d\",\"version\":\"0.3.4\",\"bundle\":\"metamod.zip\"},{\"name\":\"lobby\",\"version\":\"1.5\",\"bu" +
             "ndle\":\"lobby.zip\"},{\"name\":\"dst\",\"version\":\"0.1\",\"bundle\":\"dst.zip\"}]")]
         public string ServerAddons {
             get {
@@ -82,18 +82,6 @@ namespace D2MPMaster.Properties {
             }
             set {
                 this["ServerAddons"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("http://ddp2.d2modd.in/gdataapi/matchres")]
-        public string PostURL {
-            get {
-                return ((string)(this["PostURL"]));
-            }
-            set {
-                this["PostURL"] = value;
             }
         }
         
@@ -147,7 +135,7 @@ namespace D2MPMaster.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("ddp2.d2modd.in")]
+        [global::System.Configuration.DefaultSettingValueAttribute("net1.d2modd.in")]
         public string WebAddress {
             get {
                 return ((string)(this["WebAddress"]));
