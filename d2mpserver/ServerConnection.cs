@@ -47,7 +47,7 @@ namespace d2mpserver
             client = new XSocketClient(Settings.Default.serverIP, "*");
 #endif
             client.OnClose += (sender, args) => log.Debug("Disconnected from the server");
-            client.OnError += (sender, args) => log.Error("Socket error: " + args.data);
+            client.OnError += (sender, args) => log.Error("Socket error: " + args.ToString());
             client.OnPing += OnPing;
 
             client.Bind("commands", e =>

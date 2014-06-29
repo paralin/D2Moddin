@@ -155,6 +155,8 @@ namespace d2mp
                 }
             });
 
+            client.OnError += (sender, args) => log.Error(string.Format("Controller [{0}] sent us error [{1}] on event [{2}].", args.controller, args.data, args.@event));
+
             client.OnClose += (sender, args) =>
             {
                 log.Info("Disconnected from the server.");
@@ -167,7 +169,7 @@ namespace d2mp
             var updaterPath = Path.Combine(Directory.GetParent(ourDir).FullName, "updater.exe");
             using (WebClient wc = new WebClient())
             {
-                wc.DownloadFile("https://s3-us-west-2.amazonaws.com/d2mpclient/D2MPUpdater.exe", updaterPath);
+                wc.DownloadFile("https://s3-us-west-2.amazonaws.com/d2mpclient/StartD2MP.exe", updaterPath);
                 Process.Start(updaterPath);
                 Application.Exit();
             }
@@ -175,6 +177,8 @@ namespace d2mp
 
         private static void HandleClose()
         {
+            if (shutDown) return;
+
             if (hasConnected)
             {
                 notifier.Notify(3, "Lost connection", "Attempting to reconnect...");
@@ -224,32 +228,42 @@ namespace d2mp
                     }
                     zipEntry = zipInputStream.GetNextEntry();
                 }
-            }
-            catch (Exception ex)
-            {
-                log.Error("Error extracted files to temporary folder.", ex);
-                notifier.Notify(4, "Mod installation failed", "Error extracted files to temporary folder.");
-            }
-
-            try
-            {
-                foreach (var file in Directory.EnumerateFiles(Path.Combine(outFolder, "temp"), "*", System.IO.SearchOption.AllDirectories))
-                {
-                    string destinationPath = Path.Combine(outFolder, file.Substring(outFolder.Length + 6, file.Length - outFolder.Length - 6));
-                    if (!Directory.Exists(Path.GetDirectoryName(destinationPath)))
-                        Directory.CreateDirectory(Path.GetDirectoryName(destinationPath));
-                    File.Move(file, destinationPath);
-                }
-                if (Directory.Exists(Path.Combine(outFolder, "temp")))
-                    Directory.Delete(Path.Combine(outFolder, "temp"), true);
 
                 result = true;
             }
+            catch (ZipException ex)
+            {
+                log.Error(string.Format("Error on zip file. File may be corrupted. [{0}]", ex.Message));
+                notifier.Notify(4, "Mod installation failed", "Downloaded mod may be corrupted. Try again.");
+            }
             catch (Exception ex)
             {
-                log.Error("Error moving extracted files from temporary folder.", ex);
-                notifier.Notify(4, "Mod installation failed", "Error moving extracted files from temporary folder.");
+                log.Error("Error extracting files to temporary folder.", ex);
+                notifier.Notify(4, "Mod installation failed", "Error extracting files to temporary folder.");
             }
+
+            if (result)
+            {
+                try
+                {
+                    foreach (var file in Directory.EnumerateFiles(Path.Combine(outFolder, "temp"), "*", System.IO.SearchOption.AllDirectories))
+                    {
+                        string destinationPath = Path.Combine(outFolder, file.Substring(outFolder.Length + 6, file.Length - outFolder.Length - 6));
+                        if (!Directory.Exists(Path.GetDirectoryName(destinationPath)))
+                            Directory.CreateDirectory(Path.GetDirectoryName(destinationPath));
+                        File.Move(file, destinationPath);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    result = false;
+                    log.Error("Error moving extracted files from temporary folder.", ex);
+                    notifier.Notify(4, "Mod installation failed", "Error moving extracted files from temporary folder.");
+                }
+            }
+
+            if (Directory.Exists(Path.Combine(outFolder, "temp")))
+                Directory.Delete(Path.Combine(outFolder, "temp"), true);
 
             return result;
         }
@@ -525,7 +539,24 @@ namespace d2mp
         {
             var op = state as DeleteMod;
             string targetDir = Path.Combine(d2mpDir, op.Mod.name);
+
             if (Directory.Exists(targetDir)) Directory.Delete(targetDir, true);
+
+            //close dota before removing active mod, otherwise we might crash
+            if (activeMod.name == op.Mod.name)
+            {
+                if (Dota2Running()) KillDota2();
+
+                try
+                {
+                    Directory.Delete(modDir, true);
+                }
+                finally
+                {
+                    activeMod = GetActiveMod();
+                }
+            }
+
             log.Debug("Server/user requested that we delete mod " + op.Mod.name + ".");
             var msg = new OnDeletedMod
             {
@@ -576,45 +607,52 @@ namespace d2mp
                     wc.DownloadDataCompleted += (sender, e) =>
                     {
                         byte[] buffer = { 0 };
+                        bool success = false;
                         try
                         {
                             buffer = e.Result;
+                            success = true;
                         }
                         catch
                         {
                             notifier.Notify(4, "Error downloading mod", "The connection forcibly closed by the remote host. Please try again.");
                         }
-                        notifier.Notify(2, "Extracting mod", "Download completed, extracting files...");
-                        Stream s = new MemoryStream(buffer);
-                        if (UnzipFromStream(s, targetDir))
-                        {
-                            refreshMods();
-                            log.Info("Mod installed!");
-                            notifier.Notify(1, "Mod installed",
-                                "The following mod has been installed successfully: " + op.Mod.name);
-                            //icon.DisplayBubble("Mod downloaded successfully: " + op.Mod.name + ".");
-                            var msg = new OnInstalledMod()
-                            {
-                                Mod = op.Mod
-                            };
-                            Send(JObject.FromObject(msg).ToString(Formatting.None));
-                            var existing = modController.clientMods.FirstOrDefault(m => m.name == op.Mod.name);
-                            if (existing != null) modController.clientMods.Remove(existing);
-                            modController.clientMods.Add(op.Mod);
 
-                            activeMod = GetActiveMod();
-                            if (activeMod.name == op.Mod.name)
+                        if (success)
+                        {
+                            notifier.Notify(2, "Extracting mod", "Download completed, extracting files...");
+                            Stream s = new MemoryStream(buffer);
+                            if (UnzipFromStream(s, targetDir))
                             {
-                                try
+                                refreshMods();
+                                log.Info("Mod installed!");
+                                notifier.Notify(1, "Mod installed",
+                                    "The following mod has been installed successfully: " + op.Mod.name);
+                                //icon.DisplayBubble("Mod downloaded successfully: " + op.Mod.name + ".");
+                                var msg = new OnInstalledMod()
                                 {
-                                    Directory.Delete(modDir, true);
-                                }
-                                finally
+                                    Mod = op.Mod
+                                };
+                                Send(JObject.FromObject(msg).ToString(Formatting.None));
+                                var existing = modController.clientMods.FirstOrDefault(m => m.name == op.Mod.name);
+                                if (existing != null) modController.clientMods.Remove(existing);
+                                modController.clientMods.Add(op.Mod);
+
+                                activeMod = GetActiveMod();
+                                if (activeMod.name == op.Mod.name)
                                 {
-                                    activeMod = GetActiveMod();
+                                    try
+                                    {
+                                        Directory.Delete(modDir, true);
+                                    }
+                                    finally
+                                    {
+                                        activeMod = GetActiveMod();
+                                    }
                                 }
                             }
                         }
+
                         isInstalling = false;
                     };
                     wc.DownloadDataAsync(new Uri(op.url));
