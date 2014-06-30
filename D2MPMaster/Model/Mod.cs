@@ -33,6 +33,8 @@ namespace D2MPMaster.Model
         public string user { get; set; }
         public bool isPublic { get; set; }
 
+        public bool ranked { get; set; }
+
         /// <summary>
         /// Use some other static hosting off of AWS
         /// </summary>

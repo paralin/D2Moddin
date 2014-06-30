@@ -2,8 +2,8 @@
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Amazon.Runtime;
-using ClientCommon.Methods;
+using Amazon.ElasticTranscoder.Model;
+using Amazon.S3.Model;
 using D2MPMaster.Browser.Methods;
 using D2MPMaster.Client;
 using D2MPMaster.Database;
@@ -14,8 +14,6 @@ using d2mpserver;
 using MongoDB.Driver.Builders;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using XSockets.Core.Common.Globals;
-using XSockets.Core.Common.Socket;
 using XSockets.Core.Common.Socket.Event.Arguments;
 using XSockets.Core.Common.Socket.Event.Interface;
 using XSockets.Core.XSocket;
@@ -23,6 +21,7 @@ using XSockets.Core.XSocket.Helpers;
 using InstallMod = D2MPMaster.Browser.Methods.InstallMod;
 using System.Collections.Generic;
 using D2MPMaster.Matchmaking;
+using TimeSpan = System.TimeSpan;
 
 
 namespace D2MPMaster.Browser
@@ -64,7 +63,27 @@ namespace D2MPMaster.Browser
                 }
             }
         }
-        public Matchmake matchmake = null;
+
+        private Matchmake _match;
+        public Matchmake matchmake
+        {
+            get { return _match; }
+            set {
+                _match = value;                 
+                if (value != null)
+                {
+                    this.AsyncSendTo(m => m.user != null && m.user.Id == user.Id, ClearPublicLobbies(),
+                        req => { });
+                }
+                else
+                {
+                    this.AsyncSendTo(m => m.user != null && m.user.Id == user.Id, PublicLobbySnapshot(),
+                        req => { });
+                    this.AsyncSendTo(m => m.user != null && m.user.Id == user.Id, ClearMatchmakeR(),
+                        req => { });
+                }
+            }
+        }
 
         #endregion
 
@@ -199,6 +218,15 @@ namespace D2MPMaster.Browser
                                                                   "auth");
                                                               return;
                                                           }
+                                                          var hasBrowser =
+                                                              this.Find(m => m.user != null && m.user.Id == usr.Id)
+                                                                  .Any();
+                                                          if (hasBrowser)
+                                                          {
+                                                              this.Send(AlreadyConnected());
+                                                              this.Close();
+                                                              return;
+                                                          }
                                                           user = usr;
                                                           this.SendJson("{\"msg\": \"auth\", \"status\": true}", "auth");
                                                           this.Send(PublicLobbySnapshot());
@@ -304,6 +332,11 @@ namespace D2MPMaster.Browser
                                                       var mods = new List<Mod>();
                                                       foreach (var mod in req.mods.Select(Mods.Mods.ByID))
                                                       {
+                                                          if (!mod.ranked)
+                                                          {
+                                                              RespondError(jdata, mod.fullname+" is not available for ranked matchmaking.");
+                                                              break;
+                                                          }
                                                           mods.Add(mod);
                                                           if (mod == null)
                                                           {
@@ -320,6 +353,11 @@ namespace D2MPMaster.Browser
                                                               Send(obj.ToString(Formatting.None));
                                                               return;
                                                           }
+                                                      }
+                                                      if (mods.Count == 0)
+                                                      {
+                                                          RespondError(jdata, "You didn't specifiy any mods, or all of the mods are not ranked.");
+                                                          return;
                                                       }
                                                       matchmake = MatchmakeManager.CreateMatchmake(user, mods);
                                                       break;
@@ -832,6 +870,23 @@ namespace D2MPMaster.Browser
             var upd = new JObject();
             upd["msg"] = "colupd";
             upd["ops"] = new JArray { DiffGenerator.RemoveAll("lobbies") };
+            var msg = upd.ToString(Formatting.None);
+            return new TextArgs(msg, "lobby");
+        }
+        
+        public static ITextArgs AlreadyConnected()
+        {
+            var upd = new JObject();
+            upd["msg"] = "alreadyconn";
+            var msg = upd.ToString(Formatting.None);
+            return new TextArgs(msg, "duplicate");
+        }
+
+        public static ITextArgs ClearMatchmakeR()
+        {
+            var upd = new JObject();
+            upd["msg"] = "colupd";
+            upd["ops"] = new JArray { DiffGenerator.RemoveAll("matchmake") };
             var msg = upd.ToString(Formatting.None);
             return new TextArgs(msg, "lobby");
         }

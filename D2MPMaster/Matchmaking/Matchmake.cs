@@ -41,7 +41,7 @@ namespace D2MPMaster.Matchmaking
 
             this.UpdateRating();
         }
-
+        
         /// <summary>
         /// Check if the two matches match the criteria
         /// </summary>
