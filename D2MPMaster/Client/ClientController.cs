@@ -60,8 +60,8 @@ namespace D2MPMaster.Client
 
 			if (users.Count == 0)
 			{
-				//this.AsyncSend(Uninstall(), ar => { });
-				log.Debug("Can't find any users for client.");
+                this.AsyncSend(NotifyMessage("No registered account found","No D2Moddin account found for your active Steam account. Please login to Steam using your registered D2Moddin account and restart the client.", true) , ar => { });
+                log.Debug("Can't find any users for client.");
 				return;
 			}
 			SteamID = users.FirstOrDefault ().steam.steamid;
@@ -97,6 +97,16 @@ namespace D2MPMaster.Client
         public static ITextArgs LaunchDota()
         {
             return new TextArgs(JObject.FromObject(new LaunchDota()).ToString(Formatting.None), "commands");
+        }
+
+        public static ITextArgs NotifyMessage(string title, string message)
+        {
+            return new TextArgs(JObject.FromObject(new NotifyMessage() { message = new Message() { title = title, message = message } }).ToString(Formatting.None), "commands");
+        }
+
+        public static ITextArgs NotifyMessage(string title, string message, bool shutdown)
+        {
+            return new TextArgs(JObject.FromObject(new NotifyMessage() { message = new Message() { title = title, message = message, shutdown = shutdown } }).ToString(Formatting.None), "commands");
         }
 
         public static ITextArgs SetMod(Mod mod)

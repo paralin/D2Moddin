@@ -149,6 +149,9 @@ namespace d2mp
                         ThreadPool.QueueUserWorkItem(SpectateGame,
                             msg.ToObject<ConnectDotaSpectate>());
                         break;
+                    case ClientCommon.Methods.NotifyMessage.Msg:
+                        ThreadPool.QueueUserWorkItem(NotifyMessage, msg.ToObject<NotifyMessage>());
+                        break;
                     default:
                         log.Error("Command not recognized.");
                         break;
@@ -526,6 +529,16 @@ namespace d2mp
             var op = state as ConnectDota;
             SteamCommand("connect/" + op.ip);
             log.Debug("Told Steam to connect to " + op.ip + ".");
+        }
+
+        private static void NotifyMessage(object state)
+        {
+            var op = state as NotifyMessage;
+            MessageBox.Show(op.message.message, op.message.title, MessageBoxButtons.OK, MessageBoxIcon.Information);
+            if (op.message.shutdown)
+            {
+                shutDown = true;
+            }
         }
 
         public static void DeleteMod(object state)
