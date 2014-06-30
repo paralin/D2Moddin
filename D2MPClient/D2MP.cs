@@ -354,19 +354,26 @@ namespace d2mp
                     modController.getLocalMods();
                 }
 
-                //Detect user
-                string config = File.ReadAllText(Path.Combine(Settings.steamDir, @"config\config.vdf"));
-                MatchCollection matches = Regex.Matches(config, "\"\\d{17}\"");
-                string steamid;
+                // Detect steam account id which was logged in most recently
+                string config = File.ReadAllText(Path.Combine(Settings.steamDir, @"config\loginusers.vdf"));
+                MatchCollection idMatches = Regex.Matches(config, "\"\\d{17}\"");
+                MatchCollection timestampMatches = Regex.Matches(config, "(?m)(?<=\"Timestamp\".{2}).*$");
+                Dictionary<int, string> usersDict = new Dictionary<int, string>();
                 steamids = new List<string>();
-                if (matches.Count > 0)
+                if (idMatches.Count > 0)
                 {
-                    foreach (Match match in matches)
+                    foreach (Match match in idMatches)
                     {
-                        steamid = match.Value.Substring(1).Substring(0, match.Value.Length - 2);
-                        log.Debug("Steam ID detected: " + steamid);
-                        steamids.Add(steamid);
+                        string steamid = match.Value.Substring(1).Substring(0, match.Value.Length - 2);
+                        int index = idMatches.Cast<Match>().TakeWhile(x=> x != match).Count();
+                        string timestamp = timestampMatches[index].Value;
+                        int iTimestamp = Convert.ToInt32(timestamp.Substring(1).Substring(0, timestamp.Length - 2));
+                        log.Debug(String.Format("Steam ID detected: {0} with timestamp: {1}", steamid, iTimestamp));
+                        usersDict.Add(iTimestamp, steamid);
                     }
+                    string mainId = usersDict.OrderByDescending(x => x.Key).FirstOrDefault().Value;
+                    log.Debug("Selecting Steam ID to be sent: " + mainId);
+                    steamids.Add(mainId);
                 }
                 else
                 {
