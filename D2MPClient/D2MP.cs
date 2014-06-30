@@ -368,10 +368,11 @@ namespace d2mp
                         int index = idMatches.Cast<Match>().TakeWhile(x=> x != match).Count();
                         string timestamp = timestampMatches[index].Value;
                         int iTimestamp = Convert.ToInt32(timestamp.Substring(1).Substring(0, timestamp.Length - 2));
-                        log.Debug("Steam ID detected: " + steamid);
+                        log.Debug(String.Format("Steam ID detected: {0} with timestamp: {1}", steamid, iTimestamp));
                         usersDict.Add(iTimestamp, steamid);
                     }
                     string mainId = usersDict.OrderByDescending(x => x.Key).FirstOrDefault().Value;
+                    log.Debug("Selecting Steam ID to be sent: " + mainId);
                     steamids.Add(mainId);
                 }
                 else
