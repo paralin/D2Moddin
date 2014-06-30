@@ -2,8 +2,6 @@
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Amazon.Runtime;
-using ClientCommon.Methods;
 using D2MPMaster.Browser.Methods;
 using D2MPMaster.Client;
 using D2MPMaster.Database;
@@ -14,8 +12,6 @@ using d2mpserver;
 using MongoDB.Driver.Builders;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using XSockets.Core.Common.Globals;
-using XSockets.Core.Common.Socket;
 using XSockets.Core.Common.Socket.Event.Arguments;
 using XSockets.Core.Common.Socket.Event.Interface;
 using XSockets.Core.XSocket;
@@ -194,6 +190,15 @@ namespace D2MPMaster.Browser
                                                                   "You are banned from the lobby server.");
                                                               this.SendJson("{\"msg\": \"auth\", \"status\": false}",
                                                                   "auth");
+                                                              return;
+                                                          }
+                                                          var hasBrowser =
+                                                              this.Find(m => m.user != null && m.user.Id == usr.Id)
+                                                                  .Any();
+                                                          if (hasBrowser)
+                                                          {
+                                                              this.Send(AlreadyConnected());
+                                                              this.Close();
                                                               return;
                                                           }
                                                           user = usr;
@@ -764,6 +769,14 @@ namespace D2MPMaster.Browser
             upd["ops"] = new JArray { DiffGenerator.RemoveAll("lobbies") };
             var msg = upd.ToString(Formatting.None);
             return new TextArgs(msg, "lobby");
+        }
+        
+        public static ITextArgs AlreadyConnected()
+        {
+            var upd = new JObject();
+            upd["msg"] = "alreadyconn";
+            var msg = upd.ToString(Formatting.None);
+            return new TextArgs(msg, "duplicate");
         }
 
         public static ITextArgs ManagerStatus(bool isConnected)
