@@ -54,7 +54,6 @@ namespace D2MPMaster.Client
 			var users = new List<User>();
 			foreach (var steamid in InitData.SteamIDs.Where(steamid => steamid.Length == 17))
 			{
-				SteamID = steamid;
 				var user = Mongo.Users.FindOneAs<User>(Query.EQ("steam.steamid", steamid));
 				if (user != null) users.Add(user);
 			}
@@ -65,7 +64,10 @@ namespace D2MPMaster.Client
 				log.Debug("Can't find any users for client.");
 				return;
 			}
+			SteamID = users.FirstOrDefault ().steam.steamid;
+			UID = users.FirstOrDefault ().Id;
 
+			/*
 			var tbrowser = users.Select(user => Browser.Find(m => m.user != null && m.user.Id == user.Id).FirstOrDefault()).FirstOrDefault(browser => browser != null);
 
 			if (tbrowser != null)
@@ -74,7 +76,7 @@ namespace D2MPMaster.Client
 			{
 				var usr = users.FirstOrDefault();
 				if (usr != null) UID = usr.Id;
-			}
+			}*/
 
 			Inited = true;
 
