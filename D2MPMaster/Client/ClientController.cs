@@ -14,6 +14,7 @@ using XSockets.Core.XSocket;
 using XSockets.Core.XSocket.Helpers;
 using Query = MongoDB.Driver.Builders.Query;
 using Version = ClientCommon.Version;
+using System.Collections.Generic;
 
 namespace D2MPMaster.Client
 {
@@ -47,29 +48,43 @@ namespace D2MPMaster.Client
             }
         }
 
-        void RegisterClient()
-        {
-            //Figure out UID
-            User user = null;
-            foreach (var steamid in InitData.SteamIDs.Where(steamid => steamid.Length == 17))
-            {
-                SteamID = steamid;
-                user = Mongo.Users.FindOneAs<User>(Query.EQ("steam.steamid", steamid));
-                if (user != null) break;
-            }
+		void RegisterClient()
+		{
+			//Figure out UID
+			var users = new List<User>();
+			foreach (var steamid in InitData.SteamIDs.Where(steamid => steamid.Length == 17))
+			{
+				SteamID = steamid;
+				var user = Mongo.Users.FindOneAs<User>(Query.EQ("steam.steamid", steamid));
+				if (user != null) users.Add(user);
+			}
 
-            if (user == null) return;
-            UID = user.Id;
+			if (users.Count == 0)
+			{
+				//this.AsyncSend(Uninstall(), ar => { });
+				log.Debug("Can't find any users for client.");
+				return;
+			}
 
-            Inited = true;
+			var tbrowser = users.Select(user => Browser.Find(m => m.user != null && m.user.Id == user.Id).FirstOrDefault()).FirstOrDefault(browser => browser != null);
 
-            //Find if the user is online
-            var browsers = Browser.Find(e => e.user != null && e.user.Id == UID);
-            foreach (var browser in browsers)
-            {
-                browser.SendManagerStatus(true);
-            }
-        }
+			if (tbrowser != null)
+				UID = tbrowser.user.Id;
+			else
+			{
+				var usr = users.FirstOrDefault();
+				if (usr != null) UID = usr.Id;
+			}
+
+			Inited = true;
+
+			//Find if the user is online
+			var browsersn = Browser.Find(e => e.user != null && e.user.Id == UID);
+			foreach (var browser in browsersn)
+			{
+				browser.SendManagerStatus(true);
+			}
+		}
 
         public static ITextArgs InstallMod(Mod mod)
         {
