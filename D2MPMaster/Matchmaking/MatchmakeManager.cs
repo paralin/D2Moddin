@@ -45,7 +45,7 @@ namespace D2MPMaster.Matchmaking
         private const int MmrRoof = 5000;
 
 #if DEBUG
-        public const int TEAM_PLAYERS = 1;
+        public const int TEAM_PLAYERS = 2;
 #else
         public const int TEAM_PLAYERS = 5;
 #endif
