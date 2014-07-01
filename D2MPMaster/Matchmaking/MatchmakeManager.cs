@@ -132,7 +132,7 @@ namespace D2MPMaster.Matchmaking
                     // Merge everything to the new match
                     matchFound.MergeMatches(match);
                     // update the browsers with the new match
-                    foreach (var browser in Browsers.Find(b => b.user != null && b.matchmake != null && b.matchmake.Id == match.Id))
+                    foreach (var browser in Browsers.Find(b => b.user != null && b.matchmake != null && b.matchmake.id == match.id))
                     {
                         browser.matchmake = matchFound;
                     }
@@ -191,7 +191,7 @@ namespace D2MPMaster.Matchmaking
                     //create a lobby with one of the mods
                     var lobby = LobbyManager.CreateMatchedLobby(match, matchFound, mods[rnd.Next(0, mods.Length)]);
                     //remove the matchmake from the browsers and set the lobby
-                    foreach (var browser in Browsers.Find(b => b.user != null && b.matchmake != null && (b.matchmake.Id == match.Id || b.matchmake.Id == matchFound.Id)))
+                    foreach (var browser in Browsers.Find(b => b.user != null && b.matchmake != null && (b.matchmake.id == match.id || b.matchmake.id == matchFound.id)))
                     {
                         browser.lobby = lobby;
                         browser.matchmake = null;
@@ -214,24 +214,24 @@ namespace D2MPMaster.Matchmaking
             }
         }
 
-        public static Matchmake CreateMatchmake(User user, List<Mod> mods)
+        public static Matchmake CreateMatchmake(User user, Mod[] mods)
         {
             //loop through each mod
             foreach (var mod in mods)
             {
                 //if the user does not have a MMR for it
+                if(user.profile.mmr == null) user.profile.mmr = new Dictionary<string, int>();
                 if (!user.profile.mmr.ContainsKey(mod.Id))
                 {
                     //Assign base
                     user.profile.mmr.Add(mod.Id, BaseMmr);
-                    //save it
-                    Mongo.Users.Save(user);
                 }
             }
+            Mongo.Users.Save(user);
 
             var matchmake = new Matchmake()
             {
-                Id = Utils.RandomString(17),
+                id = Utils.RandomString(17),
                 Users = new User[5],
                 Mods = mods.Select(x => x.Id).ToArray(),
                 Ratings = user.profile.mmr.Where(x => mods.Any(y => x.Key == y.Id)).ToDictionary(x => x.Key, x => x.Value),
@@ -260,16 +260,8 @@ namespace D2MPMaster.Matchmaking
             controller.matchmake = null;
 
             //remove the user from the MM
-            for (int i = 0; i < mm.Users.Length; i++)
-            {
-                var user = mm.Users[i];
-                if (user != null && user.steam == controller.user.steam)
-                {
-                    mm.Users[i] = null;
-                    mm.UpdateRating();
-                }
-            }
-
+            mm.Users = mm.Users.Where(m => m!=null && m.Id != controller.user.Id).ToArray();
+            if (mm.Users.Length > 0) mm.UpdateRating();
             //if no users are left on it
             if (mm.Users.Length == 0)
             {
@@ -287,6 +279,7 @@ namespace D2MPMaster.Matchmaking
             else if (inTeamMatchmaking.Contains(mm))
             {
                 //set ignore, no mistakes allowed
+                //todo: wtf why not just use a lock
                 mm.Ignore = true;
 
                 //remove from here

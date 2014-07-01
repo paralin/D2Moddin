@@ -33,6 +33,34 @@ namespace D2MPMaster
             return -1;
         }
 
+        public static string TimeFromNow(DateTime dt)
+        {
+            if (dt < DateTime.Now)
+                return "about sometime ago";
+            TimeSpan span = dt - DateTime.Now;
+            if (span.Days > 365)
+            {
+                int years = (span.Days / 365);
+                return String.Format("about {0} {1} from now", years, years == 1 ? "year" : "years");
+            }
+            if (span.Days > 30)
+            {
+                int months = (span.Days / 30);
+                return String.Format("about {0} {1} from now", months, months == 1 ? "month" : "months");
+            }
+            if (span.Days > 0)
+                return String.Format("about {0} {1} from now", span.Days, span.Days == 1 ? "day" : "days");
+            if (span.Hours > 0)
+                return String.Format("about {0} {1} from now", span.Hours, span.Hours == 1 ? "hour" : "hours");
+            if (span.Minutes > 0)
+                return String.Format("about {0} {1} from now", span.Minutes, span.Minutes == 1 ? "minute" : "minutes");
+            if (span.Seconds > 5)
+                return String.Format("about {0} seconds from now", span.Seconds);
+            if (span.Seconds == 0)
+                return "just now";
+            return string.Empty;
+        }
+
         public static string[] CompressToBeginning(this string[] arr)
         {
             int firstNull = FindFirstNull(arr);

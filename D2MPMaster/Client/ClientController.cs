@@ -78,14 +78,14 @@ namespace D2MPMaster.Client
 			UID = users.FirstOrDefault ().Id;
 
 			/*
-			var tbrowser = users.Select(user => Browser.Find(m => m.user != null && m.user.Id == user.Id).FirstOrDefault()).FirstOrDefault(browser => browser != null);
+			var tbrowser = users.Select(user => Browser.Find(m => m.user != null && m.user.id == user.id).FirstOrDefault()).FirstOrDefault(browser => browser != null);
 
 			if (tbrowser != null)
-				UID = tbrowser.user.Id;
+				UID = tbrowser.user.id;
 			else
 			{
 				var usr = users.FirstOrDefault();
-				if (usr != null) UID = usr.Id;
+				if (usr != null) UID = usr.id;
 			}*/
 
 			Inited = true;

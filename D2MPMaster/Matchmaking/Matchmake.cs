@@ -23,7 +23,7 @@ namespace D2MPMaster.Matchmaking
         /// </summary>
         private const int RatingMargin = 10;
 
-        public string Id { get; set; }
+        public string id { get; set; }
         public User[] Users { get; set; }
         // Mod ids
         public string[] Mods { get; set; }

@@ -50,5 +50,6 @@ namespace D2MPMaster.Model
     {
         public string name { get; set; }
         public Dictionary<string, int> mmr { get; set; }
+        public DateTime PreventMMUntil { get; set; }
     }
 }

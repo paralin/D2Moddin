@@ -25,6 +25,7 @@ using System.Net;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using ClientCommon.Data;
 using ClientCommon.Methods;
@@ -161,7 +162,7 @@ namespace d2mp
             client.OnClose += (sender, args) =>
             {
                 log.Info("Disconnected from the server.");
-                HandleClose();
+                Task.Factory.StartNew(HandleClose);
             };
         }
 
@@ -192,7 +193,7 @@ namespace d2mp
             }
             catch (Exception)
             {
-                HandleClose();
+                Task.Factory.StartNew(HandleClose);
             }
         }
 
@@ -408,7 +409,7 @@ namespace d2mp
                 {
                     notifier.Notify(4, "Server error", "Can't connect to the lobby server!");
                     Thread.Sleep(5000);
-                    HandleClose();
+                    Task.Factory.StartNew(HandleClose);
                 }
                 while (!shutDown)
                 {

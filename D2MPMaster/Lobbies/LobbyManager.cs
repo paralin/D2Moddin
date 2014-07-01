@@ -234,7 +234,7 @@ namespace D2MPMaster.Lobbies
 
         public static PlayerLocation FindPlayerLocationU(string userid, Lobby lobby)
         {
-            User user = Mongo.Users.FindOneAs<User>(Query.EQ("_id", userid));
+            User user = Mongo.Users.FindOneAs<User>(Query.EQ("id", userid));
             if (user == null) return null;
             return FindPlayerLocation(user, lobby);
         }
@@ -433,7 +433,7 @@ namespace D2MPMaster.Lobbies
             if (controller.lobby == null || controller.user == null) return;
             var lob = controller.lobby;
             controller.lobby = null;
-            if (lob.LobbyType == LobbyType.PlayerTest && TestLobbyQueue.Contains(lob))
+            if (lob.LobbyType == LobbyType.PlayerTest)
             {
                 RemoveFromTeam(lob, controller.user.steam.steamid);
                 if (lob.TeamCount(lob.radiant) + lob.TeamCount(lob.dire) == 0)
@@ -460,6 +460,7 @@ namespace D2MPMaster.Lobbies
                                 TestLobbyQueue.Add(lob);
                             lob.status = LobbyStatus.Start;
                             TransmitLobbyUpdate(lob, new []{"status"});
+                            return;
                         }
                     }
                 }           
@@ -467,6 +468,55 @@ namespace D2MPMaster.Lobbies
             if (lob.status > LobbyStatus.Queue) return; //will be auto handled later
             //Find the player
             var team = RemoveFromTeam(lob, controller.user.steam.steamid);
+            if (lob.LobbyType == LobbyType.Matchmaking)
+            {
+                lock(LobbyQueue)
+                    LobbyQueue.Remove(lob);
+                lock(LobbyQueue)
+                    PlayingLobbies.Remove(lob);
+                //todo: handle parties here
+                //todo: more efficient way to deal with 1 person down
+                Matchmake mm1 = null;
+                var mm1b = new List<BrowserController>(5);
+                foreach (var player in lob.radiant.Where(player => player != null))
+                {
+                    var browser = Browsers.Find(m => m.user != null && m.user.steam.steamid == player.steam).FirstOrDefault();
+                    if (browser == null) continue;
+                    if (mm1 == null) mm1 = MatchmakeManager.CreateMatchmake(browser.user, browser.QueuedWithMods);
+                    else
+                    {
+                        mm1.Users = mm1.Users.Union(new[]{browser.user}).ToArray();
+                    }
+                    mm1b.Add(browser);
+                }
+                if (mm1 != null) mm1.UpdateRating();
+                foreach (var browser in mm1b)
+                {
+                    browser.lobby = null;
+                    browser.matchmake = mm1;
+                }
+                Matchmake mm2 = null;
+                var mm2b = new List<BrowserController>(5);
+                foreach (var player in lob.dire.Where(player => player != null))
+                {
+                    var browser =
+                        Browsers.Find(m => m.user != null && m.user.steam.steamid == player.steam).FirstOrDefault();
+                    if (browser == null) continue;
+                    if (mm2 == null) mm2 = MatchmakeManager.CreateMatchmake(browser.user, browser.QueuedWithMods);
+                    else
+                    {
+                        mm2.Users = mm2.Users.Union(new[] {browser.user}).ToArray();
+                    }
+                    mm2b.Add(browser);
+                }
+                if (mm2 != null) mm2.UpdateRating();
+                foreach (var browser in mm2b)
+                {
+                    browser.lobby = null;
+                    browser.matchmake = mm2;
+                }
+                return;
+            }
             lob.status = LobbyStatus.Start;
             if (team != null)
                 TransmitLobbyUpdate(lob, new[] { team, "status" });
@@ -515,7 +565,7 @@ namespace D2MPMaster.Lobbies
         public static Lobby CreateLobby(User user, Mod mod, string name)
         {
             /*
-            foreach (var result in Browsers.Find(m => m.user != null && m.user.Id == user.Id && m.lobby!=null))
+            foreach (var result in Browsers.Find(m => m.user != null && m.user.id == user.id && m.lobby!=null))
             {
                 LeaveLobby(result);
             }
@@ -565,7 +615,7 @@ namespace D2MPMaster.Lobbies
             ClientsController.AsyncSendTo(m => m.SteamID == user.steam.steamid, ClientController.SetMod(mod),
                 req => { });
             ClientsController.AsyncSendTo(m => m.SteamID == user.steam.steamid, ClientController.LaunchDota(), req => { });
-            log.InfoFormat("Lobby created, User: #{0}, Name: #{1}, Id: {2}", user.profile.name, name, user.Id);
+            log.InfoFormat("Lobby created, User: #{0}, Name: #{1}, id: {2}", user.profile.name, name, user.Id);
             return lob;
         }
 
@@ -658,6 +708,7 @@ namespace D2MPMaster.Lobbies
         /// <returns></returns>
         public static Lobby CreateMatchedLobby(Matchmake team1, Matchmake team2, string mod)
         {
+            var setMod = Mods.Mods.ByID(mod);
             var lob = new Lobby()
             {
                 dire = new Player[5],
@@ -666,10 +717,10 @@ namespace D2MPMaster.Lobbies
                 enableGG = true,
                 hasPassword = false,
                 isRanked = true,
-                id = Utils.RandomString(17),
+                id = team1.id,
                 mod = mod,
                 region = 0,
-                name = "Ranked Lobby",
+                name = "Ranked "+setMod.fullname+" Game",
                 isPublic = false,
                 password = "",
                 state = GameState.Init,
@@ -689,7 +740,6 @@ namespace D2MPMaster.Lobbies
             PlayingLobbies.Add(lob);
 
             var allUsers = team1.Users.ToArray().Concat(team2.Users.ToArray());
-            var setMod = Mods.Mods.ByID(mod);
             foreach (var user in allUsers)
             {
                 Browsers.AsyncSendTo(m => m.user != null && m.user.Id == user.Id, BrowserController.LobbySnapshot(lob), req => { });
@@ -892,9 +942,7 @@ namespace D2MPMaster.Lobbies
             if (!LobbyID.TryGetValue(matchid, out lob)) return;
             if (lob.status != LobbyStatus.Play) return;
             List<string> failed = new List<string>(10);
-            foreach(var player in failedPlayers){
-                failed.Add(player.Value<long>()+"");
-            }
+            failed.AddRange(failedPlayers.Select(player => player.Value<long>() + ""));
             foreach(var player in lob.radiant){
                 if(player == null) continue;
                 player.failedConnect = failed.Contains(player.steam);
@@ -918,16 +966,15 @@ namespace D2MPMaster.Lobbies
             }
             else if (lob.LobbyType == LobbyType.PlayerTest)
             {
-                foreach (var player in lob.radiant)
+                foreach (var player in lob.radiant.Where(m => m != null))
                 {
-                    if (player == null) continue;
                     var browser = Browsers.Find(m => m.user != null && m.user.steam.steamid == player.steam).FirstOrDefault();
                     if (browser != null)
                     {
                         browser.SetTested(!player.failedConnect);
                     }
                 }
-                foreach (var player in lob.dire)
+                foreach (var player in lob.dire.Where(m => m != null))
                 {
                     if (player == null) continue;
                     var browser = Browsers.Find(m => m.user != null && m.user.steam.steamid == player.steam).FirstOrDefault();
@@ -937,6 +984,46 @@ namespace D2MPMaster.Lobbies
                     }
                 }
                 CloseLobby(lob);
+            }
+            else if (lob.LobbyType == LobbyType.Matchmaking)
+            {
+                var didntFail = new List<BrowserController>(10);
+                foreach (var player in lob.radiant.Where(m=>m!=null))
+                {
+                    var browser = Browsers.Find(m => m.user != null && m.user.steam.steamid == player.steam).FirstOrDefault();
+                    if (browser == null) continue;
+                    if (player.failedConnect)
+                    {
+                        browser.SetTested(false);
+                        browser.user.profile.PreventMMUntil = DateTime.UtcNow + TimeSpan.FromMinutes(5);
+                        browser.SaveUser();
+                    }
+                    else
+                        didntFail.Add(browser);
+                    browser.lobby = null;
+                    browser.matchmake = null;
+                }
+                foreach (var player in lob.dire.Where(m=>m!=null))
+                {
+                    var browser = Browsers.Find(m => m.user != null && m.user.steam.steamid == player.steam).FirstOrDefault();
+                    if (browser == null) continue;
+                    if (player.failedConnect)
+                    {
+                        browser.SetTested(false);
+                        browser.user.profile.PreventMMUntil = DateTime.UtcNow + TimeSpan.FromMinutes(5);
+                        browser.SaveUser();
+                    }
+                    else
+                        didntFail.Add(browser);
+                    browser.lobby = null;
+                    browser.matchmake = null;
+                }
+                CloseLobby(lob);
+                foreach (var player in didntFail)
+                {
+                    //Requeue them. In the future group the people from their party.
+                    player.matchmake = MatchmakeManager.CreateMatchmake(player.user, player.QueuedWithMods);
+                }
             }
         }
 
