@@ -246,7 +246,6 @@ namespace D2MPMaster.Matchmaking
             {
                 inMatchmaking.Add(matchmake);
             }
-
             return matchmake;
         }
 
