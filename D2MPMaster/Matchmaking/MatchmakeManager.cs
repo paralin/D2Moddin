@@ -1,22 +1,15 @@
 ﻿// 
 // MatchmakeManager.cs
-// Created by ilian000 on 2014-06-19
 // Licenced under the Apache License, Version 2.0
 //
-
-using System.Configuration;
 using D2MPMaster.Browser;
 using D2MPMaster.Database;
-using D2MPMaster.LiveData;
 using D2MPMaster.Lobbies;
 using D2MPMaster.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
-using MongoDB.Driver;
 using MongoDB.Driver.Builders;
 using XSockets.Core.Common.Globals;
 using XSockets.Core.Common.Socket;
@@ -50,6 +43,12 @@ namespace D2MPMaster.Matchmaking
         /// Maximum MMR archievable by a player
         /// </summary>
         private const int MmrRoof = 5000;
+
+#if DEBUG
+        public const int TEAM_PLAYERS = 1;
+#else
+        public const int TEAM_PLAYERS = 5;
+#endif
 
         /// <summary>
         /// Factors to calculate MMR after match
@@ -147,7 +146,7 @@ namespace D2MPMaster.Matchmaking
                     }
 
                     //if we are crowded
-                    if (matchFound.Users.Length == 5)
+                        if (matchFound.Users.Length == TEAM_PLAYERS)
                     {
                         //reset the tries and dont ignore it
                         matchFound.TryCount = 1;

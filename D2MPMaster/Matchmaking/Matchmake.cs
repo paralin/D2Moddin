@@ -52,7 +52,7 @@ namespace D2MPMaster.Matchmaking
 
             //not the same match
             if (this != pMatch &&
-                (pTeam || this.Users.Length <= (5 - pMatch.Users.Length))) //there is room for everybody
+                (pTeam || this.Users.Length <= (MatchmakeManager.TEAM_PLAYERS - pMatch.Users.Length))) //there is room for everybody
             {
                 result = this.GetMatchedMods(pMatch).Length > 0;
             }
