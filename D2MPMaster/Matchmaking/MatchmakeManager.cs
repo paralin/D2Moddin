@@ -231,15 +231,13 @@ namespace D2MPMaster.Matchmaking
             var matchmake = new Matchmake()
             {
                 id = Utils.RandomString(17),
-                Users = new List<User>(TEAM_PLAYERS),
+                Users = new List<User>(TEAM_PLAYERS){user},
                 Mods = mods.Select(x => x.Id).ToArray(),
                 Ratings = user.profile.mmr.Where(x => mods.Any(y => x.Key == y.Id)).ToDictionary(x => x.Key, x => x.Value),
                 TryCount = 1
             };
 
-            matchmake.Users[0] = user;
-
-            log.InfoFormat("Matchmaking created User: #{0}", user.profile.name);
+            log.InfoFormat("Matchmaking created w/user: #{0}", user.profile.name);
 
             //add to the queue
             lock (inMatchmaking)
