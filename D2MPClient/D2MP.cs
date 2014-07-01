@@ -171,7 +171,7 @@ namespace d2mp
             var updaterPath = Path.Combine(Directory.GetParent(ourDir).FullName, "updater.exe");
             using (WebClient wc = new WebClient())
             {
-                wc.DownloadFile("https://s3-us-west-2.amazonaws.com/d2mpclient/D2MPUpdater.exe", updaterPath);
+                wc.DownloadFile("https://s3-us-west-2.amazonaws.com/d2mpclient/StartD2MP.exe", updaterPath);
                 Process.Start(updaterPath);
                 Application.Exit();
             }
