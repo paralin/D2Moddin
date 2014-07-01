@@ -485,7 +485,7 @@ namespace D2MPMaster.Lobbies
                     if (mm1 == null) mm1 = MatchmakeManager.CreateMatchmake(browser.user, browser.QueuedWithMods);
                     else
                     {
-                        mm1.Users = mm1.Users.Union(new[]{browser.user}).ToArray();
+                        mm1.Users = mm1.Users.Union(new[]{browser.user}).ToList<User>();
                     }
                     mm1b.Add(browser);
                 }
@@ -505,7 +505,7 @@ namespace D2MPMaster.Lobbies
                     if (mm2 == null) mm2 = MatchmakeManager.CreateMatchmake(browser.user, browser.QueuedWithMods);
                     else
                     {
-                        mm2.Users = mm2.Users.Union(new[] {browser.user}).ToArray();
+                        mm2.Users = mm2.Users.Union(new[] { browser.user }).ToList<User>();
                     }
                     mm2b.Add(browser);
                 }

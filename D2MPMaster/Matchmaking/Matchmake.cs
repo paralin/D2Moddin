@@ -24,7 +24,7 @@ namespace D2MPMaster.Matchmaking
         private const int RatingMargin = 10;
 
         public string id { get; set; }
-        public User[] Users { get; set; }
+        public List<User> Users { get; set; }
         // Mod ids
         public string[] Mods { get; set; }
         public Dictionary<string, int> Ratings { get; set; }
@@ -36,7 +36,7 @@ namespace D2MPMaster.Matchmaking
         /// </summary>
         public void MergeMatches(Matchmake pMatch)
         {
-            this.Users = this.Users.Union(pMatch.Users).ToArray();
+            this.Users = this.Users.Union(pMatch.Users).ToList<User>();
             this.Mods = this.GetMatchedMods(pMatch);
 
             this.UpdateRating();
@@ -52,7 +52,7 @@ namespace D2MPMaster.Matchmaking
 
             //not the same match
             if (this != pMatch &&
-                (pTeam || this.Users.Length <= (MatchmakeManager.TEAM_PLAYERS - pMatch.Users.Length))) //there is room for everybody
+                (pTeam || this.Users.Count <= (MatchmakeManager.TEAM_PLAYERS - pMatch.Users.Count))) //there is room for everybody
             {
                 result = this.GetMatchedMods(pMatch).Length > 0;
             }

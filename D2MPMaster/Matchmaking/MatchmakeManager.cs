@@ -137,7 +137,7 @@ namespace D2MPMaster.Matchmaking
                     }
 
                     log.InfoFormat("Matchmake merged from {0} players to {1} players after {2} tries. New rating: {3}",
-                        match.Users.Count(), matchFound.Users.Count(), match.TryCount, matchFound.Ratings);
+                        match.Users.Count, matchFound.Users.Count, match.TryCount, matchFound.Ratings);
 
                     //emove the old match, we dont need it
                     lock (inMatchmaking)
@@ -146,7 +146,7 @@ namespace D2MPMaster.Matchmaking
                     }
 
                     //if we are crowded
-                        if (matchFound.Users.Length == TEAM_PLAYERS)
+                        if (matchFound.Users.Count == TEAM_PLAYERS)
                     {
                         //reset the tries and dont ignore it
                         matchFound.TryCount = 1;
@@ -231,7 +231,7 @@ namespace D2MPMaster.Matchmaking
             var matchmake = new Matchmake()
             {
                 id = Utils.RandomString(17),
-                Users = new User[5],
+                Users = new List<User>(TEAM_PLAYERS),
                 Mods = mods.Select(x => x.Id).ToArray(),
                 Ratings = user.profile.mmr.Where(x => mods.Any(y => x.Key == y.Id)).ToDictionary(x => x.Key, x => x.Value),
                 TryCount = 1
@@ -258,10 +258,10 @@ namespace D2MPMaster.Matchmaking
             controller.matchmake = null;
 
             //remove the user from the MM
-            mm.Users = mm.Users.Where(m => m!=null && m.Id != controller.user.Id).ToArray();
-            if (mm.Users.Length > 0) mm.UpdateRating();
+            mm.Users.RemoveAll(m => m != null || m.Id != controller.user.Id);
+            if (mm.Users.Count > 0) mm.UpdateRating();
             //if no users are left on it
-            if (mm.Users.Length == 0)
+            if (mm.Users.Count == 0)
             {
                 //check the queue
                 if (inMatchmaking.Contains(mm))
