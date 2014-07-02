@@ -195,10 +195,8 @@ namespace d2mp
         }
 
         //Pipe a zip download directly through the decompressor
-        private static bool UnzipFromStreamUsingTemp(Stream zipStream, string outFolder)
+        private static bool UnzipWithTemp(Stream zipStream, string outFolder)
         {
-            bool result = false;
-
             try
             {
                 string tempFolder = Path.Combine(outFolder, "temp");
@@ -206,8 +204,9 @@ namespace d2mp
             }
             catch (Exception ex)
             {
-                log.Error("Error extracting files to temporary folder.", ex);
-                notifier.Notify(4, "Mod installation failed", "Error extracted files to temporary folder.");
+                log.Error("Error extracting files. Downloaded archive is possibly corrupt." , ex);
+                notifier.Notify(4, "Mod installation failed", "Error extracted files. Downloaded archive is corrupt.");
+                return false;
             }
 
             try
@@ -222,7 +221,7 @@ namespace d2mp
                 if (Directory.Exists(Path.Combine(outFolder, "temp")))
                     Directory.Delete(Path.Combine(outFolder, "temp"), true);
 
-                result = true;
+                return true;
             }
             catch (Exception ex)
             {
@@ -230,7 +229,7 @@ namespace d2mp
                 notifier.Notify(4, "Mod installation failed", "Error moving extracted files from temporary folder.");
             }
 
-            return result;
+            return false;
         }
 
         static void Send(string json)
@@ -532,7 +531,10 @@ namespace d2mp
             if (existing != null) modController.clientMods.Remove(existing);
             refreshMods();
         }
-
+        /// <summary>
+        /// Used to check if we already tried to redownload the mod.
+        /// </summary>
+        private static bool dlRetry;
         public static void InstallMod(object state)
         {
             var op = state as InstallMod;
@@ -582,8 +584,9 @@ namespace d2mp
                         }
                         notifier.Notify(2, "Extracting mod", "Download completed, extracting files...");
                         Stream s = new MemoryStream(buffer);
-                        if (UnzipFromStreamUsingTemp(s, targetDir))
+                        if (UnzipWithTemp(s, targetDir))
                         {
+                            dlRetry = false;
                             refreshMods();
                             log.Info("Mod installed!");
                             notifier.Notify(1, "Mod installed",
@@ -598,6 +601,13 @@ namespace d2mp
                             if (existing != null) modController.clientMods.Remove(existing);
                             modController.clientMods.Add(op.Mod);
                         }
+                        else if(!dlRetry)
+                        {
+                            isInstalling = false;
+                            log.Error("Retrying to download mod...");
+                            dlRetry = true;
+                            InstallMod(op);
+                        }
                         isInstalling = false;
                     };
                     wc.DownloadDataAsync(new Uri(op.url));
@@ -607,7 +617,17 @@ namespace d2mp
             {
                 isInstalling = false;
                 log.Error("Failed to download mod " + op.Mod.name + ".", ex);
-                notifier.Notify(4, "Error downloading mod", "Failed to download mod " + op.Mod.name + ".");
+                if (!dlRetry)
+                {
+                    log.Debug("Retrying to download mod...");
+                    dlRetry = true;
+                    InstallMod(op);
+                }
+                else
+                {
+                    notifier.Notify(4, "Error downloading mod", "Failed to download mod " + op.Mod.name + ".");
+
+                }
                 return;
             }
         }
