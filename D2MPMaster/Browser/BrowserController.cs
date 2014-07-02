@@ -197,8 +197,7 @@ namespace D2MPMaster.Browser
                                                                   .Any();
                                                           if (hasBrowser)
                                                           {
-                                                              this.Send(AlreadyConnected());
-                                                              this.Close();
+                                                              this.AsyncSend(AlreadyConnected(), cb => Close());
                                                               return;
                                                           }
                                                           user = usr;
