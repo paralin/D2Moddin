@@ -39,6 +39,9 @@
     <Reference Include="System.Windows.Forms" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\D2MPClient\UnZip.cs">
+      <Link>UnZip.cs</Link>
+    </Compile>
     <Compile Include="Checksums\Adler32.cs" />
     <Compile Include="Checksums\CRC32.cs" />
     <Compile Include="Checksums\IChecksum.cs" />

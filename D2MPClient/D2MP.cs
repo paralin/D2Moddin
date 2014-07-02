@@ -28,8 +28,6 @@ using System.Threading;
 using System.Windows.Forms;
 using ClientCommon.Data;
 using ClientCommon.Methods;
-using ICSharpCode.SharpZipLib.Core;
-using ICSharpCode.SharpZipLib.Zip;
 using log4net;
 using Microsoft.VisualBasic.FileIO;
 using Microsoft.Win32;
@@ -197,40 +195,18 @@ namespace d2mp
         }
 
         //Pipe a zip download directly through the decompressor
-        private static bool UnzipFromStream(Stream zipStream, string outFolder)
+        private static bool UnzipFromStreamUsingTemp(Stream zipStream, string outFolder)
         {
             bool result = false;
 
             try
             {
-                var zipInputStream = new ZipInputStream(zipStream);
-                ZipEntry zipEntry = zipInputStream.GetNextEntry();
-                while (zipEntry != null)
-                {
-                    String entryFileName = zipEntry.Name;
-                    log.Debug("CRC:" + zipEntry.Crc + " --> " + entryFileName);
-                    var buffer = new byte[4096];
-                    String fullZipToPath = Path.Combine(outFolder, "temp", entryFileName);
-                    string directoryName = Path.GetDirectoryName(fullZipToPath);
-                    if (directoryName.Length > 0)
-                    {
-                        Directory.CreateDirectory(directoryName);
-                        Thread.Sleep(30);
-                    }
-
-                    if (Path.GetFileName(fullZipToPath) != String.Empty)
-                    {
-                        using (FileStream streamWriter = File.Create(fullZipToPath))
-                        {
-                            StreamUtils.Copy(zipInputStream, streamWriter, buffer);
-                        }
-                    }
-                    zipEntry = zipInputStream.GetNextEntry();
-                }
+                string tempFolder = Path.Combine(outFolder, "temp");
+                UnZip.unzipFromStream(zipStream, tempFolder);
             }
             catch (Exception ex)
             {
-                log.Error("Error extracted files to temporary folder.", ex);
+                log.Error("Error extracting files to temporary folder.", ex);
                 notifier.Notify(4, "Mod installation failed", "Error extracted files to temporary folder.");
             }
 
@@ -606,7 +582,7 @@ namespace d2mp
                         }
                         notifier.Notify(2, "Extracting mod", "Download completed, extracting files...");
                         Stream s = new MemoryStream(buffer);
-                        if (UnzipFromStream(s, targetDir))
+                        if (UnzipFromStreamUsingTemp(s, targetDir))
                         {
                             refreshMods();
                             log.Info("Mod installed!");
