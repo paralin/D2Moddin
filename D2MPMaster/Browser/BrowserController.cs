@@ -651,8 +651,7 @@ namespace D2MPMaster.Browser
                                                       var mod = Mods.Mods.ByName(req.mod);
                                                       if (mod == null || !mod.playable)
                                                       {
-                                                          this.AsyncSendTo(x => x.user != null && x.user.Id == user.Id,
-                                                              InstallResponse("Can't find that mod, or it's not playable.",
+                                                          this.AsyncSend(InstallResponse("Can't find that mod, or it's not playable.",
                                                                   true),
                                                               rf => { });
                                                           return;
@@ -662,14 +661,13 @@ namespace D2MPMaster.Browser
                                                               .Mods.Any(
                                                                   m => m.name == mod.name && m.version == mod.version))
                                                       {
-                                                          this.AsyncSendTo(x => x.user != null && x.user.Id == user.Id,
-                                                              InstallResponse("The mod has already been installed.",
+                                                          this.AsyncSend(InstallResponse("The mod has already been installed.",
                                                                   true),
                                                               rf => { });
                                                           return;
                                                       }
 
-                                                      ClientsController.AsyncSendTo(m => m.UID == user.Id,
+                                                      ClientsController.AsyncSendTo(m => m.UID!=null&&m.UID == user.Id,
                                                           ClientController.InstallMod(mod),
                                                           rf => { });
                                                       break;
