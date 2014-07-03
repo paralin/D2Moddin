@@ -45,7 +45,7 @@ namespace D2MPMaster.Matchmaking
         private const int MmrRoof = 5000;
 
 #if DEBUG
-        public const int TEAM_PLAYERS = 2;
+        public const int TEAM_PLAYERS = 1;
 #else
         public const int TEAM_PLAYERS = 5;
 #endif
@@ -163,6 +163,24 @@ namespace D2MPMaster.Matchmaking
                         }
                     }
                 }
+#if DEBUG
+                // match is already full, add to teamMM, should only happen if TEAM_PLAYERS is 1 or when changing values in debug mode.
+                else if (match.Users.Count == TEAM_PLAYERS) {
+                    //reset the tries and dont ignore it
+                    match.TryCount = 1;
+                    match.Ignore = false;
+
+                    //move to team MM
+                    lock (inMatchmaking)
+                    {
+                        inMatchmaking.Remove(match);
+                    }
+                    lock (inTeamMatchmaking)
+                    {
+                        inTeamMatchmaking.Add(match);
+                    }
+                }
+#endif
                 else
                 {
                     //no match found, open the possibilities
