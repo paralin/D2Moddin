@@ -726,6 +726,7 @@ namespace D2MPMaster.Lobbies
                 state = GameState.Init,
                 requiresFullLobby = true,
                 serverIP = "",
+                status = LobbyStatus.Queue,
                 LobbyType = LobbyType.Matchmaking
             };
             foreach (var user in team1.Users.ToArray())
@@ -745,8 +746,6 @@ namespace D2MPMaster.Lobbies
                 Browsers.AsyncSendTo(m => m.user != null && m.user.Id == user.Id, BrowserController.LobbySnapshot(lob), req => { });
                 ClientsController.AsyncSendTo(m => m.SteamID == user.steam.steamid, ClientController.SetMod(setMod), req => { });
             }
-            lob.status = LobbyStatus.Queue;
-            TransmitLobbyUpdate(lob, new[] { "status" });
             SendLaunchDota(lob);
             LobbyQueue.Add(lob);
             return lob;
