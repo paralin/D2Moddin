@@ -309,9 +309,9 @@ namespace D2MPMaster.Lobbies
             {
                 if (!LobbyQueue.Contains(lobby))
                 {
-                    lock(PublicLobbies)
-                        lobby.status = LobbyStatus.Queue;
-                    PublicLobbies.Remove(lobby);
+                    lobby.status = LobbyStatus.Queue;
+                    lock (PublicLobbies)
+                        PublicLobbies.Remove(lobby);
                     TransmitLobbyUpdate(lobby, new[] {"status"});
                     SendLaunchDota(lobby);
                     LobbyQueue.Add(lobby);
