@@ -125,9 +125,30 @@ namespace d2mp
         {
             SetWindowPos(this.Handle, HWND_TOPMOST, 0, 0, 0, 0, TOPMOST_FLAGS);
             Location = new Point(Screen.PrimaryScreen.WorkingArea.Width - Width - 10, Screen.PrimaryScreen.WorkingArea.Height - Height - 10);
+            if (Environment.OSVersion.Version.Major < 6 || (Environment.OSVersion.Version.Major == 6 && Environment.OSVersion.Version.Minor <= 1))
+            {
+                FormBorderStyle = FormBorderStyle.None;
+            }
             this.MaximumSize = this.Size;
             this.MinimumSize = this.Size;
             hideTimer.Start();
+        }
+
+        protected override void WndProc(ref Message m)
+        {
+            const int WM_NCLBUTTONDBLCLK = 0x00A3; // Prevent double click on border
+            const int WM_NCHITTEST = 0x0084; // Prevent resize cursors
+
+            switch (m.Msg)
+            {
+                case WM_NCLBUTTONDBLCLK:
+                    m.Result = IntPtr.Zero;
+                    return;
+                case WM_NCHITTEST:
+                    m.Result = IntPtr.Zero;
+                    return;
+            }
+            base.WndProc(ref m);
         }
     }
 }
