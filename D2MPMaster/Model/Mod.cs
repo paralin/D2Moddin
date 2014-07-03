@@ -15,6 +15,7 @@ namespace D2MPMaster.Model
         public string version { get; set; }
         public string author { get; set; }
         public string authorimage { get; set; }
+        public string thumbsmall { get; set; }
         public string thumbnail { get; set; }
         public string spreadimage { get; set; }
         public string website { get; set; }
