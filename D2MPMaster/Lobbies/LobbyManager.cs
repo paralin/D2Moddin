@@ -188,7 +188,7 @@ namespace D2MPMaster.Lobbies
                 upd["msg"] = "colupd";
                 upd["ops"] = updates;
                 var msg = upd.ToString(Formatting.None);
-                Browsers.AsyncSendTo(m=>m.user!=null&&m.lobby==null,new TextArgs(msg, "lobby"), ar => { });
+                Browsers.AsyncSendTo(m=>m.user!=null&&m.lobby==null,new TextArgs(msg, "publicLobbies"), ar => { });
             }
         }
 
@@ -589,6 +589,7 @@ namespace D2MPMaster.Lobbies
                 state = GameState.Init,
                 LobbyType = LobbyType.PlayerTest,
                 requiresFullLobby = false,
+                status = LobbyStatus.Start,
                 serverIP = string.Empty
             };
             lob.radiant[0] = Player.FromUser(user);
