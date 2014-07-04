@@ -276,6 +276,8 @@ namespace d2mp
             iconThread.SetApartmentState(ApartmentState.STA);
             iconThread.Start();
 
+            ShortcutWriter.writeDesktopShortcut();
+
             try
             {
                 var steam = new SteamFinder();

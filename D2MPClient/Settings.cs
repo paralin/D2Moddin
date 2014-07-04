@@ -1,5 +1,12 @@
-﻿using System;
+﻿// 
+// Settings.cs
+// Created by ilian000 on 2014-06-08
+// Licenced under the Apache License, Version 2.0
+//
+
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 
@@ -35,6 +42,26 @@ namespace d2mp
             Properties.Settings.Default.Reset();
         }
 
+    }
+    static class ShortcutWriter
+    {
+        public static void writeDesktopShortcut()
+        {
+            string path = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory) + "\\" + "D2Moddin Client" + ".url";
+            if (!File.Exists(path))
+            {
+                using (StreamWriter writer = new StreamWriter(path))
+                {
+                    string app = System.Reflection.Assembly.GetExecutingAssembly().Location;
+                    writer.WriteLine("[InternetShortcut]");
+                    writer.WriteLine("URL=file:///" + app);
+                    writer.WriteLine("IconIndex=0");
+                    string icon = app.Replace('\\', '/');
+                    writer.WriteLine("IconFile=" + icon);
+                    writer.Flush();
+                }
+            }
+        }
     }
     static class logKeeper
     {
