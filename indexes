@@ -1,0 +1,13 @@
+Important Database Indexes
+========================
+
+sessions:
+  expires
+inviteQueue:
+  steam_id
+sessions:
+  session
+users:
+  steam.steamid: 1
+mods:
+  name

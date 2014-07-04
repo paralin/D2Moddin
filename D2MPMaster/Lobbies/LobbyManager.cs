@@ -309,9 +309,9 @@ namespace D2MPMaster.Lobbies
             {
                 if (!LobbyQueue.Contains(lobby))
                 {
-                    lock(PublicLobbies)
-                        lobby.status = LobbyStatus.Queue;
-                    PublicLobbies.Remove(lobby);
+                    lobby.status = LobbyStatus.Queue;
+                    lock (PublicLobbies)
+                        PublicLobbies.Remove(lobby);
                     TransmitLobbyUpdate(lobby, new[] {"status"});
                     SendLaunchDota(lobby);
                     LobbyQueue.Add(lobby);
@@ -676,6 +676,18 @@ namespace D2MPMaster.Lobbies
         {
             log.Info("Server shutdown: " + instance.lobby.id);
             if (!PlayingLobbies.Contains(instance.lobby) || instance.lobby.status == LobbyStatus.Start) return;
+            if (instance.lobby.LobbyType == LobbyType.Matchmaking)
+            {
+                log.Error("No match result info for test lobby, setting all to success.");
+                foreach (var browser in instance.lobby.radiant.Where(player => player != null).Select(player => Browsers.Find(m => m.user != null && m.user.steam.steamid == player.steam).FirstOrDefault()).Where(browser => browser != null))
+                {
+                    browser.SetTested(true);
+                }
+                foreach (var browser in instance.lobby.dire.Where(player => player != null).Select(player => Browsers.Find(m => m.user != null && m.user.steam.steamid == player.steam).FirstOrDefault()).Where(browser => browser != null))
+                {
+                    browser.SetTested(true);
+                }
+            }
             CloseLobby(instance.lobby);
         }
 
@@ -817,8 +829,9 @@ namespace D2MPMaster.Lobbies
             if (!LobbyID.TryGetValue(matchid, out lob)) return;
             if (lob.status != LobbyStatus.Play) return;
             List<string> failed = new List<string>(10);
-            foreach(var player in failedPlayers){
-                failed.Add(player.Value<long>()+"");
+            foreach(var player in failedPlayers)
+            {
+                failed.Add(player.Value<int>().ToSteamID64());
             }
             foreach(var player in lob.radiant){
                 if(player == null) continue;

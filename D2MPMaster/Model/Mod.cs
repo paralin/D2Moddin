@@ -15,6 +15,7 @@ namespace D2MPMaster.Model
         public string version { get; set; }
         public string author { get; set; }
         public string authorimage { get; set; }
+        public string thumbsmall { get; set; }
         public string thumbnail { get; set; }
         public string spreadimage { get; set; }
         public string website { get; set; }
@@ -32,6 +33,8 @@ namespace D2MPMaster.Model
         public string fetch { get; set; }
         public string user { get; set; }
         public bool isPublic { get; set; }
+
+        public bool ranked { get; set; }
 
         /// <summary>
         /// Use some other static hosting off of AWS

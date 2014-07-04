@@ -2,8 +2,6 @@
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Amazon.Runtime;
-using ClientCommon.Methods;
 using D2MPMaster.Browser.Methods;
 using D2MPMaster.Client;
 using D2MPMaster.Database;
@@ -14,8 +12,6 @@ using d2mpserver;
 using MongoDB.Driver.Builders;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using XSockets.Core.Common.Globals;
-using XSockets.Core.Common.Socket;
 using XSockets.Core.Common.Socket.Event.Arguments;
 using XSockets.Core.Common.Socket.Event.Interface;
 using XSockets.Core.XSocket;
@@ -176,16 +172,6 @@ namespace D2MPMaster.Browser
                                                               this.SendJson("{\"status\": false}", "auth");
                                                               break;
                                                           }
-                                                          var invite =
-                                                              Mongo.InviteQueue.FindOneAs<MongoInviteQueue>(
-                                                                  Query.EQ("steam_id", usr.steam.steamid));
-                                                          if (invite == null || !invite.invited)
-                                                          {
-                                                              RespondError(jdata, "You are not yet invited.");
-                                                              this.SendJson("{\"msg\": \"auth\", \"status\": false}",
-                                                                  "auth");
-                                                              return;
-                                                          }
                                                           if (usr.authItems != null && usr.authItems.Contains("banned"))
                                                           {
                                                               log.Debug(string.Format("User is banned {0}",
@@ -194,6 +180,14 @@ namespace D2MPMaster.Browser
                                                                   "You are banned from the lobby server.");
                                                               this.SendJson("{\"msg\": \"auth\", \"status\": false}",
                                                                   "auth");
+                                                              return;
+                                                          }
+                                                          var hasBrowser =
+                                                              this.Find(m => m.user != null && m.user.Id == usr.Id)
+                                                                  .Any();
+                                                          if (hasBrowser)
+                                                          {
+                                                              this.AsyncSend(AlreadyConnected(), cb => Close());
                                                               return;
                                                           }
                                                           user = usr;
@@ -646,8 +640,7 @@ namespace D2MPMaster.Browser
                                                       var mod = Mods.Mods.ByName(req.mod);
                                                       if (mod == null || !mod.playable)
                                                       {
-                                                          this.AsyncSendTo(x => x.user != null && x.user.Id == user.Id,
-                                                              InstallResponse("Can't find that mod, or it's not playable.",
+                                                          this.AsyncSend(InstallResponse("Can't find that mod, or it's not playable.",
                                                                   true),
                                                               rf => { });
                                                           return;
@@ -657,14 +650,13 @@ namespace D2MPMaster.Browser
                                                               .Mods.Any(
                                                                   m => m.name == mod.name && m.version == mod.version))
                                                       {
-                                                          this.AsyncSendTo(x => x.user != null && x.user.Id == user.Id,
-                                                              InstallResponse("The mod has already been installed.",
+                                                          this.AsyncSend(InstallResponse("The mod has already been installed.",
                                                                   true),
                                                               rf => { });
                                                           return;
                                                       }
 
-                                                      ClientsController.AsyncSendTo(m => m.UID == user.Id,
+                                                      ClientsController.AsyncSendTo(m => m.UID!=null&&m.UID == user.Id,
                                                           ClientController.InstallMod(mod),
                                                           rf => { });
                                                       break;
@@ -764,6 +756,14 @@ namespace D2MPMaster.Browser
             upd["ops"] = new JArray { DiffGenerator.RemoveAll("lobbies") };
             var msg = upd.ToString(Formatting.None);
             return new TextArgs(msg, "lobby");
+        }
+        
+        public static ITextArgs AlreadyConnected()
+        {
+            var upd = new JObject();
+            upd["msg"] = "alreadyconn";
+            var msg = upd.ToString(Formatting.None);
+            return new TextArgs(msg, "duplicate");
         }
 
         public static ITextArgs ManagerStatus(bool isConnected)
