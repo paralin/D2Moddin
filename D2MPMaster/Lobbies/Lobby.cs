@@ -47,17 +47,16 @@ namespace D2MPMaster.Lobbies
         public bool isPublic { get; set; }
         [ExcludeField(Collections = new[] { "publicLobbies" })]
         public bool requiresFullLobby { get; set; }
-        [ExcludeField(Collections = new[] { "publicLobbies" })]
+        [ExcludeField(Collections = new[] { "publicLobbies", "lobbies" })]
         public bool devMode { get; set; }
-        [ExcludeField(Collections = new[] { "publicLobbies" })]
+        [ExcludeField(Collections = new[] { "publicLobbies", "lobbies" })]
         public bool enableGG { get; set; }
         [ExcludeField(Collections = new[] { "publicLobbies" })]
         public GameState state { get; set; }
         public ServerRegion region { get; set; }
         public LobbyStatus status { get; set; }
-        [ExcludeField(Collections = new[] { "publicLobbies" })]
+        [ExcludeField(Collections = new[] { "publicLobbies", "lobbies" })]
         public DateTime IdleSince { get; set; }
-        [ExcludeField(Collections = new[] { "publicLobbies" })]
         public LobbyType LobbyType {get;set;}
 
         public int TeamCount(Player[] team)

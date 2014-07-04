@@ -28,7 +28,16 @@ namespace D2MPMaster.LiveData
                 {
                     var prop = source.GetType().GetProperty(field);
                     if (prop == null) continue;
-                    obj.Add(field, JToken.FromObject(Convert.ChangeType(prop.GetValue(source, null), prop.PropertyType)));
+                    var attr = (ExcludeFieldAttribute[])prop.GetCustomAttributes(typeof(ExcludeFieldAttribute), false);
+                    if (attr.Length > 0)
+                    {
+                        var attrib = attr[0];
+                        if (attrib.Collections.Contains(collection)) continue;
+                    }
+                    var ival = prop.GetValue(source, null);
+                    if (ival == null) continue;
+                    var val = Convert.ChangeType(ival, prop.PropertyType);
+                    obj[prop.Name] = JToken.FromObject(val);
                 }
                 catch (Exception ex)
                 {

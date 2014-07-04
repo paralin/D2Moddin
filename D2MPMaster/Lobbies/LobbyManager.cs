@@ -589,6 +589,7 @@ namespace D2MPMaster.Lobbies
                 state = GameState.Init,
                 LobbyType = LobbyType.PlayerTest,
                 requiresFullLobby = false,
+                status = LobbyStatus.Start,
                 serverIP = string.Empty
             };
             lob.radiant[0] = Player.FromUser(user);
