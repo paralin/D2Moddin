@@ -1,11 +1,23 @@
 ﻿using System;
 using System.Dynamic;
 using System.Linq;
+using System.Linq.Expressions;
 using D2MPMaster.LiveData;
 using d2mpserver;
 
 namespace D2MPMaster.Lobbies
 {
+    [AttributeUsage(AttributeTargets.Property|AttributeTargets.Field)]
+    public class ExcludeFieldAttribute : System.Attribute
+    {
+        public string[] Collections
+        {
+            get { return colls; }
+            set { colls = value; }
+        }
+
+        private string[] colls = null;
+    }
     /// <summary>
     /// A lobby instance.
     /// </summary>
@@ -13,8 +25,11 @@ namespace D2MPMaster.Lobbies
     {
         public string id { get; set; }
         public string name { get; set; }
+        [ExcludeField(Collections = new []{"publicLobbies"})]
         public bool hasPassword { get; set; }
+        [ExcludeField(Collections = new[] { "publicLobbies" })]
         public string password { get; set; }
+        [ExcludeField(Collections = new[] { "publicLobbies" })]
         public string[] banned { get; set; }
         public string creator { get; set; }
         /// <summary>
@@ -27,15 +42,22 @@ namespace D2MPMaster.Lobbies
         /// Mod ID not name (before would be "reflex" or "fof")
         /// </summary>
         public string mod { get; set; }
+        [ExcludeField(Collections = new[] { "publicLobbies" })]
         public string serverIP { get; set; }
         public bool isPublic { get; set; }
+        [ExcludeField(Collections = new[] { "publicLobbies" })]
         public bool requiresFullLobby { get; set; }
+        [ExcludeField(Collections = new[] { "publicLobbies" })]
         public bool devMode { get; set; }
+        [ExcludeField(Collections = new[] { "publicLobbies" })]
         public bool enableGG { get; set; }
+        [ExcludeField(Collections = new[] { "publicLobbies" })]
         public GameState state { get; set; }
         public ServerRegion region { get; set; }
         public LobbyStatus status { get; set; }
+        [ExcludeField(Collections = new[] { "publicLobbies" })]
         public DateTime IdleSince { get; set; }
+        [ExcludeField(Collections = new[] { "publicLobbies" })]
         public LobbyType LobbyType {get;set;}
 
         public int TeamCount(Player[] team)
