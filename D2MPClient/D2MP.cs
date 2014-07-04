@@ -41,7 +41,7 @@ namespace d2mp
     public class D2MP
     {
 #if DEBUG
-        private static string server = "ws://localhost:4502/ClientController";
+        private static string server = "ws://127.0.0.1:4502/ClientController";
 #else
         private static string server = "ws://net1.d2modd.in:4502/ClientController";
 #endif

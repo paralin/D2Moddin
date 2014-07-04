@@ -817,8 +817,9 @@ namespace D2MPMaster.Lobbies
             if (!LobbyID.TryGetValue(matchid, out lob)) return;
             if (lob.status != LobbyStatus.Play) return;
             List<string> failed = new List<string>(10);
-            foreach(var player in failedPlayers){
-                failed.Add(player.Value<long>()+"");
+            foreach(var player in failedPlayers)
+            {
+                failed.Add(player.Value<int>().ToSteamID64());
             }
             foreach(var player in lob.radiant){
                 if(player == null) continue;
