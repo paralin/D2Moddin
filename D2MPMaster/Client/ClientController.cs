@@ -155,6 +155,20 @@ namespace D2MPMaster.Client
                             RegisterClient();
                             break;
                         }
+                    case RequestMod.Msg:
+                        {
+                            var msg = jdata.ToObject<RequestMod>();
+                            var mod = D2MPMaster.Mods.Mods.ByName(msg.Mod.name);
+                            if (mod != null && mod.playable)
+                            {
+                                if (!Mods.Any(m => m.name == mod.name && m.version == mod.version))
+                                {
+                                    this.AsyncSend(InstallMod(mod), rf => { });
+                                }
+                            }
+
+                            break;
+                        }
                 }
 
             }
