@@ -100,7 +100,7 @@
     <Compile Include="Lobbies\LobbyManager.cs" />
     <Compile Include="Lobbies\Player.cs" />
     <Compile Include="Model\MatchData.cs" />
-    <Compile Include="Model\ServerKey.cs" />
+    <Compile Include="Model\Server.cs" />
     <Compile Include="WebHandler\MatchDataServer.cs" />
     <Compile Include="Model\ClientRecord.cs" />
     <Compile Include="Model\Mod.cs" />

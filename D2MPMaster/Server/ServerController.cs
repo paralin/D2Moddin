@@ -106,7 +106,7 @@ namespace D2MPMaster.Server
                                     if (Inited) return;
                                     var msg = jdata.ToObject<Init>();
                                     log.Info(String.Format("Server trying to connect: hwGuid: {0} ip: {1}", msg.hwGuid, msg.publicIP));
-                                    var serverPubKey = Mongo.ServerKeys.FindOneAs<ServerKey>(Query.EQ("_id", msg.hwGuid));
+                                    var serverPubKey = Mongo.Servers.FindOneAs<Model.Server>(Query.EQ("_id", msg.hwGuid));
                                     if (serverPubKey == null)
                                     {
                                         // Public key not in database
