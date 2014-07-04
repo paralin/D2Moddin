@@ -20,7 +20,7 @@ namespace D2MPMaster.MatchData
         {
             Post["/gdataapi/matchres"] = paramaters => HandleMatchRes(this.Request);
             Get["/clientver"] =
-                paramaters => string.Format("version:{0}|https://s3-us-west-2.amazonaws.com/d2mpclient/{0}.zip",
+                paramaters => string.Format("version:{0}|https://static.d2modd.in/d2mpclient/{0}.zip",
                     ClientCommon.Version.ClientVersion);
         }
 
