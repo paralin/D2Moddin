@@ -354,12 +354,19 @@ namespace d2mp
                 {
                     foreach (Match match in idMatches)
                     {
-                        string steamid = match.Value.Substring(1).Substring(0, match.Value.Length - 2);
-                        int index = idMatches.Cast<Match>().TakeWhile(x=> x != match).Count();
-                        string timestamp = timestampMatches[index].Value;
-                        int iTimestamp = Convert.ToInt32(timestamp.Substring(1).Substring(0, timestamp.Length - 2));
-                        log.Debug(String.Format("Steam ID detected: {0} with timestamp: {1}", steamid, iTimestamp));
-                        usersDict.Add(iTimestamp, steamid);
+                        try
+                        {
+                            string steamid = match.Value.Trim(' ', '"');
+                            int index = idMatches.Cast<Match>().TakeWhile(x => x != match).Count();
+                            string timestamp = timestampMatches[index].Value;
+                            int iTimestamp = Convert.ToInt32(timestamp.Substring(1).Substring(0, timestamp.Length - 2));
+                            log.Debug(String.Format("Steam ID detected: {0} with timestamp: {1}", steamid, iTimestamp));
+                            usersDict.Add(iTimestamp, steamid);
+                        }
+                        catch (Exception ex)
+                        {
+                            log.Error("Error finding user", ex);
+                        }
                     }
                     string mainId = usersDict.OrderByDescending(x => x.Key).FirstOrDefault().Value;
                     log.Debug("Selecting Steam ID to be sent: " + mainId);
