@@ -454,9 +454,9 @@ namespace D2MPMaster.Lobbies
             if (lob.status > LobbyStatus.Queue) return; //will be auto handled later
             //Find the player
             var team = RemoveFromTeam(lob, controller.user.steam.steamid);
-            lob.status = LobbyStatus.Start;
+            CancelQueue(lob);
             if (team != null)
-                TransmitLobbyUpdate(lob, new[] { team, "status" });
+                TransmitLobbyUpdate(lob, new[] { team });
             if ((lob.TeamCount(lob.dire) == 0 && lob.TeamCount(lob.radiant) == 0) || lob.creatorid == controller.user.Id)
             {
                 CloseLobby(lob);
@@ -842,18 +842,24 @@ namespace D2MPMaster.Lobbies
                 if(player == null) continue;
                 player.failedConnect = failed.Contains(player.steam);
             }
-            if(lob.LobbyType == LobbyType.Normal){
-                log.Debug(matchid+" failed to load, returning to waiting stage.");
-                foreach(var steam in failed)
+            if(lob.LobbyType == LobbyType.Normal)
+            {
+                log.Debug(matchid + " failed to load, returning to waiting stage.");
+                foreach (var steam in failed)
                 {
                     var browser = Browsers.Find(m => m.user != null && m.user.steam.steamid == steam).FirstOrDefault();
                     if (browser != null)
                     {
                         browser.SetTested(false);
-                        log.Debug(matchid+" -> marked "+steam+" as FAIL");
+                        log.Debug(matchid + " -> marked " + steam + " as FAIL");
                     }
                 }
-                ReturnToWait(lob);
+                if (failed.Contains(Mongo.Users.FindOneAs<User>(Query.EQ("_id", lob.creatorid)).steam.steamid))
+                {
+                    CloseLobby(lob);
+                }
+                else
+                    ReturnToWait(lob);
             }
             else if (lob.LobbyType == LobbyType.PlayerTest)
             {
