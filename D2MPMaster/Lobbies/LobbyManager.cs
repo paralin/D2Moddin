@@ -676,8 +676,8 @@ namespace D2MPMaster.Lobbies
         public static void OnServerShutdown(GameInstance instance)
         {
             log.Info("Server shutdown: " + instance.lobby.id);
-            if (!PlayingLobbies.Contains(instance.lobby) || instance.lobby.status == LobbyStatus.Start) return;
-            if (instance.lobby.LobbyType == LobbyType.Matchmaking)
+            if (!LobbyID.Values.Contains(instance.lobby) || instance.lobby.status == LobbyStatus.Start) return;
+            if (instance.lobby.LobbyType == LobbyType.PlayerTest)
             {
                 log.Error("No match result info for test lobby, setting all to success.");
                 foreach (var browser in instance.lobby.radiant.Where(player => player != null).Select(player => Browsers.Find(m => m.user != null && m.user.steam.steamid == player.steam).FirstOrDefault()).Where(browser => browser != null))
