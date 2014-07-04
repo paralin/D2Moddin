@@ -55,7 +55,7 @@ namespace d2mp
         private static volatile ProcessIcon icon;
         private static volatile notificationForm notifier;
         private static volatile settingsForm settingsForm = new settingsForm();
-        private static volatile bool isInstalling;
+        public static volatile bool isInstalling;
         private static bool hasConnected = false;
         private static XSocketClient client;
         private static List<string> steamids;
@@ -230,6 +230,17 @@ namespace d2mp
             }
 
             return false;
+        }
+
+        public static void SendRequestMod(string mod)
+        {
+            log.DebugFormat("Sending mod request: {0}", mod);
+            var req = new RequestMod()
+            {
+                Mod = new ClientMod() { name = mod }
+            };
+            var json = JObject.FromObject(req).ToString(Formatting.None);
+            Send(json);
         }
 
         static void Send(string json)
@@ -534,7 +545,7 @@ namespace d2mp
         /// <summary>
         /// Used to check if we already tried to redownload the mod.
         /// </summary>
-        private static bool dlRetry;
+        public static bool dlRetry;
         public static void InstallMod(object state)
         {
             var op = state as InstallMod;
@@ -603,9 +614,9 @@ namespace d2mp
                         }
                         else if(!dlRetry)
                         {
+                            dlRetry = true;
                             isInstalling = false;
                             log.Error("Retrying to download mod...");
-                            dlRetry = true;
                             InstallMod(op);
                         }
                         isInstalling = false;

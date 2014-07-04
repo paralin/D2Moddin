@@ -44,7 +44,6 @@ namespace d2mp
                 throw;
             }
             List<RemoteMod> needsUpdate = modController.checkUpdates();
-            List<RemoteMod> needsInstall = modController.checkAvailable();
             var activeMod = D2MP.GetActiveMod();
             foreach (var mod in remoteMods)
             {
@@ -98,18 +97,14 @@ namespace d2mp
             {
                 var parameterMod = new ClientCommon.Data.ClientMod { name=mod.name };
                 D2MP.DeleteMod(new ClientCommon.Methods.DeleteMod { Mod = parameterMod });
-                installModBrowser(mod.name);
-                //D2MP.InstallMod(new ClientCommon.Methods.InstallMod { Mod = parameterMod, url = mod.url });
-                
+
+                if (!modController.installQueue.Contains(mod))
+                    modController.installQueue.Enqueue(mod);
             }
             btnUpdateAll.Text = "Update All";
             btnUpdateAll.Enabled = false;
+            modController.InstallQueued();
             refreshTable();
-        }
-
-        private void installModBrowser(string name)
-        {
-            Process.Start(string.Format("http://d2modd.in/install/{0}", name));
         }
 
         private void btnRefresh_Click(object sender, EventArgs e)
@@ -122,8 +117,10 @@ namespace d2mp
             var remoteMods = modController.getRemoteMods();
             foreach (var mod in remoteMods.Where(rMod=>rMod.needsInstall))
             {
-                installModBrowser(mod.name);
+                if (!modController.installQueue.Contains(mod))
+                    modController.installQueue.Enqueue(mod);
             }
+            modController.InstallQueued();
         }
 
         private void modsGridView_CellMouseDown(object sender, DataGridViewCellMouseEventArgs e)
@@ -147,7 +144,12 @@ namespace d2mp
 
         private void installModToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            installModBrowser(((RemoteMod)modsGridView.SelectedRows[0].Tag).name);
+            var mod = (RemoteMod) modsGridView.SelectedRows[0].Tag;
+
+            if (!modController.installQueue.Contains(mod))
+                modController.installQueue.Enqueue(mod);
+            
+            modController.InstallQueued();
         }
 
         private void updateModToolStripMenuItem_Click(object sender, EventArgs e)
@@ -155,7 +157,10 @@ namespace d2mp
             var mod = (RemoteMod)modsGridView.SelectedRows[0].Tag;
             var parameterMod = new ClientCommon.Data.ClientMod { name = mod.name };
             D2MP.DeleteMod(new ClientCommon.Methods.DeleteMod { Mod = parameterMod });
-            installModBrowser(mod.name);
+            if (!modController.installQueue.Contains(mod))
+                modController.installQueue.Enqueue(mod);
+
+            modController.InstallQueued();
         }
 
         private void removeModToolStripMenuItem_Click(object sender, EventArgs e)
