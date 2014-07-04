@@ -87,15 +87,22 @@ namespace d2mp
             }
         }
 
+        private static void Wait(int seconds)
+        {
+            for (int i = 0; i < seconds; i++)
+            {
+                if( shutDown ) break;
+                
+                Thread.Sleep(1000);
+            }
+        }
+
         private static void SetupClient()
         {
             client = new XSocketClient(server, "*");
             client.OnOpen += (sender, args) =>
             {
                 notifier.Notify(1, hasConnected ? "Reconnected" : "Connected", hasConnected ? "Connection to the server has been reestablished" : "Client has been connected to the server.");
-                //icon.DisplayBubble(hasConnected
-                //    ? "Reconnected!"
-                //    : "Connected and ready to begin installing mods.");
                 hasConnected = true;
 
                 log.Debug("Sending init, version: " + ClientCommon.Version.ClientVersion);
@@ -156,6 +163,8 @@ namespace d2mp
                 }
             });
 
+            client.OnError += (sender, args) => log.Error(string.Format("Controller [{0}] sent us error [{1}] on event [{2}].", args.controller, args.data, args.@event));
+
             client.OnClose += (sender, args) =>
             {
                 log.Info("Disconnected from the server.");
@@ -176,25 +185,28 @@ namespace d2mp
 
         private static void HandleClose()
         {
+            if (shutDown) return;
+
             if (hasConnected)
             {
                 notifier.Notify(3, "Lost connection", "Attempting to reconnect...");
-                //icon.DisplayBubble("Disconnected, attempting to reconnect...");
                 hasConnected = false;
             }
             SetupClient();
-            Thread.Sleep(10000);
+            Wait(10);
             try
             {
                 client.Open();
             }
-            catch (Exception)
+            catch
             {
                 HandleClose();
             }
         }
 
-        //Pipe a zip download directly through the decompressor
+        /// <summary>
+        /// Pipe a zip download directly through the decompressor
+        /// </summary>
         private static bool UnzipWithTemp(Stream zipStream, string outFolder)
         {
             try
@@ -344,12 +356,19 @@ namespace d2mp
                 {
                     foreach (Match match in idMatches)
                     {
-                        string steamid = match.Value.Substring(1).Substring(0, match.Value.Length - 2);
-                        int index = idMatches.Cast<Match>().TakeWhile(x=> x != match).Count();
-                        string timestamp = timestampMatches[index].Value;
-                        int iTimestamp = Convert.ToInt32(timestamp.Substring(1).Substring(0, timestamp.Length - 2));
-                        log.Debug(String.Format("Steam ID detected: {0} with timestamp: {1}", steamid, iTimestamp));
-                        usersDict.Add(iTimestamp, steamid);
+                        try
+                        {
+                            string steamid = match.Value.Trim(' ', '"');
+                            int index = idMatches.Cast<Match>().TakeWhile(x => x != match).Count();
+                            string timestamp = timestampMatches[index].Value;
+                            int iTimestamp = Convert.ToInt32(timestamp.Substring(1).Substring(0, timestamp.Length - 2));
+                            log.Debug(String.Format("Steam ID detected: {0} with timestamp: {1}", steamid, iTimestamp));
+                            usersDict.Add(iTimestamp, steamid);
+                        }
+                        catch (Exception ex)
+                        {
+                            log.Error("Error finding user", ex);
+                        }
                     }
                     string mainId = usersDict.OrderByDescending(x => x.Key).FirstOrDefault().Value;
                     log.Debug("Selecting Steam ID to be sent: " + mainId);
@@ -384,14 +403,15 @@ namespace d2mp
                 catch (Exception)
                 {
                     notifier.Notify(4, "Server error", "Can't connect to the lobby server!");
-                    Thread.Sleep(5000);
+                    Wait(5);
                     HandleClose();
                 }
                 while (!shutDown)
                 {
                     Thread.Sleep(100);
                 }
-                client.Close();
+
+                if (client != null) client.Close();
             }
             catch (Exception ex)
             {
@@ -543,12 +563,10 @@ namespace d2mp
             if (isInstalling)
             {
                 notifier.Notify(3, "Already downloading a mod", "Please try again after a few seconds.");
-                //icon.DisplayBubble("Already downloading a mod!");
                 return;
             }
             isInstalling = true;
             notifier.Notify(5, "Downloading mod", "Downloading " + op.Mod.name + "...");
-            //icon.DisplayBubble("Attempting to download "+op.Mod.name+"...");
 
             log.Info("Server requested that we install mod " + op.Mod.name + " from download " + op.url);
 
@@ -580,8 +598,9 @@ namespace d2mp
                         {
                             buffer = e.Result;
                         }
-                        catch
+                        catch(Exception ex)
                         {
+                            log.Error("Error downloading mod", ex);
                             notifier.Notify(4, "Error downloading mod", "The connection forcibly closed by the remote host. Please try again.");
                         }
                         notifier.Notify(2, "Extracting mod", "Download completed, extracting files...");
@@ -593,7 +612,6 @@ namespace d2mp
                             log.Info("Mod installed!");
                             notifier.Notify(1, "Mod installed",
                                 "The following mod has been installed successfully: " + op.Mod.name);
-                            //icon.DisplayBubble("Mod downloaded successfully: " + op.Mod.name + ".");
                             var msg = new OnInstalledMod()
                             {
                                 Mod = op.Mod
@@ -628,7 +646,6 @@ namespace d2mp
                 else
                 {
                     notifier.Notify(4, "Error downloading mod", "Failed to download mod " + op.Mod.name + ".");
-
                 }
                 return;
             }
@@ -669,9 +686,8 @@ namespace d2mp
             modManager modFrm = (modManager)Application.OpenForms["modManager"];
             if (modFrm != null)
             {
-                modFrm.InvokeIfRequired(() => { modFrm.refreshTable(); });
+                modFrm.InvokeIfRequired(modFrm.refreshTable);
             }
-
         }
 
         public static void showPreferences()
@@ -718,12 +734,19 @@ namespace d2mp
 
                 //Get from registry?
                 RegistryKey regKey = Registry.CurrentUser;
-                regKey = regKey.OpenSubKey(@"Software\Valve\Steam");
-
-                if (regKey != null)
+                try
                 {
-                    cachedLocation = regKey.GetValue("SteamPath").ToString();
-                    return cachedLocation;
+                    regKey = regKey.OpenSubKey(@"Software\Valve\Steam");
+
+                    if (regKey != null)
+                    {
+                        cachedLocation = regKey.GetValue("SteamPath").ToString();
+                        return cachedLocation;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    D2MP.log.Error("Error trying to read dota path through registry", ex);
                 }
 
                 if (useProtocol)
@@ -735,13 +758,20 @@ namespace d2mp
                         Process[] processes = Process.GetProcessesByName("STEAM");
                         if (processes.Length > 0)
                         {
-                            string dir = processes[0].MainModule.FileName.Substring(0, processes[0].MainModule.FileName.Length - 9);
-                            if (Directory.Exists(dir))
+                            try
                             {
-                                cachedLocation = dir;
-                                Settings.steamDir = dir;
-                                return cachedLocation;
+                                string dir = processes[0].MainModule.FileName.Substring(0,
+                                    processes[0].MainModule.FileName.Length - 9);
+                                if (Directory.Exists(dir))
+                                {
+                                    cachedLocation = dir;
 
+                                    return cachedLocation;
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                D2MP.log.Error("Error trying to read steam path through process", ex);
                             }
                         }
                         else
@@ -763,16 +793,22 @@ namespace d2mp
             string steamDir = FindSteam(false);
             //Get from registry
             RegistryKey regKey = Registry.LocalMachine;
-            regKey =
-                regKey.OpenSubKey(@"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 570");
-            if (regKey != null)
+            try
             {
-                string dir = regKey.GetValue("InstallLocation").ToString();
-                if (checkDotaDir(dir))
+                regKey = regKey.OpenSubKey(@"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\Steam App 570");
+                if (regKey != null)
                 {
-                    cachedDotaLocation = regKey.GetValue("InstallLocation").ToString();
-                    return cachedDotaLocation;
+                    string dir = regKey.GetValue("InstallLocation").ToString();
+                    if (checkDotaDir(dir))
+                    {
+                        cachedDotaLocation = dir;
+                        return cachedDotaLocation;
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                D2MP.log.Error("Error trying to read dota path through registry", ex);
             }
 
             if (steamDir != null)
@@ -781,9 +817,10 @@ namespace d2mp
                 if (checkDotaDir(dir))
                 {
                     cachedDotaLocation = dir;
-                    return dir;
+                    return cachedDotaLocation;
                 }
             }
+
             if (useProtocol)
             {
                 Process.Start("steam://rungameid/570");
@@ -793,15 +830,22 @@ namespace d2mp
                     Process[] processes = Process.GetProcessesByName("DOTA");
                     if (processes.Length > 0)
                     {
-                        string dir = processes[0].MainModule.FileName.Substring(0, processes[0].MainModule.FileName.Length - 8);
-                        processes[0].Kill();
-                        if (checkDotaDir(dir))
+                        try
                         {
-                            cachedLocation = dir;
-                            Settings.dotaDir = dir;
-                            return cachedLocation;
-                        }
+                            string dir = processes[0].MainModule.FileName.Substring(0, processes[0].MainModule.FileName.Length - 8);
+                            processes[0].Kill();
+                            if (checkDotaDir(dir))
+                            {
+                                cachedLocation = dir;
 
+                                return cachedLocation;
+                            }
+
+                        }
+                        catch (Exception ex)
+                        {
+                            D2MP.log.Error("Error trying to read dota path through process", ex);
+                        }
                     }
                     else
                     {
