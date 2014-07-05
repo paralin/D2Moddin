@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Configuration;
 using System.IO;
 using System.Net;
@@ -159,7 +160,7 @@ namespace d2mpserver
                         int port;
                         for (port=Settings.Default.portRangeStart; port < Settings.Default.portRangeEnd; port++)
                         {
-                            if (Utils.IsPortOpen(port))
+                            if (manager.IsPortFree(port) && Utils.IsPortOpen(port))
                             {
                                 break;
                             }
