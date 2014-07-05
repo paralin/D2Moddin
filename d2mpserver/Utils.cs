@@ -15,16 +15,10 @@ namespace d2mpserver
     {
         public static bool IsPortOpen(int port)
         {
-            try
-            {
-                var client = new UdpClient(port) {ExclusiveAddressUse = true};
-                client.Close();
-                return true;
-            }
-            catch (Exception ex)
-            {
-                return false;
-            }
+            return (from p in
+                System.Net.NetworkInformation.IPGlobalProperties.GetIPGlobalProperties().GetActiveUdpListeners()
+                where p.Port == port
+                select p).Count() == 1;
         }
         public static void UnzipFromStream(Stream zipStream, string outFolder)
         {
