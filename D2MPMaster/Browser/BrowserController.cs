@@ -802,12 +802,13 @@ namespace D2MPMaster.Browser
             var ops = new JArray { DiffGenerator.RemoveAll("publicLobbies") };
             try
             {
-                lock(LobbyManager.PublicLobbies){
-                    foreach (var lobby in LobbyManager.PublicLobbies)
-                    {
-                        if(lobby != null)
-                            ops.Add(lobby.Add("publicLobbies"));
-                    }
+                Lobby[] snap;
+                lock (LobbyManager.PublicLobbies)
+                    snap = LobbyManager.PublicLobbies.ToArray();
+                foreach (var lobby in snap)
+                {
+                    if(lobby != null)
+                        ops.Add(lobby.Add("publicLobbies"));
                 }
             }
             catch(Exception ex)

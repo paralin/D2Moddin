@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using ICSharpCode.SharpZipLib.Core;
@@ -11,6 +13,21 @@ namespace d2mpserver
 {
     public static class Utils
     {
+        public static bool IsPortOpen(int port)
+        {
+            IPAddress ipAddress = Dns.GetHostEntry("localhost").AddressList[0];
+            try
+            {
+                var tcpListener = new TcpListener(ipAddress, port) {ExclusiveAddressUse = true};
+                tcpListener.Start();
+                tcpListener.Stop();
+                return true;
+            }
+            catch (SocketException ex)
+            {
+                return false;
+            }
+        }
         public static void UnzipFromStream(Stream zipStream, string outFolder)
         {
 
