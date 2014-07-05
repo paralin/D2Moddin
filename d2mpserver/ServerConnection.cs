@@ -152,13 +152,19 @@ namespace d2mpserver
                 case "launchServer":
                     {
                         int id = int.Parse(command[1]);
-                        int port = int.Parse(command[2]);
-                        bool dev = bool.Parse(command[3]);
-                        string mod = command[4];
-                        string rconPass = command[5];
-                        string[] commands = command[6].Split('&');
+                        bool dev = bool.Parse(command[2]);
+                        string mod = command[3];
+                        string rconPass = command[4];
+                        string[] commands = command[5].Split('&');
+                        int port = 0;
+                        for (int i = Settings.Default.portRangeStart; i < Settings.Default.portRangeEnd; i++)
+                        {
+                            if (!Utils.IsPortOpen(i)) continue;
+                            port = i;
+                            break;
+                        }
                         var serv = manager.LaunchServer(id, port, dev, mod, rconPass, commands);
-                        serv.OnReady += (sender, args) => Send(JObject.FromObject(new OnServerLaunched() { id = id }).ToString(Formatting.None));
+                        serv.OnReady += (sender, args) => Send(JObject.FromObject(new OnServerLaunched() { id = id, port=port }).ToString(Formatting.None));
                         serv.OnShutdown += (sender, args) => Send(JObject.FromObject(new OnServerShutdown() {id = id}).ToString(Formatting.None));
                         break;
                     }

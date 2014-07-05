@@ -24,7 +24,6 @@ namespace D2MPMaster.Server
         public ObservableCollection<ServerAddon> Addons = new ObservableCollection<ServerAddon>();
         public Init InitData;
         public string Address;
-        public int portCounter;
         public int IDCounter;
         public ConcurrentDictionary<int, GameInstance> Instances = new ConcurrentDictionary<int, GameInstance>();
         public bool Inited { get; set; }
@@ -87,7 +86,6 @@ namespace D2MPMaster.Server
                             var del = (from addon in msg.addons let exist = ServerAddons.Addons.FirstOrDefault(m => m.name == addon.name) where exist == null select addon.name).ToList();
                             if ((add.Count + del.Count) == 0)
                             {
-                                portCounter = msg.portRangeStart;
                                 InitData = msg;
                                 Address = InitData.publicIP;
                                 Inited = true;
@@ -104,6 +102,7 @@ namespace D2MPMaster.Server
                             if (Instances.ContainsKey(msg.id))
                             {
                                 var instance = Instances[msg.id];
+                                instance.port = msg.port;
                                 LobbyManager.OnServerReady(instance);
                             }
                             break;
@@ -130,16 +129,13 @@ namespace D2MPMaster.Server
         public GameInstance StartInstance(Lobby lobby)
         {
             IDCounter++;
-            portCounter++;
-            if (portCounter > InitData.portRangeEnd) portCounter = InitData.portRangeStart;
             var instance = new GameInstance()
                            {
                                ID = IDCounter,
                                lobby = lobby,
                                RconPass = lobby.id + "R",
                                Server = this,
-                               state = GameState.Init,
-                               port = portCounter
+                               state = GameState.Init
                            };
             var command = "launchServer|" + instance.ID + "|" + instance.port + "|" +
                           (lobby.devMode ? bool.TrueString : bool.FalseString) + "|" + Mods.Mods.ByID(lobby.mod).name +
