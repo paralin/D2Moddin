@@ -145,65 +145,78 @@ namespace D2MPMaster.Browser
                                               switch (command)
                                               {
                                                       #region Authentication
-
                                                   case "deauth":
                                                       user = null;
                                                       this.SendJson("{\"status\": false}", "auth");
                                                       break;
                                                   case "auth":
-                                                      //Parse the UID
-                                                      var uid = jdata["uid"].Value<string>();
-                                                      if (user != null && uid == user.Id)
+                                                      try
                                                       {
-                                                          this.SendJson("{\"msg\": \"auth\", \"status\": true}", "auth");
-                                                          return;
-                                                      }
-                                                      //Parse the resume key
-                                                      var key = jdata["key"].Value<string>();
-                                                      //Find it in the database
-                                                      var usr = Mongo.Users.FindOneAs<User>(Query.EQ("_id", uid));
-                                                      if (usr != null)
-                                                      {
-                                                          var session =
-                                                              Mongo.Sessions.FindOneAs<Session>(Query.EQ("_id", key));
-                                                          if (session == null || session.expires < DateTime.UtcNow)
+                                                          //Parse the UID
+                                                          var uid = jdata["uid"].Value<string>();
+                                                          if (user != null && uid == user.Id)
                                                           {
-                                                              user = null;
-                                                              this.SendJson("{\"status\": false}", "auth");
-                                                              break;
-                                                          }
-                                                          if (usr.authItems != null && usr.authItems.Contains("banned"))
-                                                          {
-                                                              log.Debug(string.Format("User is banned {0}",
-                                                                  usr.profile.name));
-                                                              RespondError(jdata,
-                                                                  "You are banned from the lobby server.");
-                                                              this.SendJson("{\"msg\": \"auth\", \"status\": false}",
+                                                              this.SendJson("{\"msg\": \"auth\", \"status\": true}",
                                                                   "auth");
                                                               return;
                                                           }
-                                                          var hasBrowser =
-                                                              this.Find(m => m.user != null && m.user.Id == usr.Id)
-                                                                  .Any();
-                                                          if (hasBrowser)
+                                                          //Parse the resume key
+                                                          var key = jdata["key"].Value<string>();
+                                                          //Find it in the database
+                                                          var usr = Mongo.Users.FindOneAs<User>(Query.EQ("_id", uid));
+                                                          if (usr != null)
                                                           {
-                                                              this.AsyncSend(AlreadyConnected(), cb => Close());
-                                                              return;
+                                                              var session =
+                                                                  Mongo.Sessions.FindOneAs<Session>(Query.EQ("_id", key));
+                                                              if (session == null || session.expires < DateTime.UtcNow)
+                                                              {
+                                                                  user = null;
+                                                                  this.SendJson("{\"status\": false}", "auth");
+                                                                  break;
+                                                              }
+                                                              if (usr.authItems != null &&
+                                                                  usr.authItems.Contains("banned"))
+                                                              {
+                                                                  log.Debug(string.Format("User is banned {0}",
+                                                                      usr.profile.name));
+                                                                  RespondError(jdata,
+                                                                      "You are banned from the lobby server.");
+                                                                  this.SendJson(
+                                                                      "{\"msg\": \"auth\", \"status\": false}",
+                                                                      "auth");
+                                                                  return;
+                                                              }
+                                                              var hasBrowser =
+                                                                  this.Find(m => m.user != null && m.user.Id == usr.Id)
+                                                                      .Any();
+                                                              if (hasBrowser)
+                                                              {
+                                                                  this.AsyncSend(AlreadyConnected(), cb => Close());
+                                                                  return;
+                                                              }
+                                                              user = usr;
+                                                              this.SendJson("{\"msg\": \"auth\", \"status\": true}",
+                                                                  "auth");
+                                                              this.Send(PublicLobbySnapshot());
+                                                              SendManagerStatus();
                                                           }
-                                                          user = usr;
-                                                          this.SendJson("{\"msg\": \"auth\", \"status\": true}", "auth");
-                                                          this.Send(PublicLobbySnapshot());
-                                                          SendManagerStatus();
+                                                          else
+                                                          {
+                                                              user = null;
+                                                              this.SendJson("{\"msg\": \"auth\", \"status\": false}",
+                                                                  "auth");
+                                                          }
                                                       }
-                                                      else
+                                                      catch (Exception ex)
                                                       {
-                                                          user = null;
-                                                          this.SendJson("{\"msg\": \"auth\", \"status\": false}", "auth");
+                                                          RespondError(jdata,
+                                                              "Issue authenticating you, we're working on it: " +
+                                                              ex.Message);
+                                                          log.Error("CANNOT AUTHENTICATE PLAYER", ex);
                                                       }
                                                       break;
 
                                                       #endregion
-
                                                   case "createlobby":
                                                   {
                                                       if (user == null)
