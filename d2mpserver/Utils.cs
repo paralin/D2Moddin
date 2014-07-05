@@ -17,12 +17,11 @@ namespace d2mpserver
         {
             try
             {
-                using (new UdpClient(port) {ExclusiveAddressUse = true})
-                {
-                    return true;
-                }
+                var client = new UdpClient(port) {ExclusiveAddressUse = true};
+                client.Close();
+                return true;
             }
-            catch (SocketException ex)
+            catch (Exception ex)
             {
                 return false;
             }
