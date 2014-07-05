@@ -4,6 +4,7 @@
 // Licenced under the Apache License, Version 2.0
 //
 
+using D2MPMaster.Lobbies;
 using D2MPMaster.Model;
 using System;
 using System.Collections.Generic;
@@ -21,14 +22,18 @@ namespace D2MPMaster.Matchmaking
         /// <summary>
         ///  Margin increases by this number every time doMatchmake executes.
         /// </summary>
+        [ExcludeField(Collections = new []{"matchmake"})]
         private const int RatingMargin = 10;
 
         public string id { get; set; }
+         [ExcludeField(Collections = new[] { "matchmake" })]
         public List<User> Users { get; set; }
         // Mod ids
         public string[] Mods { get; set; }
+         [ExcludeField(Collections = new[] { "matchmake" })]
         public Dictionary<string, int> Ratings { get; set; }
         public int TryCount { get; set; }
+        [ExcludeField(Collections = new[] { "matchmake" })]
         public bool Ignore { get; set; }
 
         /// <summary>

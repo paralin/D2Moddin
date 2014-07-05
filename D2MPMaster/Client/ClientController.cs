@@ -146,8 +146,10 @@ namespace D2MPMaster.Client
                                     var msg = jdata.ToObject<OnInstalledMod>();
                                     log.Debug(SteamID + " -> installed " + msg.Mod.name + ".");
                                     Mods.Add(msg.Mod);
-                                    Browser.AsyncSendTo(x => x.user != null && x.user.steam.steamid == SteamID,
-                                        BrowserController.InstallResponse("The mod has been installed.", true),
+                                    Browser.AsyncSendTo(
+                                        x => x.user != null && x.user.steam.steamid == SteamID,
+                                        BrowserController.InstallResponse(
+                                            "The mod has been installed.", true),
                                         rf => { });
                                     break;
                                 }
@@ -165,27 +167,50 @@ namespace D2MPMaster.Client
                                     InitData = msg;
                                     if (msg.Version != Version.ClientVersion)
                                     {
-                                        this.SendJson(JObject.FromObject(new Shutdown()).ToString(Formatting.None),
+                                        this.SendJson(
+                                            JObject.FromObject(new Shutdown())
+                                                .ToString(Formatting.None),
                                             "commands");
                                         return;
                                     }
-                                    foreach (var mod in msg.Mods.Where(mod => mod.name != null && mod.version != null))
+                                    foreach (
+                                        var mod in
+                                            msg.Mods.Where(
+                                                mod => mod.name != null && mod.version != null))
                                         Mods.Add(mod);
                                     //Insert the client into the DB
                                     RegisterClient();
+                                    break;
+                                }
+                                case RequestMod.Msg:
+                                {
+                                    var msg = jdata.ToObject<RequestMod>();
+                                    var mod = D2MPMaster.Mods.Mods.ByName(msg.Mod.name);
+                                    if (mod != null && mod.playable)
+                                    {
+                                        if (
+                                            !Mods.Any(
+                                                m =>
+                                                    m.name == mod.name && m.version == mod.version))
+                                        {
+                                            this.AsyncSend(InstallMod(mod), rf => { });
+                                        }
+                                    }
+
                                     break;
                                 }
                             }
                         }
                         catch (Exception ex)
                         {
+                            //log.Error("Parsing client message.", ex);
                         }
                     }
                 });
             }
             catch (Exception ex)
             {
-                //log.Error("Parsing client message.", ex);
+                
             }
         }
 

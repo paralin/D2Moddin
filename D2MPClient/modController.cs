@@ -3,7 +3,9 @@
 // Created by ilian000 on 2014-06-13
 // Licenced under the Apache License, Version 2.0
 //
-            
+
+using System.Threading;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,8 +19,10 @@ namespace d2mp
     {
         private const string modUrlCheck = "http://d2modd.in/data/mods";
         private const string modCDN = "https://s3-us-west-2.amazonaws.com/d2mpclient/";
+        private static bool installing = false;
         private static List<RemoteMod> remoteMods = new List<RemoteMod>();
         public static List<ClientCommon.Data.ClientMod> clientMods = new List<ClientCommon.Data.ClientMod>();
+        public static Queue<RemoteMod> installQueue = new Queue<RemoteMod>();
 
         public static List<ClientCommon.Data.ClientMod> getLocalMods()
         {
@@ -61,7 +65,7 @@ namespace d2mp
                 remoteMods.Clear();
                 foreach (var mod in msg)
                 {
-                    remoteMods.Add(new RemoteMod { name = mod["name"].Value<string>(), fullname = mod["fullname"].Value<string>() , version = mod["version"].Value<string>(), author = mod["author"].Value<string>() });
+                    remoteMods.Add(new RemoteMod { name = mod["name"].Value<string>(), fullname = mod["fullname"].Value<string>(), version = mod["version"].Value<string>(), author = mod["author"].Value<string>() });
                 }
             }
             checkUpdates();
@@ -80,10 +84,11 @@ namespace d2mp
                 where clientMods.Any(cMod => cMod.name == rMod.name && cMod.version != rMod.version)
                 select rMod;
             List<RemoteMod> updateMods = results.ToList();
-            remoteMods.ForEach(rMod =>{
+            remoteMods.ForEach(rMod =>
+            {
                 if (updateMods.Any(uMod => rMod.name == uMod.name)) { rMod.needsUpdate = true; } else { rMod.needsUpdate = false; }
             });
-   
+
             return updateMods;
         }
 
@@ -104,16 +109,63 @@ namespace d2mp
             });
             return availableMods;
         }
+
+        /// <summary>
+        /// Start the install process of all queued mods
+        /// </summary>
+        public static void InstallQueued()
+        {
+            if (!installing)
+            {
+                installing = true;
+                ThreadPool.QueueUserWorkItem(InstallProcess);
+            }
+        }
+
+        private static void InstallProcess(object o)
+        {
+            RemoteMod currentMod = null;
+
+            while (installQueue.Count > 0 && !D2MP.shutDown)
+            {
+                Thread.Sleep(1000);
+
+                if (!D2MP.isInstalling && !D2MP.dlRetry)
+                {
+                    currentMod = installQueue.Dequeue();
+                    D2MP.SendRequestMod(currentMod.name);
+                    Thread.Sleep(1000);
+                }
+            }
+
+            installing = false;
+        }
     }
 
     class RemoteMod
     {
-        public string name { get; set;}
+        public string name { get; set; }
         public string fullname { get; set; }
-        public string version { get; set;}
+        public string version { get; set; }
         public string author { get; set; }
         public string url { get; set; }
         public bool needsUpdate { get; set; }
         public bool needsInstall { get; set; }
+
+        /// <summary>
+        /// Used by Queue.Contains to specify same object
+        /// </summary>
+        class Comparer : IEqualityComparer<RemoteMod>
+        {
+            public bool Equals(RemoteMod x, RemoteMod y)
+            {
+                return x.name == y.name;
+            }
+
+            public int GetHashCode(RemoteMod obj)
+            {
+                return obj.GetHashCode();
+            }
+        }
     }
 }

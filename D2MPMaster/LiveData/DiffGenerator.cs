@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Linq;
+using System.Security.Permissions;
+using D2MPMaster.Lobbies;
 using Newtonsoft.Json.Linq;
 
 namespace D2MPMaster.LiveData
@@ -25,7 +28,16 @@ namespace D2MPMaster.LiveData
                 {
                     var prop = source.GetType().GetProperty(field);
                     if (prop == null) continue;
-                    obj.Add(field, JToken.FromObject(Convert.ChangeType(prop.GetValue(source, null), prop.PropertyType)));
+                    var attr = (ExcludeFieldAttribute[])prop.GetCustomAttributes(typeof(ExcludeFieldAttribute), false);
+                    if (attr.Length > 0)
+                    {
+                        var attrib = attr[0];
+                        if (attrib.Collections.Contains(collection)) continue;
+                    }
+                    var ival = prop.GetValue(source, null);
+                    if (ival == null) continue;
+                    var val = Convert.ChangeType(ival, prop.PropertyType);
+                    obj[prop.Name] = JToken.FromObject(val);
                 }
                 catch (Exception ex)
                 {
@@ -37,12 +49,24 @@ namespace D2MPMaster.LiveData
 
         public static JObject Add<T>(this T source, string collection)
         {
-            var obj = JObject.FromObject(source);
+            var obj = new JObject();
+            foreach (var field in source.GetType().GetProperties())
+            {
+                var attr = (ExcludeFieldAttribute[])field.GetCustomAttributes(typeof(ExcludeFieldAttribute), false);
+                if (attr.Length > 0)
+                {
+                    var attrib = attr[0];
+                    if (attrib.Collections.Contains(collection)) continue;
+                }
+                var ival = field.GetValue(source, null);
+                if (ival == null) continue;
+                var val = Convert.ChangeType(ival, field.PropertyType);
+                obj[field.Name] = JToken.FromObject(val);
+            }
             obj["_o"] = "insert";
             obj["_c"] = collection;
-            obj["id"] = (string)source.GetType().GetProperty("id").GetValue(source, null);
+            obj["_id"] = obj["id"].Value<string>();
             obj.Remove("id");
-            var type = source.GetType();
             return obj;
         }
 

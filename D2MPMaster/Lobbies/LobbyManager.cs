@@ -190,7 +190,7 @@ namespace D2MPMaster.Lobbies
                 upd["msg"] = "colupd";
                 upd["ops"] = updates;
                 var msg = upd.ToString(Formatting.None);
-                Browsers.AsyncSendTo(m => m.user != null && m.lobby == null, new TextArgs(msg, "lobby"), ar => { });
+                Browsers.AsyncSendTo(m=>m.user!=null&&m.lobby==null,new TextArgs(msg, "publicLobbies"), ar => { });
             }
         }
 
@@ -311,10 +311,10 @@ namespace D2MPMaster.Lobbies
             {
                 if (!LobbyQueue.Contains(lobby))
                 {
+                    lobby.status = LobbyStatus.Queue;
                     lock (PublicLobbies)
-                        lobby.status = LobbyStatus.Queue;
-                    PublicLobbies.Remove(lobby);
-                    TransmitLobbyUpdate(lobby, new[] { "status" });
+                        PublicLobbies.Remove(lobby);
+                    TransmitLobbyUpdate(lobby, new[] {"status"});
                     SendLaunchDota(lobby);
                     LobbyQueue.Add(lobby);
                 }
@@ -518,8 +518,9 @@ namespace D2MPMaster.Lobbies
                 return;
             }
             lob.status = LobbyStatus.Start;
+            CancelQueue(lob);
             if (team != null)
-                TransmitLobbyUpdate(lob, new[] { team, "status" });
+                TransmitLobbyUpdate(lob, new[] { team });
             if ((lob.TeamCount(lob.dire) == 0 && lob.TeamCount(lob.radiant) == 0) || lob.creatorid == controller.user.Id)
             {
                 CloseLobby(lob);
@@ -653,6 +654,7 @@ namespace D2MPMaster.Lobbies
                 state = GameState.Init,
                 LobbyType = LobbyType.PlayerTest,
                 requiresFullLobby = false,
+                status = LobbyStatus.Start,
                 serverIP = string.Empty
             };
             lob.radiant[0] = Player.FromUser(user);
@@ -791,7 +793,19 @@ namespace D2MPMaster.Lobbies
         public static void OnServerShutdown(GameInstance instance)
         {
             log.Info("Server shutdown: " + instance.lobby.id);
-            if (!PlayingLobbies.Contains(instance.lobby) || instance.lobby.status == LobbyStatus.Start) return;
+            if (!LobbyID.Values.Contains(instance.lobby) || instance.lobby.status == LobbyStatus.Start) return;
+            if (instance.lobby.LobbyType == LobbyType.PlayerTest)
+            {
+                log.Error("No match result info for test lobby, setting all to success.");
+                foreach (var browser in instance.lobby.radiant.Where(player => player != null).Select(player => Browsers.Find(m => m.user != null && m.user.steam.steamid == player.steam).FirstOrDefault()).Where(browser => browser != null))
+                {
+                    browser.SetTested(true);
+                }
+                foreach (var browser in instance.lobby.dire.Where(player => player != null).Select(player => Browsers.Find(m => m.user != null && m.user.steam.steamid == player.steam).FirstOrDefault()).Where(browser => browser != null))
+                {
+                    browser.SetTested(true);
+                }
+            }
             CloseLobby(instance.lobby);
         }
 
@@ -941,7 +955,10 @@ namespace D2MPMaster.Lobbies
             if (!LobbyID.TryGetValue(matchid, out lob)) return;
             if (lob.status != LobbyStatus.Play) return;
             List<string> failed = new List<string>(10);
-            failed.AddRange(failedPlayers.Select(player => player.Value<long>() + ""));
+            foreach(var player in failedPlayers)
+            {
+                failed.Add(player.Value<int>().ToSteamID64());
+            }
             foreach(var player in lob.radiant){
                 if(player == null) continue;
                 player.failedConnect = failed.Contains(player.steam);
@@ -950,18 +967,24 @@ namespace D2MPMaster.Lobbies
                 if(player == null) continue;
                 player.failedConnect = failed.Contains(player.steam);
             }
-            if(lob.LobbyType == LobbyType.Normal){
-                log.Debug(matchid+" failed to load, returning to waiting stage.");
-                foreach(var steam in failed)
+            if(lob.LobbyType == LobbyType.Normal)
+            {
+                log.Debug(matchid + " failed to load, returning to waiting stage.");
+                foreach (var steam in failed)
                 {
                     var browser = Browsers.Find(m => m.user != null && m.user.steam.steamid == steam).FirstOrDefault();
                     if (browser != null)
                     {
                         browser.SetTested(false);
-                        log.Debug(matchid+" -> marked "+steam+" as FAIL");
+                        log.Debug(matchid + " -> marked " + steam + " as FAIL");
                     }
                 }
-                ReturnToWait(lob);
+                if (failed.Contains(Mongo.Users.FindOneAs<User>(Query.EQ("_id", lob.creatorid)).steam.steamid))
+                {
+                    CloseLobby(lob);
+                }
+                else
+                    ReturnToWait(lob);
             }
             else if (lob.LobbyType == LobbyType.PlayerTest)
             {

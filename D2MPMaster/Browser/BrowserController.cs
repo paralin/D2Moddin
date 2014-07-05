@@ -216,16 +216,6 @@ namespace D2MPMaster.Browser
                                                               this.SendJson("{\"status\": false}", "auth");
                                                               break;
                                                           }
-                                                          var invite =
-                                                              Mongo.InviteQueue.FindOneAs<MongoInviteQueue>(
-                                                                  Query.EQ("steam_id", usr.steam.steamid));
-                                                          if (invite == null || !invite.invited)
-                                                          {
-                                                              RespondError(jdata, "You are not yet invited.");
-                                                              this.SendJson("{\"msg\": \"auth\", \"status\": false}",
-                                                                  "auth");
-                                                              return;
-                                                          }
                                                           if (usr.authItems != null && usr.authItems.Contains("banned"))
                                                           {
                                                               log.Debug(string.Format("User is banned {0}",
