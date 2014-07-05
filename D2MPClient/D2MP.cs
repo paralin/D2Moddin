@@ -372,7 +372,7 @@ namespace d2mp
                             string steamid = match.Value.Trim(' ', '"');
                             int index = idMatches.Cast<Match>().TakeWhile(x => x != match).Count();
                             string timestamp = timestampMatches[index].Value;
-                            int iTimestamp = Convert.ToInt32(timestamp.Substring(1).Substring(0, timestamp.Length - 2));
+                            int iTimestamp = Convert.ToInt32(timestamp.Trim(' ', '"'));
                             log.Debug(String.Format("Steam ID detected: {0} with timestamp: {1}", steamid, iTimestamp));
                             usersDict.Add(iTimestamp, steamid);
                         }
