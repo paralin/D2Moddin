@@ -15,10 +15,10 @@ namespace d2mpserver
     {
         public static bool IsPortOpen(int port)
         {
-            return (from p in
+            return !(from p in
                 System.Net.NetworkInformation.IPGlobalProperties.GetIPGlobalProperties().GetActiveUdpListeners()
                 where p.Port == port
-                select p).Count() == 1;
+                select p).Any();
         }
         public static void UnzipFromStream(Stream zipStream, string outFolder)
         {
