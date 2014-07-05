@@ -18,10 +18,10 @@ namespace d2mpserver
             IPAddress ipAddress = Dns.GetHostEntry("localhost").AddressList[0];
             try
             {
-                var tcpListener = new TcpListener(ipAddress, port) {ExclusiveAddressUse = true};
-                tcpListener.Start();
-                tcpListener.Stop();
-                return true;
+                using (new UdpClient(ipAddress.ToString(), port) {ExclusiveAddressUse = true})
+                {
+                    return true;
+                }
             }
             catch (SocketException ex)
             {
