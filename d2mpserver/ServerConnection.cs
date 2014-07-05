@@ -164,6 +164,7 @@ namespace d2mpserver
                                 break;
                             }
                         }
+                        log.Debug("Picked port "+port+" id "+id+" dev "+dev+" mod "+mod+" rconPass "+rconPass);
                         var serv = manager.LaunchServer(id, port, dev, mod, rconPass, commands);
                         serv.OnReady += (sender, args) => Send(JObject.FromObject(new OnServerLaunched() { id = id, port = port }).ToString(Formatting.None));
                         serv.OnShutdown += (sender, args) => Send(JObject.FromObject(new OnServerShutdown() {id = id}).ToString(Formatting.None));

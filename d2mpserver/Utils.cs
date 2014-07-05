@@ -15,10 +15,9 @@ namespace d2mpserver
     {
         public static bool IsPortOpen(int port)
         {
-            IPAddress ipAddress = Dns.GetHostEntry("localhost").AddressList[0];
             try
             {
-                using (new UdpClient(ipAddress.ToString(), port) {ExclusiveAddressUse = true})
+                using (new UdpClient(port) {ExclusiveAddressUse = true})
                 {
                     return true;
                 }
