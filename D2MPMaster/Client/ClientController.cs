@@ -48,11 +48,7 @@ namespace D2MPMaster.Client
         private void OnClientConnect(object sender, OnClientConnectArgs e)
         {
             //stop the timer if the client ACK
-            this.ProtocolInstance.OnPing += (s, args) =>
-            {
-                log.Info("ACK received");
-                mAckTimer.Stop();
-            };//protocol instance is null until someone connects
+            this.ProtocolInstance.OnPing += (s, args) => mAckTimer.Stop();//protocol instance is null until someone connects
         }
 
         private void OnClientError(object sender, OnErrorArgs args)
