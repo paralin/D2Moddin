@@ -184,6 +184,11 @@ namespace d2mpserver
                 name = Path.GetFileName(directory), version = AddonInfo.DetectVersion(directory)
             }).ToArray();
         }
+
+        public bool IsPortFree(int port)
+        {
+            return servers.Values.All(m => m.port != port);
+        }
     }
 
     //Stores info on a server
@@ -191,7 +196,7 @@ namespace d2mpserver
     {
         private Process serverProc;
         public int id;
-        private int port;
+        public int port;
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         public bool shutdown = false;
         public event ShutdownEventHandler OnShutdown;

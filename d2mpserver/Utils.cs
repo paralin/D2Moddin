@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using ICSharpCode.SharpZipLib.Core;
@@ -11,6 +13,13 @@ namespace d2mpserver
 {
     public static class Utils
     {
+        public static bool IsPortOpen(int port)
+        {
+            return !(from p in
+                System.Net.NetworkInformation.IPGlobalProperties.GetIPGlobalProperties().GetActiveUdpListeners()
+                where p.Port == port
+                select p).Any();
+        }
         public static void UnzipFromStream(Stream zipStream, string outFolder)
         {
 

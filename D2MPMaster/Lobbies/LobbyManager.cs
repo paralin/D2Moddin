@@ -196,17 +196,26 @@ namespace D2MPMaster.Lobbies
         {
             while (!shutdown)
             {
-                Thread.Sleep(10000);
+                Thread.Sleep(20000);
                 var lobbies =
                     LobbyID.Values.Where(
                         m =>
                             m.status == LobbyStatus.Start &&
                             !m.hasPassword &&
-						m.IdleSince < DateTime.Now.Subtract(TimeSpan.FromMinutes(5)));
+						m.IdleSince < DateTime.Now.Subtract(TimeSpan.FromMinutes(3)));
                 foreach (var lobby in lobbies)
                 {
                     CloseLobby(lobby); 
                     log.DebugFormat("Cleared lobby {0} for inactivity.", lobby.id);
+                }
+                //All playing lobbies with no server with an instance that has the lobby
+                lobbies =
+                    LobbyID.Values.Where(
+                        m => m.status==LobbyStatus.Play&&!ServerService.Servers.Find(z => z.Instances.Any(f => f.Value.lobby.id == m.id)).Any());
+                foreach (var lobby in lobbies)
+                {
+                    CloseLobby(lobby);
+                    log.DebugFormat("Cleared orphan lobby {0}.", lobby.id);
                 }
             }
         }
@@ -385,15 +394,14 @@ namespace D2MPMaster.Lobbies
 
         public static void CloseLobby(Lobby lob)
         {
-            lock(PublicLobbies){
-                foreach (var browser in Browsers.Find(m => m.user != null && m.lobby != null && m.lobby.id == lob.id))
-                {
-                    browser.lobby = null;
-                }
-                PublicLobbies.Remove(lob);
-                lock(PlayingLobbies)
-                    PlayingLobbies.Remove(lob);
+            foreach (var browser in Browsers.Find(m => m.user != null && m.lobby != null && m.lobby.id == lob.id))
+            {
+                browser.lobby = null;
             }
+            lock (PublicLobbies)
+                PublicLobbies.Remove(lob);
+            lock(PlayingLobbies)
+                PlayingLobbies.Remove(lob);
             lock (LobbyQueue)
                 LobbyQueue.Remove(lob);
         }
@@ -684,8 +692,12 @@ namespace D2MPMaster.Lobbies
                 {
                     browser.SetTested(true);
                 }
-            }
-            CloseLobby(instance.lobby);
+            }else if (instance.lobby.LobbyType == LobbyType.Normal)
+            {
+                log.Error("No match result info for regular lobby, returning to wait.");
+                ReturnToWait(instance.lobby);
+            }else
+                CloseLobby(instance.lobby);
         }
 
         public static void OnServerReady(GameInstance instance)
@@ -695,16 +707,15 @@ namespace D2MPMaster.Lobbies
             lobby.serverIP = instance.Server.Address.Split(':')[0]+":"+instance.port;
             lobby.status = LobbyStatus.Play;
             TransmitLobbyUpdate(lobby, new []{"status"});
-            //Guilty unless proven innocent
             foreach (var player in lobby.radiant)
             {
                 if (player == null) continue;
-                player.failedConnect = true;
+                player.failedConnect = false;
             }
             foreach (var player in lobby.dire)
             {
                 if (player == null) continue;
-                player.failedConnect = true;
+                player.failedConnect = false;
             }
             SendLaunchDota(lobby);
             SendConnectDota(lobby);
@@ -823,11 +834,8 @@ namespace D2MPMaster.Lobbies
             Lobby lob;
             if (!LobbyID.TryGetValue(matchid, out lob)) return;
             if (lob.status != LobbyStatus.Play) return;
-            List<string> failed = new List<string>(10);
-            foreach(var player in failedPlayers)
-            {
-                failed.Add(player.Value<int>().ToSteamID64());
-            }
+            var failed = new List<string>(10);
+            failed.AddRange(failedPlayers.Select(player => player.Value<int>().ToSteamID64()));
             foreach(var player in lob.radiant){
                 if(player == null) continue;
                 player.failedConnect = failed.Contains(player.steam);
@@ -848,12 +856,7 @@ namespace D2MPMaster.Lobbies
                         log.Debug(matchid + " -> marked " + steam + " as FAIL");
                     }
                 }
-                if (failed.Contains(Mongo.Users.FindOneAs<User>(Query.EQ("_id", lob.creatorid)).steam.steamid))
-                {
-                    CloseLobby(lob);
-                }
-                else
-                    ReturnToWait(lob);
+                ReturnToWait(lob);
             }
             else if (lob.LobbyType == LobbyType.PlayerTest)
             {
