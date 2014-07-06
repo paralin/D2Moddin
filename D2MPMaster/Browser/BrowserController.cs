@@ -191,7 +191,7 @@ namespace D2MPMaster.Browser
                                                               }
                                                               user = usr;
                                                               var otherBrowsers =
-                                                                  this.Find(m => m.user != null && m.user.Id == usr.Id);
+                                                                  this.Find(m => m!=this&&m.user != null && m.user.Id == usr.Id);
                                                               var browser = otherBrowsers.FirstOrDefault();
                                                               if (browser != null)
                                                               {
