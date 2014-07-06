@@ -58,7 +58,7 @@ namespace d2mp
         public static volatile bool isInstalling;
         private static bool hasConnected = false;
         private static XSocketClient client;
-        private static List<string> steamids;
+        private static List<string> steamids = new List<string>();
 
         private static void SteamCommand(string command)
         {
@@ -346,6 +346,7 @@ namespace d2mp
                 addonsDir = Path.Combine(Settings.dotaDir, @"dota\addons\");
                 d2mpDir = Path.Combine(Settings.dotaDir, @"dota\d2moddin\");
                 modDir = Path.Combine(addonsDir, "d2moddin");
+
                 if (!Directory.Exists(addonsDir))
                     Directory.CreateDirectory(addonsDir);
                 if (!Directory.Exists(d2mpDir))
@@ -353,34 +354,11 @@ namespace d2mp
                 if (!Directory.Exists(modDir))
                     Directory.CreateDirectory(modDir);
 
-                {
-                    modController.getLocalMods();
-                }
+                modController.getLocalMods();
 
-                // Detect steam account id which was logged in most recently
-                string config = File.ReadAllText(Path.Combine(Settings.steamDir, @"config\loginusers.vdf"));
-                MatchCollection idMatches = Regex.Matches(config, "\"\\d{17}\"");
-                MatchCollection timestampMatches = Regex.Matches(config, "(?m)(?<=\"Timestamp\".{2}).*$");
-                Dictionary<int, string> usersDict = new Dictionary<int, string>();
-                steamids = new List<string>();
-                if (idMatches.Count > 0)
+                Dictionary<int, string> usersDict = steam.FindUsers();
+                if (usersDict.Count > 0)
                 {
-                    foreach (Match match in idMatches)
-                    {
-                        try
-                        {
-                            string steamid = match.Value.Trim(' ', '"');
-                            int index = idMatches.Cast<Match>().TakeWhile(x => x != match).Count();
-                            string timestamp = timestampMatches[index].Value;
-                            int iTimestamp = Convert.ToInt32(timestamp.Trim(' ', '"'));
-                            log.Debug(String.Format("Steam ID detected: {0} with timestamp: {1}", steamid, iTimestamp));
-                            usersDict.Add(iTimestamp, steamid);
-                        }
-                        catch (Exception ex)
-                        {
-                            log.Error("Error finding user", ex);
-                        }
-                    }
                     string mainId = usersDict.OrderByDescending(x => x.Key).FirstOrDefault().Value;
                     log.Debug("Selecting Steam ID to be sent: " + mainId);
                     steamids.Add(mainId);
@@ -867,6 +845,41 @@ namespace d2mp
             }
             return null;
         }
+
+        public Dictionary<int, string> FindUsers()
+        {
+            Dictionary<int, string> usersDict = new Dictionary<int, string>();
+            string steamDir = FindSteam(false);
+
+            // Detect steam account id which was logged in most recently
+            string config = File.ReadAllText(Path.Combine(steamDir, @"config\loginusers.vdf"));
+
+            MatchCollection idMatches = Regex.Matches(config, "\"\\d{17}\"");
+            MatchCollection timestampMatches = Regex.Matches(config, "(?m)(?<=\"Timestamp\".{2}).*$");
+            
+            if (idMatches.Count > 0)
+            {
+                foreach (Match match in idMatches)
+                {
+                    try
+                    {
+                        string steamid = match.Value.Trim(' ', '"');
+                        int index = idMatches.Cast<Match>().TakeWhile(x => x != match).Count();
+                        string timestamp = timestampMatches[index].Value;
+                        int iTimestamp = Convert.ToInt32(timestamp.Trim(' ', '"'));
+                        D2MP.log.Debug(String.Format("Steam ID detected: {0} with timestamp: {1}", steamid, iTimestamp));
+                        usersDict.Add(iTimestamp, steamid);
+                    }
+                    catch (Exception ex)
+                    {
+                        D2MP.log.Error("Error finding user", ex);
+                    }
+                }
+            }
+
+            return usersDict;
+        }
+
         public static bool checkDotaDir(string path)
         {
             return Directory.Exists(path) && Directory.Exists(Path.Combine(path, "dota")) && File.Exists(Path.Combine(path, "dota/gameinfo.txt"));
