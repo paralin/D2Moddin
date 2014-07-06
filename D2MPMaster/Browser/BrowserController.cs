@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using D2MPMaster.Browser.Methods;
 using D2MPMaster.Client;
@@ -40,6 +41,8 @@ namespace D2MPMaster.Browser
         //Chat flood prevention
         private string lastMsg = "";
         private DateTime lastMsgTime = DateTime.UtcNow;
+
+        public bool isDuplicate = false;
 
         //User and lobby
         public User user = null;
@@ -186,15 +189,22 @@ namespace D2MPMaster.Browser
                                                                       "auth");
                                                                   return;
                                                               }
-                                                              var hasBrowser =
-                                                                  this.Find(m => m.user != null && m.user.Id == usr.Id)
-                                                                      .Any();
-                                                              if (hasBrowser)
-                                                              {
-                                                                  this.AsyncSend(AlreadyConnected(), cb => Close());
-                                                                  return;
-                                                              }
                                                               user = usr;
+                                                              var otherBrowsers =
+                                                                  this.Find(m => m.user != null && m.user.Id == usr.Id);
+                                                              var browser = otherBrowsers.FirstOrDefault();
+                                                              if (browser != null)
+                                                              {
+                                                                  if (browser.lobby != null) {lobby = browser.lobby; this.AsyncSend(LobbySnapshot(lobby),
+                                                                      cb => { });}
+                                                                  browser.isDuplicate = true;
+                                                                  browser.AsyncSend(AlreadyConnected(), cb => Task.Factory.StartNew
+                                                                      (()=>
+                                                                       {
+                                                                           Thread.Sleep(1000);                            
+                                                                           browser.Close();
+                                                                       }));
+                                                              }
                                                               this.SendJson("{\"msg\": \"auth\", \"status\": true}",
                                                                   "auth");
                                                               this.Send(PublicLobbySnapshot());
@@ -757,7 +767,8 @@ namespace D2MPMaster.Browser
 
         public void OnClosed(object sender, OnClientDisconnectArgs e)
         {
-            LobbyManager.ForceLeaveLobby(this);
+            if(!isDuplicate)
+                LobbyManager.ForceLeaveLobby(this);
         }
 
         public static ITextArgs ClearLobbyR()
