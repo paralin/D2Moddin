@@ -194,19 +194,20 @@ namespace d2mp
             {
                 notifier.Notify(3, "Lost connection", "Attempting to reconnect...");
                 hasConnected = false;
-                Wait(2);
             }
-            else
-                Wait(10);
 
-            SetupClient();
-            try
+            while (!shutDown)
             {
-                client.Open();
-            }
-            catch
-            {
-                HandleClose();
+                SetupClient();
+                try
+                {
+                    client.Open();
+                    break;
+                }
+                catch
+                {
+                    Wait(10);
+                }
             }
         }
 
@@ -286,6 +287,10 @@ namespace d2mp
         public static void main()
         {
             log.Debug("D2MP starting...");
+
+            Application.ThreadException += (sender, args) => log.Error("Unhandled thread exception.", args.Exception);
+            AppDomain.CurrentDomain.UnhandledException += (sender, args) => log.Error("Unhandled domain exception.", (Exception) args.ExceptionObject);
+
             var notifyThread = new Thread(delegate()
             {
                 using (notifier = new notificationForm())
@@ -412,7 +417,7 @@ namespace d2mp
                     Thread.Sleep(100);
                 }
 
-                if (client != null) client.Close();
+                if (client != null && client.IsConnected) client.Close();
             }
             catch (Exception ex)
             {
