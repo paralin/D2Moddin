@@ -117,8 +117,7 @@ namespace D2MPMaster.Client
             {
                 var msg = JObject.FromObject(new InstallMod() { Mod = mod.ToClientMod(), url = Program.S3.GenerateModURL(mod) }).ToString(Formatting.None);
                 client.AsyncSend(new TextArgs(msg, "commands"),
-                    req => log.InfoFormat("InstallMod was sent correctly to user [{0}]? [{1}]",
-                        pUID, req.IsCompleted ? "YES" : "NO"));
+                    req => { });
                 client.mAckTimer.Start();
             }
         }
@@ -220,8 +219,7 @@ namespace D2MPMaster.Client
             if (client != null)
             {
                 var msg = JObject.FromObject(new ConnectDota() { ip = serverIp }).ToString(Formatting.None);
-                client.AsyncSend(new TextArgs(msg, "commands"),
-                    req => log.InfoFormat("ConnectDota was sent correctly to user [{0}]? [{1}]", pSteamId, req.IsCompleted ? "YES" : "NO"));
+                client.AsyncSend(new TextArgs(msg, "commands"), arg=>{});
                 client.mAckTimer.Start();
             }
         }
