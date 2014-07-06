@@ -27,7 +27,7 @@ namespace D2MPMaster.Client
         public Init InitData;
         public string UID;
         public string SteamID;
-        private Timer mAckTimer = new Timer(4000);//4 seconds
+        private Timer mAckTimer = new Timer(10000);//10 seconds
 
         public bool Inited { get; set; }
 
