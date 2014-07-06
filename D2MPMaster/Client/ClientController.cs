@@ -145,8 +145,7 @@ namespace D2MPMaster.Client
             if (client != null)
             {
                 var msg = JObject.FromObject(new SetMod() { Mod = mod.ToClientMod() }).ToString(Formatting.None);
-                client.AsyncSend(new TextArgs(msg, "commands"),
-                    req => log.InfoFormat("SetMod was sent correctly to user [{0}]? [{1}]", pSteamId, req.IsCompleted ? "YES" : "NO"));
+                client.AsyncSend(new TextArgs(msg, "commands"), req => { });
                 client.mAckTimer.Start();
             }
         }
