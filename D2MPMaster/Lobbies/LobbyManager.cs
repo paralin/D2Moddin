@@ -196,17 +196,26 @@ namespace D2MPMaster.Lobbies
         {
             while (!shutdown)
             {
-                Thread.Sleep(10000);
+                Thread.Sleep(20000);
                 var lobbies =
                     LobbyID.Values.Where(
                         m =>
                             m.status == LobbyStatus.Start &&
                             !m.hasPassword &&
-						m.IdleSince < DateTime.Now.Subtract(TimeSpan.FromMinutes(5)));
+						m.IdleSince < DateTime.Now.Subtract(TimeSpan.FromMinutes(3)));
                 foreach (var lobby in lobbies)
                 {
                     CloseLobby(lobby); 
                     log.DebugFormat("Cleared lobby {0} for inactivity.", lobby.id);
+                }
+                //All playing lobbies with no server with an instance that has the lobby
+                lobbies =
+                    LobbyID.Values.Where(
+                        m => m.status==LobbyStatus.Play&&!ServerService.Servers.Find(z => z.Instances.Any(f => f.Value.lobby.id == m.id)).Any());
+                foreach (var lobby in lobbies)
+                {
+                    CloseLobby(lobby);
+                    log.DebugFormat("Cleared orphan lobby {0}.", lobby.id);
                 }
             }
         }
@@ -385,15 +394,14 @@ namespace D2MPMaster.Lobbies
 
         public static void CloseLobby(Lobby lob)
         {
-            lock(PublicLobbies){
-                foreach (var browser in Browsers.Find(m => m.user != null && m.lobby != null && m.lobby.id == lob.id))
-                {
-                    browser.lobby = null;
-                }
-                PublicLobbies.Remove(lob);
-                lock(PlayingLobbies)
-                    PlayingLobbies.Remove(lob);
+            foreach (var browser in Browsers.Find(m => m.user != null && m.lobby != null && m.lobby.id == lob.id))
+            {
+                browser.lobby = null;
             }
+            lock (PublicLobbies)
+                PublicLobbies.Remove(lob);
+            lock(PlayingLobbies)
+                PlayingLobbies.Remove(lob);
             lock (LobbyQueue)
                 LobbyQueue.Remove(lob);
         }
