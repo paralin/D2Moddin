@@ -308,7 +308,7 @@ namespace D2MPMaster.Browser
                                                       }
                                                       LobbyManager.RemoveFromTeam(lobby, user.steam.steamid);
                                                       lobby.AddPlayer(goodguys ? lobby.radiant : lobby.dire,
-                                                          Player.FromUser(user));
+                                                          Player.FromUser(user,lobby.creatorid==user.Id));
                                                       LobbyManager.TransmitLobbyUpdate(lobby, new[] {"radiant", "dire"});
                                                       break;
                                                   }

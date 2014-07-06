@@ -29,13 +29,22 @@ namespace D2MPMaster.Lobbies
         /// </summary>
         public bool failedConnect { get; set; }
 
-        public static Player FromUser(User user)
+        /// <summary>
+        /// Null on default, if they want a special icon
+        /// </summary>
+        public string icon { get; set; }
+
+        public bool isHost { get; set; }
+
+        public static Player FromUser(User user, bool isHost)
         {
             return new Player
                    {
                        avatar = user.steam.avatarfull,
                        name = user.profile.name,
-                       steam = user.steam.steamid
+                       steam = user.steam.steamid,
+                       icon = user.profile.playerIcon,
+                       isHost = isHost
                    };
         }
     }
