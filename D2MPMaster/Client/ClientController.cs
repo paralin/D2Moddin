@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Timers;
 using ClientCommon.Data;
 using ClientCommon.Methods;
 using D2MPMaster.Browser;
@@ -26,16 +27,37 @@ namespace D2MPMaster.Client
         public Init InitData;
         public string UID;
         public string SteamID;
+        private Timer mAckTimer = new Timer(4000);//4 seconds
+
         public bool Inited { get; set; }
 
         public ClientController()
         {
             this.OnOpen += OnClientConnect;
             this.OnClose += DeregisterClient;
+            this.OnError += OnClientError;
+            //force the connection closed when the client does not ACK
+            mAckTimer.Elapsed += (sender, args) =>
+            {
+                log.Info("Client did not respond in time");
+                mAckTimer.Stop();
+                this.Close();
+            };
         }
 
         private void OnClientConnect(object sender, OnClientConnectArgs e)
         {
+            //stop the timer if the client ACK
+            this.ProtocolInstance.OnPing += (s, args) =>
+            {
+                log.Info("ACK received");
+                mAckTimer.Stop();
+            };//protocol instance is null until someone connects
+        }
+
+        private void OnClientError(object sender, OnErrorArgs args)
+        {
+            log.Error(args.Message, args.Exception);
         }
 
         void DeregisterClient(object se, OnClientDisconnectArgs e)
@@ -85,13 +107,24 @@ namespace D2MPMaster.Client
 			foreach (var browser in browsersn)
 			{
 				browser.SendManagerStatus(true);
+                //set the current mod (helps after manager restart)
+                if( browser.lobby != null )
+			        SetMod(SteamID, D2MPMaster.Mods.Mods.ByID(browser.lobby.mod));
 			}
 		}
 
-        public static ITextArgs InstallMod(Mod mod)
+        public void InstallMod(string pUID, Mod mod)
         {
-            var msg = JObject.FromObject(new InstallMod() { Mod = mod.ToClientMod(), url = Program.S3.GenerateModURL(mod) }).ToString(Formatting.None);
-            return new TextArgs(msg, "commands");
+            //find the correct client
+            ClientController client = this.Find(c => !string.IsNullOrEmpty(c.UID) && c.UID == pUID).FirstOrDefault();
+            if (client != null)
+            {
+                var msg = JObject.FromObject(new InstallMod() { Mod = mod.ToClientMod(), url = Program.S3.GenerateModURL(mod) }).ToString(Formatting.None);
+                client.AsyncSend(new TextArgs(msg, "commands"),
+                    req => log.InfoFormat("InstallMod was sent correctly to user [{0}]? [{1}]",
+                        pUID, req.IsCompleted ? "YES" : "NO"));
+                client.mAckTimer.Start();
+            }
         }
 
         public static ITextArgs LaunchDota()
@@ -109,10 +142,17 @@ namespace D2MPMaster.Client
             return new TextArgs(JObject.FromObject(new NotifyMessage() { message = new Message() { title = title, message = message, shutdown = shutdown } }).ToString(Formatting.None), "commands");
         }
 
-        public static ITextArgs SetMod(Mod mod)
+        public void SetMod(string pSteamId, Mod mod)
         {
-            var msg = JObject.FromObject(new SetMod() { Mod = mod.ToClientMod() }).ToString(Formatting.None);
-            return new TextArgs(msg, "commands");
+            //find the correct client
+            ClientController client = this.Find(c => !string.IsNullOrEmpty(c.SteamID) && c.SteamID == pSteamId).FirstOrDefault();
+            if (client != null)
+            {
+                var msg = JObject.FromObject(new SetMod() { Mod = mod.ToClientMod() }).ToString(Formatting.None);
+                client.AsyncSend(new TextArgs(msg, "commands"),
+                    req => log.InfoFormat("SetMod was sent correctly to user [{0}]? [{1}]", pSteamId, req.IsCompleted ? "YES" : "NO"));
+                client.mAckTimer.Start();
+            }
         }
 
         public override void OnMessage(ITextArgs textArgs)
@@ -163,7 +203,7 @@ namespace D2MPMaster.Client
                             {
                                 if (!Mods.Any(m => m.name == mod.name && m.version == mod.version))
                                 {
-                                    this.AsyncSend(InstallMod(mod), rf => { });
+                                    this.InstallMod(this.UID, mod);
                                 }
                             }
 
@@ -178,9 +218,17 @@ namespace D2MPMaster.Client
             }
         }
 
-        public static ITextArgs ConnectDota(string serverIp)
+        public void ConnectDota(string pSteamId, string serverIp)
         {
-            return new TextArgs(JObject.FromObject(new ConnectDota() { ip = serverIp }).ToString(Formatting.None), "commands");
+            //find the correct client
+            ClientController client = this.Find(c => !string.IsNullOrEmpty(c.SteamID) && c.SteamID == pSteamId).FirstOrDefault();
+            if (client != null)
+            {
+                var msg = JObject.FromObject(new ConnectDota() { ip = serverIp }).ToString(Formatting.None);
+                client.AsyncSend(new TextArgs(msg, "commands"),
+                    req => log.InfoFormat("ConnectDota was sent correctly to user [{0}]? [{1}]", pSteamId, req.IsCompleted ? "YES" : "NO"));
+                client.mAckTimer.Start();
+            }
         }
 
         public static ITextArgs Shutdown()
