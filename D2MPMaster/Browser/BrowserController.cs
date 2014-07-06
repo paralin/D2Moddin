@@ -380,7 +380,11 @@ namespace D2MPMaster.Browser
                                                           return;
                                                       }
                                                       var req = jdata["req"].ToObject<KickPlayer>();
-                                                      LobbyManager.BanFromLobby(lobby, req.steam);
+                                                      if (!LobbyManager.BanFromLobby(lobby, req.steam))
+                                                      {
+                                                          RespondError(jdata, "You are not allowed to kick admins.");
+                                                          return;
+                                                      }
                                                       break;
                                                   }
                                                   case "setname":

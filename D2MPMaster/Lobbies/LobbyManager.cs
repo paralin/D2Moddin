@@ -648,12 +648,16 @@ namespace D2MPMaster.Lobbies
             Browsers.AsyncSendTo(m=>m.lobby!=null&&m.lobby.id==lobby.id, BrowserController.ChatMessage(cmsg), req => { });
         }
 
-        public static void BanFromLobby(Lobby lobby, string steam)
+        public static bool BanFromLobby(Lobby lobby, string steam)
         {
             var client =
                 Browsers.Find(m => m.user != null && m.user.steam.steamid == steam && m.lobby!=null&&m.lobby.id == lobby.id);
             var browserClients = client as BrowserController[] ?? client.ToArray();
             if (!browserClients.Any()) return;
+            if (browserClients.First().user.authItems.Contains("admin"))
+            {
+                return false;
+            }
             if (!lobby.banned.Contains(steam))
             {
                 var arr = lobby.banned;
@@ -663,6 +667,7 @@ namespace D2MPMaster.Lobbies
                 TransmitLobbyUpdate(lobby, new []{"banned"});
             }
             LeaveLobby(browserClients.First());
+            return true;
         }
 
         public static void SetTitle(Lobby lobby, string name)
