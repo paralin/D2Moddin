@@ -732,10 +732,12 @@ namespace D2MPMaster.Lobbies
             var radiant = new List<Player>(5);
             var dire = new List<Player>(5);
             radiant.AddRange(from plyr in lobby.radiant
+                where plyr != null
                 let hasBrowser = Browsers.Find(m => m.user != null && m.lobby != null && m.user.steam.steamid == plyr.steam && m.lobby.id == lobby.id).Any()
                 where hasBrowser
                 select plyr);
             dire.AddRange(from plyr in lobby.dire
+                where plyr != null
                 let hasBrowser = Browsers.Find(m => m.user != null && m.lobby != null && m.user.steam.steamid == plyr.steam && m.lobby.id == lobby.id).Any()
                 where hasBrowser
                 select plyr);
