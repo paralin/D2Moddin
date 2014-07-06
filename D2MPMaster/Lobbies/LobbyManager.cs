@@ -487,8 +487,7 @@ namespace D2MPMaster.Lobbies
             TransmitLobbyUpdate(lobby, new []{"radiant", "dire"});
             var mod = Mods.Mods.ByID(lobby.mod);
             if (mod != null)
-                ClientsController.AsyncSendTo(m=>m.SteamID==controller.user.steam.steamid, ClientController.SetMod(mod),
-                    req => { });
+                ClientsController.SetMod(controller.user.steam.steamid, mod);
             ClientsController.AsyncSendTo(m => m.SteamID == user.steam.steamid, ClientController.LaunchDota(), req => { });
         }
 
@@ -548,8 +547,7 @@ namespace D2MPMaster.Lobbies
                 PlayingLobbies.Add(lob);
             Browsers.AsyncSendTo(m => m.user != null && m.user.Id == user.Id, BrowserController.LobbySnapshot(lob),
                 req => { });
-            ClientsController.AsyncSendTo(m => m.SteamID == user.steam.steamid, ClientController.SetMod(mod),
-                req => { });
+            ClientsController.SetMod(user.steam.steamid, mod);
             ClientsController.AsyncSendTo(m => m.SteamID == user.steam.steamid, ClientController.LaunchDota(), req => { });
             log.InfoFormat("Lobby created, User: #{0}, Name: #{1}, Id: {2}", user.profile.name, name, user.Id);
             return lob;
@@ -599,8 +597,7 @@ namespace D2MPMaster.Lobbies
             }
             Browsers.AsyncSendTo(m => m.user != null && m.user.Id == user.Id, BrowserController.LobbySnapshot(lob),
                 req => { });
-            ClientsController.AsyncSendTo(m => m.SteamID == user.steam.steamid, ClientController.SetMod(mod),
-                req => { });
+            ClientsController.SetMod(user.steam.steamid, mod);
             ClientsController.AsyncSendTo(m => m.SteamID == user.steam.steamid, ClientController.LaunchDota(), req => { });
             log.InfoFormat("Load test lobby created w/ user: #{0}", user.profile.name);
             return lob;
@@ -624,8 +621,7 @@ namespace D2MPMaster.Lobbies
                     }
                     Browsers.AsyncSendTo(m => m.user != null && m.user.Id == user.Id, BrowserController.LobbySnapshot(lobby),
                         req => { });
-                    ClientsController.AsyncSendTo(m => m.SteamID == user.steam.steamid, ClientController.SetMod(Mods.Mods.ByName("checker")),
-                        req => { });
+                    ClientsController.SetMod(user.steam.steamid, Mods.Mods.ByName("checker"));
                     ClientsController.AsyncSendTo(m => m.SteamID == user.steam.steamid, ClientController.LaunchDota(), req => { });
                     return lobby;
                 }else{
@@ -778,20 +774,18 @@ namespace D2MPMaster.Lobbies
         {
             foreach (var plyr in lobby.radiant.Where(plyr => plyr != null))
             {
-                ClientsController.AsyncSendTo(c => c.SteamID != null && c.SteamID == plyr.steam, ClientController.ConnectDota(lobby.serverIP),
-                    req => { });
+                ClientsController.ConnectDota(plyr.steam, lobby.serverIP);
             }
             foreach (var plyr in lobby.dire.Where(plyr => plyr != null))
             {
-                ClientsController.AsyncSendTo(c => c.SteamID != null && c.SteamID == plyr.steam, ClientController.ConnectDota(lobby.serverIP),
-                    req => { });
+                ClientsController.ConnectDota(plyr.steam, lobby.serverIP);
             }
         }
 
         public static void LaunchAndConnect(Lobby lobby, string steamid)
         {
             ClientsController.AsyncSendTo(m => m.SteamID == steamid, ClientController.LaunchDota(), req => { });
-            ClientsController.AsyncSendTo(m => m.SteamID == steamid, ClientController.ConnectDota(lobby.serverIP), req => { });
+            ClientsController.ConnectDota(steamid, lobby.serverIP);
         }
 
         public static void OnMatchComplete(Model.MatchData toObject)

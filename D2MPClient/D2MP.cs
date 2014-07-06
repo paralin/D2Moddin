@@ -134,15 +134,18 @@ namespace d2mp
                         shutDown = true;
                         return;
                     case ClientCommon.Methods.InstallMod.Msg:
+                        SendPing(ClientCommon.Methods.InstallMod.Msg);
                         ThreadPool.QueueUserWorkItem(InstallMod, msg.ToObject<InstallMod>());
                         break;
                     case ClientCommon.Methods.DeleteMod.Msg:
                         ThreadPool.QueueUserWorkItem(DeleteMod, msg.ToObject<DeleteMod>());
                         break;
                     case ClientCommon.Methods.SetMod.Msg:
+                        SendPing(ClientCommon.Methods.SetMod.Msg);
                         ThreadPool.QueueUserWorkItem(SetMod, msg.ToObject<SetMod>());
                         break;
                     case ClientCommon.Methods.ConnectDota.Msg:
+                        SendPing(ClientCommon.Methods.ConnectDota.Msg);
                         ThreadPool.QueueUserWorkItem(ConnectDota, msg.ToObject<ConnectDota>());
                         break;
                     case ClientCommon.Methods.LaunchDota.Msg:
@@ -191,9 +194,12 @@ namespace d2mp
             {
                 notifier.Notify(3, "Lost connection", "Attempting to reconnect...");
                 hasConnected = false;
+                Wait(2);
             }
+            else
+                Wait(10);
+
             SetupClient();
-            Wait(10);
             try
             {
                 client.Open();
@@ -242,6 +248,12 @@ namespace d2mp
             }
 
             return false;
+        }
+
+        public static void SendPing(string msg)
+        {
+            log.DebugFormat("Sending ACK for command [{0}]", msg);
+            client.Ping(new byte[] {1});
         }
 
         public static void SendRequestMod(string mod)
