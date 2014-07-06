@@ -428,7 +428,7 @@ namespace D2MPMaster.Lobbies
             if (controller.lobby == null || controller.user == null) return;
             var lob = controller.lobby;
             controller.lobby = null;
-            if (lob.LobbyType == LobbyType.PlayerTest && TestLobbyQueue.Contains(lob))
+            if (lob.LobbyType == LobbyType.PlayerTest)
             {
                 RemoveFromTeam(lob, controller.user.steam.steamid);
                 if (lob.TeamCount(lob.radiant) + lob.TeamCount(lob.dire) == 0)
