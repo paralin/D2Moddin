@@ -16,7 +16,9 @@
 // <date>2014-05-10</date>
 // <summary>Entry point for the d2moddin plugin.</summary>
 using System;
+using System.Diagnostics;
 using System.IO;
+using System.Reflection;
 using System.Windows.Forms;
 using log4net.Config;
 
@@ -32,8 +34,24 @@ namespace d2mp
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            XmlConfigurator.Configure();
-            D2MP.main();
+
+            //check to see if we are already running
+            if (IsAlreadyRunning())
+            {
+                MessageBox.Show("Close all d2mp.exe instances before opening a new one.", "d2mp.exe is already running",
+                    MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+            }
+            else
+            {
+                XmlConfigurator.Configure();
+                D2MP.main();   
+            }
+        }
+
+        static bool IsAlreadyRunning()
+        {
+            Process[] localByName = Process.GetProcessesByName(Path.GetFileNameWithoutExtension(Assembly.GetEntryAssembly().Location));
+            return localByName.Length > 1;
         }
     }
 }
