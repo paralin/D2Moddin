@@ -728,6 +728,22 @@ namespace D2MPMaster.Browser
                                                           RespondError(jdata, "You are in a lobby already.");
                                                           return;
                                                       }
+                                                      var mod = Mods.Mods.ByName("checker");
+                                                      var clients = ClientsController.Find(m => m.UID == user.Id);
+                                                      var clientControllers = clients as ClientController[] ??
+                                                                              clients.ToArray();
+                                                      if (!clientControllers.Any())
+                                                      {
+                                                          //Error message
+                                                          RespondError(jdata, "Your client has not been started yet.");
+                                                          return;
+                                                      }
+                                                      if (!clientControllers.First().Mods.Any(m => m.name == mod.name && m.version == mod.version))
+                                                      {
+                                                          RespondError(jdata,
+                                                              "You need to click the green Install Mod button first.");
+                                                          return;
+                                                      }
                                                       /*if (user.authItems.Contains("tested"))
                                                       {
                                                           RespondError(jdata, "You have already completed the test.");
