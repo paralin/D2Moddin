@@ -428,7 +428,8 @@ namespace D2MPMaster.Lobbies
             if (controller.lobby == null || controller.user == null) return;
             var lob = controller.lobby;
             controller.lobby = null;
-            if (lob.LobbyType == LobbyType.PlayerTest && TestLobbyQueue.Contains(lob))
+            if (lob.status > LobbyStatus.Queue) return; //will be auto handled later
+            if (lob.LobbyType == LobbyType.PlayerTest)
             {
                 RemoveFromTeam(lob, controller.user.steam.steamid);
                 if (lob.TeamCount(lob.radiant) + lob.TeamCount(lob.dire) == 0)
@@ -459,7 +460,6 @@ namespace D2MPMaster.Lobbies
                     }
                 }           
             }
-            if (lob.status > LobbyStatus.Queue) return; //will be auto handled later
             //Find the player
             var team = RemoveFromTeam(lob, controller.user.steam.steamid);
             CancelQueue(lob);
@@ -483,11 +483,11 @@ namespace D2MPMaster.Lobbies
             if (direCount >= 5 && radCount >= 5) return;
             if (direCount < radCount || direCount == radCount)
             {
-                lobby.AddPlayer(lobby.dire, Player.FromUser(user));
+                lobby.AddPlayer(lobby.dire, Player.FromUser(user, lobby.creatorid == user.Id));
             }
             else
             {
-                lobby.AddPlayer(lobby.radiant, Player.FromUser(user));
+                lobby.AddPlayer(lobby.radiant, Player.FromUser(user, lobby.creatorid == user.Id));
             }
             controller.lobby = lobby;
             Browsers.AsyncSendTo(m => m.user != null && m.user.Id == user.Id, BrowserController.LobbySnapshot(lobby),
@@ -532,7 +532,7 @@ namespace D2MPMaster.Lobbies
                             IdleSince = DateTime.Now,
                             radiant = new Player[5],
                             devMode = false,
-                            enableGG = true,
+                            enableGG = !mod.disableGG,
                             hasPassword = false,
                             id = Utils.RandomString(17),
                             mod = mod.Id,
@@ -548,7 +548,7 @@ namespace D2MPMaster.Lobbies
                                   user.authItems.Contains("moderator"))),
 							serverIP = string.Empty
                         };
-            lob.radiant[0] = Player.FromUser(user);
+            lob.radiant[0] = Player.FromUser(user, true);
             lock(PublicLobbies)
                 PublicLobbies.Add(lob);
             lock(PlayingLobbies)
@@ -584,7 +584,7 @@ namespace D2MPMaster.Lobbies
                 IdleSince = DateTime.Now,
                 radiant = new Player[5],
                 devMode = false,
-                enableGG = true,
+                enableGG = false,
                 hasPassword = false,
                 id = Utils.RandomString(17),
                 mod = mod.Id,
@@ -598,7 +598,7 @@ namespace D2MPMaster.Lobbies
                 status = LobbyStatus.Start,
                 serverIP = string.Empty
             };
-            lob.radiant[0] = Player.FromUser(user);
+            lob.radiant[0] = Player.FromUser(user, true);
             lock (PlayingLobbies)
             {
                 PlayingLobbies.Add(lob);
@@ -621,11 +621,11 @@ namespace D2MPMaster.Lobbies
                     var radCount = lobby.TeamCount(lobby.radiant);
                     if (direCount < radCount || direCount == radCount)
                     {
-                        lobby.AddPlayer(lobby.dire, Player.FromUser(user));
+                        lobby.AddPlayer(lobby.dire, Player.FromUser(user, false));
                     }
                     else
                     {
-                        lobby.AddPlayer(lobby.radiant, Player.FromUser(user));
+                        lobby.AddPlayer(lobby.radiant, Player.FromUser(user, false));
                     }
                     Browsers.AsyncSendTo(m => m.user != null && m.user.Id == user.Id, BrowserController.LobbySnapshot(lobby),
                         req => { });
@@ -648,12 +648,16 @@ namespace D2MPMaster.Lobbies
             Browsers.AsyncSendTo(m=>m.lobby!=null&&m.lobby.id==lobby.id, BrowserController.ChatMessage(cmsg), req => { });
         }
 
-        public static void BanFromLobby(Lobby lobby, string steam)
+        public static bool BanFromLobby(Lobby lobby, string steam)
         {
             var client =
                 Browsers.Find(m => m.user != null && m.user.steam.steamid == steam && m.lobby!=null&&m.lobby.id == lobby.id);
             var browserClients = client as BrowserController[] ?? client.ToArray();
-            if (!browserClients.Any()) return;
+            if (!browserClients.Any()) return true;
+            if (browserClients.First().user.authItems.Contains("admin"))
+            {
+                return false;
+            }
             if (!lobby.banned.Contains(steam))
             {
                 var arr = lobby.banned;
@@ -663,6 +667,7 @@ namespace D2MPMaster.Lobbies
                 TransmitLobbyUpdate(lobby, new []{"banned"});
             }
             LeaveLobby(browserClients.First());
+            return true;
         }
 
         public static void SetTitle(Lobby lobby, string name)
@@ -732,10 +737,12 @@ namespace D2MPMaster.Lobbies
             var radiant = new List<Player>(5);
             var dire = new List<Player>(5);
             radiant.AddRange(from plyr in lobby.radiant
+                where plyr != null
                 let hasBrowser = Browsers.Find(m => m.user != null && m.lobby != null && m.user.steam.steamid == plyr.steam && m.lobby.id == lobby.id).Any()
                 where hasBrowser
                 select plyr);
             dire.AddRange(from plyr in lobby.dire
+                where plyr != null
                 let hasBrowser = Browsers.Find(m => m.user != null && m.lobby != null && m.user.steam.steamid == plyr.steam && m.lobby.id == lobby.id).Any()
                 where hasBrowser
                 select plyr);

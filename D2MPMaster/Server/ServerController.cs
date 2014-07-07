@@ -149,7 +149,7 @@ namespace D2MPMaster.Server
         {
             var cmds = new List<string>
             {
-                "d2lobby_gg_time " + (lobby.enableGG ? "5" : "-1"),
+                "d2lobby_gg_time " + (lobby.enableGG ? "20" : "-1"),
 #if DEBUG
                 "match_post_url \"http://127.0.0.1:8080/gdataapi/matchres\"",
 #else

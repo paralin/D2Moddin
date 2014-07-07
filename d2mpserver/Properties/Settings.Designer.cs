@@ -226,5 +226,17 @@ namespace d2mpserver.Properties {
                 this["ReadyDelay"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool disableSteamCMD {
+            get {
+                return ((bool)(this["disableSteamCMD"]));
+            }
+            set {
+                this["disableSteamCMD"] = value;
+            }
+        }
     }
 }

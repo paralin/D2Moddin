@@ -191,7 +191,7 @@ namespace D2MPMaster.Browser
                                                               }
                                                               user = usr;
                                                               var otherBrowsers =
-                                                                  this.Find(m => m.user != null && m.user.Id == usr.Id);
+                                                                  this.Find(m => m!=this&&m.user != null && m.user.Id == usr.Id);
                                                               var browser = otherBrowsers.FirstOrDefault();
                                                               if (browser != null)
                                                               {
@@ -308,7 +308,7 @@ namespace D2MPMaster.Browser
                                                       }
                                                       LobbyManager.RemoveFromTeam(lobby, user.steam.steamid);
                                                       lobby.AddPlayer(goodguys ? lobby.radiant : lobby.dire,
-                                                          Player.FromUser(user));
+                                                          Player.FromUser(user,lobby.creatorid==user.Id));
                                                       LobbyManager.TransmitLobbyUpdate(lobby, new[] {"radiant", "dire"});
                                                       break;
                                                   }
@@ -380,7 +380,11 @@ namespace D2MPMaster.Browser
                                                           return;
                                                       }
                                                       var req = jdata["req"].ToObject<KickPlayer>();
-                                                      LobbyManager.BanFromLobby(lobby, req.steam);
+                                                      if (!LobbyManager.BanFromLobby(lobby, req.steam))
+                                                      {
+                                                          RespondError(jdata, "You are not allowed to kick admins.");
+                                                          return;
+                                                      }
                                                       break;
                                                   }
                                                   case "setname":
@@ -722,6 +726,22 @@ namespace D2MPMaster.Browser
                                                       if (lobby != null)
                                                       {
                                                           RespondError(jdata, "You are in a lobby already.");
+                                                          return;
+                                                      }
+                                                      var mod = Mods.Mods.ByName("checker");
+                                                      var clients = ClientsController.Find(m => m.UID == user.Id);
+                                                      var clientControllers = clients as ClientController[] ??
+                                                                              clients.ToArray();
+                                                      if (!clientControllers.Any())
+                                                      {
+                                                          //Error message
+                                                          RespondError(jdata, "Your client has not been started yet.");
+                                                          return;
+                                                      }
+                                                      if (!clientControllers.First().Mods.Any(m => m.name == mod.name && m.version == mod.version))
+                                                      {
+                                                          RespondError(jdata,
+                                                              "You need to click the green Install Mod button first.");
                                                           return;
                                                       }
                                                       /*if (user.authItems.Contains("tested"))

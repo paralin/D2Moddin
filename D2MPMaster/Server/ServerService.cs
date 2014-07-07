@@ -2,6 +2,7 @@
 using D2MPMaster.Lobbies;
 using D2MPMaster.Server;
 using d2mpserver;
+using MongoDB.Driver.Linq;
 using XSockets.Core.XSocket.Helpers;
 
 namespace D2MPMaster
@@ -14,6 +15,12 @@ namespace D2MPMaster
         {
             //Params
             ServerRegion region = lobby.region;
+            if (region != ServerRegion.UNKNOWN)
+            {
+                var regionServers = Servers.Find(m => m.Inited && (int)m.InitData.region == (int)region);
+                if (!regionServers.Any()) lobby.region = ServerRegion.UNKNOWN;
+            }
+
             var available = Servers.Find(m => m.Inited && m.Instances.Count < m.InitData.serverCount).OrderBy(m=>m.Instances.Count);// fraction not working properly m.InitData.serverCount);
             if (region == ServerRegion.UNKNOWN)
             {
