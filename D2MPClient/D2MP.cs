@@ -40,6 +40,7 @@ namespace d2mp
 {
     public class D2MP
     {
+        public const string PIDFile = "d2mp.pid";
 #if DEBUG
         private static string server = "ws://127.0.0.1:4502/ClientController";
 #else
@@ -390,14 +391,14 @@ namespace d2mp
                 ModGameInfo();
 
                 log.Debug("Starting shutdown file watcher...");
-                string pathToShutdownFile = Path.Combine(ourDir, "d2mp.pid");
+                string pathToShutdownFile = Path.Combine(ourDir, PIDFile);
                 File.WriteAllText(pathToShutdownFile, "Delete this file to shutdown D2MP.");
 
                 var watcher = new FileSystemWatcher();
                 watcher.Path = ourDir;
                 watcher.NotifyFilter = NotifyFilters.LastAccess | NotifyFilters.LastWrite
                                        | NotifyFilters.FileName;
-                watcher.Filter = "d2mp.pid";
+                watcher.Filter = PIDFile;
                 watcher.Deleted += (sender, args) => { shutDown = true; };
                 watcher.EnableRaisingEvents = true;
 

@@ -19,6 +19,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
+using System.Threading;
 using System.Windows.Forms;
 using log4net.Config;
 
@@ -36,16 +37,19 @@ namespace d2mp
             Application.SetCompatibleTextRenderingDefault(false);
 
             //check to see if we are already running
-            if (IsAlreadyRunning())
+            string pid = Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), D2MP.PIDFile);
+            //delete the pid to shut down the other instance
+            if (File.Exists(pid)) File.Delete(pid);
+
+            //wait for it to close
+            do
             {
-                MessageBox.Show("Close all d2mp.exe instances before opening a new one.", "d2mp.exe is already running",
-                    MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                Thread.Sleep(100);
             }
-            else
-            {
-                XmlConfigurator.Configure();
-                D2MP.main();   
-            }
+            while (IsAlreadyRunning());
+
+            XmlConfigurator.Configure();
+            D2MP.main();
         }
 
         static bool IsAlreadyRunning()
