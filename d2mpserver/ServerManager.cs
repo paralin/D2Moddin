@@ -93,21 +93,35 @@ namespace d2mpserver
 
                     log.Debug("Working directory: " + workingdir);
 
-                    log.Debug("Searching for SteamCMD...");
-                    steamCmdPath = Path.Combine(workingdir, "steam/steamcmd.exe");
-                    if (!File.Exists(steamCmdPath))
+                    if (Settings.Default.disableSteamCMD)
                     {
-                        log.Debug("Downloading SteamCMD....");
-                        client.DownloadFile(Settings.Default.steamcmd, steamCmdPath);
+                        log.Debug("STEAMCMD disabled! Skipping step...");
                     }
-                    log.Debug("SteamCMD path: " + steamCmdPath);
+                    else
+                    {
+                        log.Debug("Searching for SteamCMD...");
+                        steamCmdPath = Path.Combine(workingdir, "steam/steamcmd.exe");
+                        if (!File.Exists(steamCmdPath))
+                        {
+                            log.Debug("Downloading SteamCMD....");
+                            client.DownloadFile(Settings.Default.steamcmd, steamCmdPath);
+                        }
+                        log.Debug("SteamCMD path: " + steamCmdPath);
 
-                    log.Debug("Launching SteamCMD to update Dota (570)...");
-                    activeSteamCMD = SteamCMD.LaunchSteamCMD("+app_update 570"+(Settings.Default.steamVerify ? " validate" : ""));
-                    activeSteamCMD.WaitForExitSync();
-                    log.Debug("SteamCMD finished! Continuing...");
-                    activeSteamCMD = null;
-                    if(shutdown) { log.Debug("Environment setup canceled!"); return false;}
+                        log.Debug("Launching SteamCMD to update Dota (570)...");
+                        activeSteamCMD =
+                            SteamCMD.LaunchSteamCMD("+app_update 570" +
+                                                    (Settings.Default.steamVerify ? " validate" : ""));
+                        activeSteamCMD.WaitForExitSync();
+                        log.Debug("SteamCMD finished! Continuing...");
+                        activeSteamCMD = null;
+                    }
+
+                    if (shutdown)
+                    {
+                        log.Debug("Environment setup canceled!");
+                        return false;
+                    }
 
                     log.Debug("Finding dota.exe (Dota 2 root)...");
                     var files = Directory.GetFiles(Path.Combine(workingdir, "game"), "dota.exe",
