@@ -872,18 +872,17 @@ namespace d2mp
             string config = File.ReadAllText(Path.Combine(steamDir, @"config\loginusers.vdf"));
 
             MatchCollection idMatches = Regex.Matches(config, "\"\\d{17}\"");
-            MatchCollection timestampMatches = Regex.Matches(config, "(?m)(?<=\"Timestamp\".{2}).*$");
+            MatchCollection timestampMatches = Regex.Matches(config, "(?m)(?<=\"Timestamp\".{2}).*$", RegexOptions.IgnoreCase);
             
             if (idMatches.Count > 0)
             {
-                foreach (Match match in idMatches)
+                for (int i = 0; i < idMatches.Count; i++)
                 {
                     try
                     {
-                        string steamid = match.Value.Trim(' ', '"');
-                        int index = idMatches.Cast<Match>().TakeWhile(x => x != match).Count();
-                        string timestamp = timestampMatches[index].Value;
-                        int iTimestamp = Convert.ToInt32(timestamp.Trim(' ', '"'));
+                        string steamid = idMatches[i].Value.Trim(' ', '"');
+                        string timestamp = timestampMatches[i].Value.Trim(' ', '"');
+                        int iTimestamp = Convert.ToInt32(timestamp);
                         D2MP.log.Debug(String.Format("Steam ID detected: {0} with timestamp: {1}", steamid, iTimestamp));
                         usersDict.Add(iTimestamp, steamid);
                     }
