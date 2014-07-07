@@ -36,6 +36,8 @@ namespace D2MPMaster.Lobbies
 
         public bool isHost { get; set; }
 
+        public string contribDesc { get; set; }
+
         public static Player FromUser(User user, bool isHost)
         {
             return new Player
@@ -44,7 +46,8 @@ namespace D2MPMaster.Lobbies
                        name = user.profile.name,
                        steam = user.steam.steamid,
                        icon = user.profile.playerIcon,
-                       isHost = isHost
+                       isHost = isHost,
+                       contribDesc = user.profile.contribDesc
                    };
         }
     }
