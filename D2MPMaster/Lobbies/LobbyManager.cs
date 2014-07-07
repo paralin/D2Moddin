@@ -428,6 +428,7 @@ namespace D2MPMaster.Lobbies
             if (controller.lobby == null || controller.user == null) return;
             var lob = controller.lobby;
             controller.lobby = null;
+            if (lob.status > LobbyStatus.Queue) return; //will be auto handled later
             if (lob.LobbyType == LobbyType.PlayerTest)
             {
                 RemoveFromTeam(lob, controller.user.steam.steamid);
@@ -459,7 +460,6 @@ namespace D2MPMaster.Lobbies
                     }
                 }           
             }
-            if (lob.status > LobbyStatus.Queue) return; //will be auto handled later
             //Find the player
             var team = RemoveFromTeam(lob, controller.user.steam.steamid);
             CancelQueue(lob);
