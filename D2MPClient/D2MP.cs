@@ -317,7 +317,8 @@ namespace d2mp
             iconThread.SetApartmentState(ApartmentState.STA);
             iconThread.Start();
 
-            ShortcutWriter.writeDesktopShortcut();
+            if (Settings.createShortcutAtStartup)
+                ShortcutWriter.writeDesktopShortcut();
 
             try
             {

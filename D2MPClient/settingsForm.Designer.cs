@@ -41,10 +41,14 @@
             this.lblSeperator = new System.Windows.Forms.Label();
             this.txtLog = new System.Windows.Forms.TextBox();
             this.gbxLog = new System.Windows.Forms.GroupBox();
+            this.btnCreateShortcut = new System.Windows.Forms.Button();
+            this.gbShortcut = new System.Windows.Forms.GroupBox();
+            this.ckbShortcut = new System.Windows.Forms.CheckBox();
             this.gbxSteamDir.SuspendLayout();
             this.gbxDotaDir.SuspendLayout();
             this.gbxExtra.SuspendLayout();
             this.gbxLog.SuspendLayout();
+            this.gbShortcut.SuspendLayout();
             this.SuspendLayout();
             // 
             // gbxSteamDir
@@ -115,14 +119,14 @@
             this.gbxExtra.Controls.Add(this.btnViewLog);
             this.gbxExtra.Location = new System.Drawing.Point(12, 149);
             this.gbxExtra.Name = "gbxExtra";
-            this.gbxExtra.Size = new System.Drawing.Size(214, 65);
+            this.gbxExtra.Size = new System.Drawing.Size(206, 65);
             this.gbxExtra.TabIndex = 2;
             this.gbxExtra.TabStop = false;
             this.gbxExtra.Text = "Additional Preferences";
             // 
             // btnResetSettings
             // 
-            this.btnResetSettings.Location = new System.Drawing.Point(106, 20);
+            this.btnResetSettings.Location = new System.Drawing.Point(106, 19);
             this.btnResetSettings.Name = "btnResetSettings";
             this.btnResetSettings.Size = new System.Drawing.Size(93, 34);
             this.btnResetSettings.TabIndex = 1;
@@ -169,11 +173,44 @@
             this.gbxLog.TabStop = false;
             this.gbxLog.Text = "Application Log";
             // 
+            // btnCreateShortcut
+            // 
+            this.btnCreateShortcut.Location = new System.Drawing.Point(6, 19);
+            this.btnCreateShortcut.Name = "btnCreateShortcut";
+            this.btnCreateShortcut.Size = new System.Drawing.Size(93, 34);
+            this.btnCreateShortcut.TabIndex = 1;
+            this.btnCreateShortcut.Text = "Create Now";
+            this.btnCreateShortcut.UseVisualStyleBackColor = true;
+            this.btnCreateShortcut.Click += new System.EventHandler(this.btnCreateShortcut_Click);
+            // 
+            // gbShortcut
+            // 
+            this.gbShortcut.Controls.Add(this.ckbShortcut);
+            this.gbShortcut.Controls.Add(this.btnCreateShortcut);
+            this.gbShortcut.Location = new System.Drawing.Point(225, 149);
+            this.gbShortcut.Name = "gbShortcut";
+            this.gbShortcut.Size = new System.Drawing.Size(245, 65);
+            this.gbShortcut.TabIndex = 6;
+            this.gbShortcut.TabStop = false;
+            this.gbShortcut.Text = "Desktop Shortcut";
+            // 
+            // ckbShortcut
+            // 
+            this.ckbShortcut.AutoSize = true;
+            this.ckbShortcut.Location = new System.Drawing.Point(122, 29);
+            this.ckbShortcut.Name = "ckbShortcut";
+            this.ckbShortcut.Size = new System.Drawing.Size(104, 17);
+            this.ckbShortcut.TabIndex = 2;
+            this.ckbShortcut.Text = "Create at startup";
+            this.ckbShortcut.UseVisualStyleBackColor = true;
+            this.ckbShortcut.CheckedChanged += new System.EventHandler(this.ckbShortcut_CheckedChanged);
+            // 
             // settingsForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(482, 420);
+            this.Controls.Add(this.gbShortcut);
             this.Controls.Add(this.gbxLog);
             this.Controls.Add(this.lblSeperator);
             this.Controls.Add(this.gbxExtra);
@@ -194,6 +231,8 @@
             this.gbxExtra.ResumeLayout(false);
             this.gbxLog.ResumeLayout(false);
             this.gbxLog.PerformLayout();
+            this.gbShortcut.ResumeLayout(false);
+            this.gbShortcut.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -212,5 +251,8 @@
         private System.Windows.Forms.Label lblSeperator;
         private System.Windows.Forms.GroupBox gbxLog;
         private System.Windows.Forms.TextBox txtLog;
+        private System.Windows.Forms.Button btnCreateShortcut;
+        private System.Windows.Forms.GroupBox gbShortcut;
+        private System.Windows.Forms.CheckBox ckbShortcut;
     }
 }
