@@ -24,6 +24,11 @@ namespace d2mp
         public static List<ClientCommon.Data.ClientMod> clientMods = new List<ClientCommon.Data.ClientMod>();
         public static Queue<RemoteMod> installQueue = new Queue<RemoteMod>();
 
+        static modController()
+        {
+            getLocalMods();
+        }
+
         public static List<ClientCommon.Data.ClientMod> getLocalMods()
         {
             clientMods.Clear();

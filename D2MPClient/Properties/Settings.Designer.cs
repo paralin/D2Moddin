@@ -58,5 +58,17 @@ namespace d2mp.Properties {
                 this["shortcut"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool autoUpdate {
+            get {
+                return ((bool)(this["autoUpdate"]));
+            }
+            set {
+                this["autoUpdate"] = value;
+            }
+        }
     }
 }

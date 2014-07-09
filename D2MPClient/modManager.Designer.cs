@@ -33,6 +33,10 @@
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(modManager));
             this.gbxMods = new System.Windows.Forms.GroupBox();
             this.modsGridView = new System.Windows.Forms.DataGridView();
+            this.name = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.version = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.author = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.status = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.gbxModActions = new System.Windows.Forms.GroupBox();
             this.btnUninstallAll = new System.Windows.Forms.Button();
             this.btnInstallAll = new System.Windows.Forms.Button();
@@ -44,10 +48,7 @@
             this.setActiveToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.updateModToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.removeModToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.name = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.version = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.author = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.status = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.ckbUpdate = new System.Windows.Forms.CheckBox();
             this.gbxMods.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.modsGridView)).BeginInit();
             this.gbxModActions.SuspendLayout();
@@ -56,10 +57,12 @@
             // 
             // gbxMods
             // 
+            this.gbxMods.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.gbxMods.Controls.Add(this.modsGridView);
             this.gbxMods.Location = new System.Drawing.Point(12, 12);
             this.gbxMods.Name = "gbxMods";
-            this.gbxMods.Size = new System.Drawing.Size(575, 168);
+            this.gbxMods.Size = new System.Drawing.Size(585, 168);
             this.gbxMods.TabIndex = 0;
             this.gbxMods.TabStop = false;
             this.gbxMods.Text = "Available Mods";
@@ -68,6 +71,9 @@
             // 
             this.modsGridView.AllowUserToAddRows = false;
             this.modsGridView.AllowUserToDeleteRows = false;
+            this.modsGridView.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.modsGridView.BackgroundColor = System.Drawing.SystemColors.Control;
             this.modsGridView.BorderStyle = System.Windows.Forms.BorderStyle.None;
             this.modsGridView.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
@@ -93,19 +99,50 @@
             this.modsGridView.RowTemplate.ReadOnly = true;
             this.modsGridView.RowTemplate.Resizable = System.Windows.Forms.DataGridViewTriState.False;
             this.modsGridView.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
-            this.modsGridView.Size = new System.Drawing.Size(563, 143);
+            this.modsGridView.Size = new System.Drawing.Size(573, 143);
             this.modsGridView.TabIndex = 0;
             this.modsGridView.CellMouseDown += new System.Windows.Forms.DataGridViewCellMouseEventHandler(this.modsGridView_CellMouseDown);
             // 
+            // name
+            // 
+            this.name.HeaderText = "Name";
+            this.name.Name = "name";
+            this.name.ReadOnly = true;
+            this.name.Width = 170;
+            // 
+            // version
+            // 
+            this.version.HeaderText = "Version";
+            this.version.Name = "version";
+            this.version.ReadOnly = true;
+            this.version.Width = 80;
+            // 
+            // author
+            // 
+            this.author.HeaderText = "Author";
+            this.author.Name = "author";
+            this.author.ReadOnly = true;
+            this.author.Width = 200;
+            // 
+            // status
+            // 
+            this.status.HeaderText = "Status";
+            this.status.Name = "status";
+            this.status.ReadOnly = true;
+            this.status.Width = 110;
+            // 
             // gbxModActions
             // 
+            this.gbxModActions.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.gbxModActions.Controls.Add(this.ckbUpdate);
             this.gbxModActions.Controls.Add(this.btnUninstallAll);
             this.gbxModActions.Controls.Add(this.btnInstallAll);
             this.gbxModActions.Controls.Add(this.btnUpdateAll);
             this.gbxModActions.Controls.Add(this.btnRefresh);
             this.gbxModActions.Location = new System.Drawing.Point(12, 186);
             this.gbxModActions.Name = "gbxModActions";
-            this.gbxModActions.Size = new System.Drawing.Size(432, 59);
+            this.gbxModActions.Size = new System.Drawing.Size(585, 59);
             this.gbxModActions.TabIndex = 1;
             this.gbxModActions.TabStop = false;
             this.gbxModActions.Text = "Actions";
@@ -196,39 +233,21 @@
             this.removeModToolStripMenuItem.Text = "Remove Mod";
             this.removeModToolStripMenuItem.Click += new System.EventHandler(this.removeModToolStripMenuItem_Click);
             // 
-            // name
+            // ckbUpdate
             // 
-            this.name.HeaderText = "Name";
-            this.name.Name = "name";
-            this.name.ReadOnly = true;
-            this.name.Width = 170;
-            // 
-            // version
-            // 
-            this.version.HeaderText = "Version";
-            this.version.Name = "version";
-            this.version.ReadOnly = true;
-            this.version.Width = 80;
-            // 
-            // author
-            // 
-            this.author.HeaderText = "Author";
-            this.author.Name = "author";
-            this.author.ReadOnly = true;
-            this.author.Width = 200;
-            // 
-            // status
-            // 
-            this.status.HeaderText = "Status";
-            this.status.Name = "status";
-            this.status.ReadOnly = true;
-            this.status.Width = 110;
+            this.ckbUpdate.Location = new System.Drawing.Point(430, 19);
+            this.ckbUpdate.Name = "ckbUpdate";
+            this.ckbUpdate.Size = new System.Drawing.Size(120, 30);
+            this.ckbUpdate.TabIndex = 4;
+            this.ckbUpdate.Text = "Update all outdated mods at startup";
+            this.ckbUpdate.UseVisualStyleBackColor = true;
+            this.ckbUpdate.CheckedChanged += new System.EventHandler(this.ckbUpdate_CheckedChanged);
             // 
             // modManager
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(599, 257);
+            this.ClientSize = new System.Drawing.Size(609, 257);
             this.Controls.Add(this.gbxModActions);
             this.Controls.Add(this.gbxMods);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
@@ -264,5 +283,6 @@
         private System.Windows.Forms.DataGridViewTextBoxColumn version;
         private System.Windows.Forms.DataGridViewTextBoxColumn author;
         private System.Windows.Forms.DataGridViewTextBoxColumn status;
+        private System.Windows.Forms.CheckBox ckbUpdate;
     }
 }

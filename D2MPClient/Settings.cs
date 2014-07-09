@@ -50,6 +50,19 @@ namespace d2mp
                 Properties.Settings.Default.Save();
             }
         }
+
+        public static bool autoUpdateMods
+        {
+            get
+            {
+                return Properties.Settings.Default.autoUpdate;
+            }
+            set
+            {
+                Properties.Settings.Default.autoUpdate = value;
+                Properties.Settings.Default.Save();
+            }
+        }
         public static void Reset()
         {
             Properties.Settings.Default.Reset();

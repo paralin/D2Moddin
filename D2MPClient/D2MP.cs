@@ -115,6 +115,7 @@ namespace d2mp
                 };
                 var json = JObject.FromObject(init).ToString(Formatting.None);
                 Send(json);
+                AutoUpdateMods();
             };
 
             client.Bind("commands", e =>
@@ -283,6 +284,17 @@ namespace d2mp
             info.RedirectStandardOutput = true;
             info.UseShellExecute = false;
             Process.Start(info);
+        }
+
+        private static void AutoUpdateMods()
+        {
+            if (Settings.autoUpdateMods)
+            {
+                List<RemoteMod> lst = modController.getRemoteMods();
+                lst.FindAll(a => a.needsUpdate).ForEach(mod => modController.installQueue.Enqueue(mod));
+                if (modController.installQueue.Count > 0)
+                    modController.InstallQueued();
+            }
         }
 
         public static void main()

@@ -26,6 +26,7 @@ namespace d2mp
         private void modManager_Load(object sender, EventArgs e)
         {
             refreshTable();
+            ckbUpdate.Checked = Settings.autoUpdateMods;
         }
         public void refreshTable()
         {
@@ -183,6 +184,11 @@ namespace d2mp
         {
             var mod = (RemoteMod)modsGridView.SelectedRows[0].Tag;
             D2MP.SetMod(new ClientCommon.Methods.SetMod { Mod = new ClientCommon.Data.ClientMod { name = mod.name, version = mod.version } });
+        }
+
+        private void ckbUpdate_CheckedChanged(object sender, EventArgs e)
+        {
+            Settings.autoUpdateMods = ckbUpdate.Checked;
         }
     }
 }
