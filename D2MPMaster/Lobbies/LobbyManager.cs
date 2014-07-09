@@ -216,18 +216,8 @@ namespace D2MPMaster.Lobbies
                             m => m.status==LobbyStatus.Play&&!ServerService.Servers.Find(z => z.Instances.Any(f => f.Value.lobby.id == m.id)).Any());
                     foreach (var lobby in lobbies)
                     {
-                        CloseLobby(lobby);
+						OnServerShutdownNoInstance(lobby);
                         log.DebugFormat("Cleared orphan lobby {0}.", lobby.id);
-                    }
-
-                    foreach (var server in ServerService.Servers.Find(m=>m.Inited))
-                    {
-                        var instances = server.Instances.Where(m => !LobbyID.Keys.Contains(m.Value.lobby.id));
-                        foreach (var instance in instances)
-                        {
-                            GameInstance inst;
-                            server.Instances.TryRemove(instance.Key, out inst);
-                        }
                     }
                 }
             }
@@ -717,6 +707,29 @@ namespace D2MPMaster.Lobbies
             }else
                 CloseLobby(instance.lobby);
         }
+
+		public static void OnServerShutdownNoInstance(Lobby lobby)
+		{
+			log.Error("Server shutdown (NO INSTANCE): " + lobby.id);
+			if (!LobbyID.Values.Contains(lobby) || lobby.status == LobbyStatus.Start) return;
+			if (lobby.LobbyType == LobbyType.PlayerTest)
+			{
+				log.Error("No match result info for test lobby, setting all to success.");
+				foreach (var browser in lobby.radiant.Where(player => player != null).Select(player => Browsers.Find(m => m.user != null && m.user.steam.steamid == player.steam).FirstOrDefault()).Where(browser => browser != null))
+				{
+					browser.SetTested(true);
+				}
+				foreach (var browser in lobby.dire.Where(player => player != null).Select(player => Browsers.Find(m => m.user != null && m.user.steam.steamid == player.steam).FirstOrDefault()).Where(browser => browser != null))
+				{
+					browser.SetTested(true);
+				}
+			}else if (lobby.LobbyType == LobbyType.Normal)
+			{
+				log.Error("No match result info for regular lobby, returning to wait.");
+				ReturnToWait(lobby);
+			}else
+				CloseLobby(lobby);
+		}
 
         public static void OnServerReady(GameInstance instance)
         {
