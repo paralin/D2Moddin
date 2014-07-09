@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Configuration;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Threading;
 using Newtonsoft.Json;
@@ -305,10 +306,13 @@ namespace d2mpserver
 
         public void SendInit()
         {
+            List<ServerCommon.ServerRegion> regions = new List<ServerCommon.ServerRegion>();
+            regions.Add((ServerCommon.ServerRegion)(int)Settings.Default.serverRegion1);
+            regions.Add((ServerCommon.ServerRegion)(int)Settings.Default.serverRegion2);
             var data = new Init()
                        {
                            addons = manager.GetAddonVersions(),
-                           region = (ServerCommon.ServerRegion)((int)Settings.Default.serverRegion),
+                           regions = regions.ToArray(),
                            name = Settings.Default.serverName,
                            portRangeStart = Settings.Default.portRangeStart,
                            portRangeEnd = Settings.Default.portRangeEnd,

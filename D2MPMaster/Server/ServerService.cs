@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using System.Runtime.ExceptionServices;
 using D2MPMaster.Lobbies;
 using D2MPMaster.Server;
 using d2mpserver;
@@ -17,16 +18,12 @@ namespace D2MPMaster
             ServerRegion region = lobby.region;
             if (region != ServerRegion.UNKNOWN)
             {
-                var regionServers = Servers.Find(m => m.Inited && (int)m.InitData.region == (int)region);
+                var regionServers = Servers.Find(m => m.Inited && m.InitData.regions.Contains((ServerCommon.ServerRegion)region)).OrderBy(m=>m.Instances.Count);
                 if (!regionServers.Any()) lobby.region = ServerRegion.UNKNOWN;
+                else return regionServers.FirstOrDefault(m=>m.Instances.Count < m.InitData.serverCount);
             }
 
-            var available = Servers.Find(m => m.Inited && m.Instances.Count < m.InitData.serverCount).OrderBy(m=>m.Instances.Count);// fraction not working properly m.InitData.serverCount);
-            if (region == ServerRegion.UNKNOWN)
-            {
-                return available.FirstOrDefault();
-            }
-            return available.FirstOrDefault(m=>(int)m.InitData.region == (int)region);
+            return Servers.Find(m => m.Inited && m.Instances.Count < m.InitData.serverCount).OrderBy(m=>m.Instances.Count).FirstOrDefault();
         }
     }
 }
