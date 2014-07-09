@@ -206,12 +206,12 @@ namespace d2mpserver.Properties {
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("UNKNOWN")]
-        public global::d2mpserver.ServerRegion serverRegion {
+        public global::d2mpserver.ServerRegion serverRegion1 {
             get {
-                return ((global::d2mpserver.ServerRegion)(this["serverRegion"]));
+                return ((global::d2mpserver.ServerRegion)(this["serverRegion1"]));
             }
             set {
-                this["serverRegion"] = value;
+                this["serverRegion1"] = value;
             }
         }
         
@@ -236,6 +236,18 @@ namespace d2mpserver.Properties {
             }
             set {
                 this["disableSteamCMD"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("UNKNOWN")]
+        public global::d2mpserver.ServerRegion serverRegion2 {
+            get {
+                return ((global::d2mpserver.ServerRegion)(this["serverRegion2"]));
+            }
+            set {
+                this["serverRegion2"] = value;
             }
         }
     }

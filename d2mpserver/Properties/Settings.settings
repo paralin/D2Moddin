@@ -47,7 +47,7 @@
     <Setting Name="serverName" Type="System.String" Scope="User">
       <Value Profile="(Default)">UNNAMED</Value>
     </Setting>
-    <Setting Name="serverRegion" Type="d2mpserver.ServerRegion" Scope="User">
+    <Setting Name="serverRegion1" Type="d2mpserver.ServerRegion" Scope="User">
       <Value Profile="(Default)">UNKNOWN</Value>
     </Setting>
     <Setting Name="ReadyDelay" Type="System.Int32" Scope="User">
@@ -55,6 +55,9 @@
     </Setting>
     <Setting Name="disableSteamCMD" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">False</Value>
+    </Setting>
+    <Setting Name="serverRegion2" Type="d2mpserver.ServerRegion" Scope="User">
+      <Value Profile="(Default)">UNKNOWN</Value>
     </Setting>
   </Settings>
 </SettingsFile>
