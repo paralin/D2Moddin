@@ -45,9 +45,9 @@ namespace d2mp
         private static string server = "ws://127.0.0.1:4502/ClientController";
 #else
 #if DEV
-        private static string server = "ws://net1.d2modd.in:4502/ClientController";
-#else
         private static string server = "ws://172.250.79.95:4502/ClientController";
+#else
+        private static string server = "ws://net1.d2modd.in:4502/ClientController";
 #endif
 #endif
         public static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
