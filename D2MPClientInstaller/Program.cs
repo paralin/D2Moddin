@@ -162,7 +162,6 @@ namespace D2MPClientInstaller
                             client.DownloadFile(info[1], dlPath);
                         }
                         d2mp.UnZip.unzipFromStream(File.OpenRead(dlPath), installdir);
-                        File.Delete(dlPath);
                     }
                     catch (Exception ex)
                     {
