@@ -67,7 +67,6 @@ namespace D2MPMaster.Server
         public void Send(string msg)
         {
             this.AsyncSend(new TextArgs(msg, "commands"), req => { });
-            this.SendJson(msg, "commands");
             this.mAckTimer.Start();
         }
 
