@@ -10,7 +10,7 @@ namespace ServerCommon.Methods
         public string password = Password;
         public int serverCount { get; set; }
         public ServerAddon[] addons { get; set; }
-        public const string Version = "2.3.1";
+        public const string Version = "2.4.0";
         public string version = Version;
         public int portRangeStart { get; set; }
         public int portRangeEnd { get; set; }

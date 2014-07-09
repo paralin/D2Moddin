@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading;
+using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using ServerCommon.Methods;
@@ -21,6 +22,8 @@ namespace d2mpserver
         private ServerManager manager;
         private XSocketClient client;
         private bool updating = false;
+        private bool installingAddons = false;
+        private object ConcurrentLock = new object();
 
         public ServerConnection(ServerManager manager)
         {
@@ -103,6 +106,8 @@ namespace d2mpserver
 
         private void PerformAddonOps(object state)
         {
+            if (installingAddons) return;
+            installingAddons = true;
             var command = (string[])state;
 
             if (command[1] != "")
@@ -123,6 +128,7 @@ namespace d2mpserver
                     DeleteAddon(deletion);
                 }
             }
+            installingAddons = false;
             SendInit();
         }
 
@@ -130,105 +136,143 @@ namespace d2mpserver
         {
             string[] command = data.Split('|');
             SendPing(command[0]);
-            switch (command[0])
-            {
-                case "shutdown":
-                    {
-                        Program.ShutdownAll();
-                    }
-                    break;
-                case "restart":
-                    {
-                        ServerUpdater.RestartD2MP();
-                        Program.ShutdownAll();
-                    }
-                    break;
-                case "reinit":
-                    {
-                        SendInit();
-                    }
-                    break;
-                case "addonOps":
-                    {
-                        ThreadPool.QueueUserWorkItem(PerformAddonOps, command);
-                    }
-                    break;
-                case "launchServer":
-                    {
-                        int id = int.Parse(command[1]);
-                        bool dev = bool.Parse(command[2]);
-                        string mod = command[3];
-                        string rconPass = command[4];
-                        string[] commands = command[5].Split('&');
-                        int port;
-                        for (port=Settings.Default.portRangeStart; port < Settings.Default.portRangeEnd; port++)
-                        {
-                            if (manager.IsPortFree(port) && Utils.IsPortOpen(port))
-                            {
-                                break;
-                            }
-                        }
-                        log.Debug("Picked port "+port+" id "+id+" dev "+dev+" mod "+mod+" rconPass "+rconPass);
-                        var serv = manager.LaunchServer(id, port, dev, mod, rconPass, commands);
-                        serv.OnReady += (sender, args) => Send(JObject.FromObject(new OnServerLaunched() { id = id, port = port }).ToString(Formatting.None));
-                        serv.OnShutdown += (sender, args) => Send(JObject.FromObject(new OnServerShutdown() {id = id}).ToString(Formatting.None));
-                        break;
-                    }
-                case "setMaxLobbies":
-                    {
-                        int max = int.Parse(command[1]);
-                        Settings.Default["serverCount"] = max;
-                        var configPath = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.PerUserRoaming).FilePath;
-                        Settings.Default.Save();
-                        log.Info("Server set the max lobby count to "+max);
-                        log.Debug("Saved config: "+configPath);
-                        break;
-                    }
-                case "setServerRegion":
-                    {
-                        Settings.Default["serverRegion"] = (ServerRegion)int.Parse(command[1]);
-                        Settings.Default.Save();
-                        log.Debug("The server region was set to "+command[1]);
-                        break;
-                    };
-                case "setServerName":
-                    {
-                        Settings.Default["serverName"] = command[1];
-                        Settings.Default.Save();
-                        log.Debug("Server set our name to "+command[1]);
-                        break;
-                    }
-                case "shutdownServer":
-                    {
-                        int id = int.Parse(command[1]);
-                        manager.ShutdownServer(id);
-                    }
-                    break;
-                case "authFail":
-                    log.Debug("Auth password is invalid.");
-                    log.Fatal("Server doesn't like our init info (we're probably out of date), shutting down...");
-                    infoValid = false;
-                    Environment.Exit(0);
-                    break;
-                case "outOfDate":
-                    if (updating) return;
-                    log.Info("Server is out of date (current version is " + Init.Version + "), updating...");
-                    updating = true;
-                    client.Close();
-                    if (!Settings.Default.disableUpdate)
-                    {
-                        var url = command[1];
-                        log.Debug("Downloading update from " + url + "...");
-                        ServerUpdater.UpdateFromURL(url);
-                        break;
-                    }
-                    else
-                    {
-                        log.Fatal("Server out of date but auto updating disabled. Exiting...");
-                        Program.shutdown = true;
-                    }
-                    break;
-            }
+            Task.Factory.StartNew(() =>
+                                  {
+                                      try
+                                      {
+                                          lock (ConcurrentLock)
+                                          {
+                                              switch (command[0])
+                                              {
+                                                  case "shutdown":
+                                                  {
+                                                      Program.ShutdownAll();
+                                                  }
+                                                      break;
+                                                  case "restart":
+                                                  {
+                                                      ServerUpdater.RestartD2MP();
+                                                      Program.ShutdownAll();
+                                                  }
+                                                      break;
+                                                  case "reinit":
+                                                  {
+                                                      SendInit();
+                                                  }
+                                                      break;
+                                                  case "addonOps":
+                                                  {
+                                                      ThreadPool.QueueUserWorkItem(PerformAddonOps, command);
+                                                  }
+                                                      break;
+                                                  case "launchServer":
+                                                  {
+                                                      int id = int.Parse(command[1]);
+                                                      bool dev = bool.Parse(command[2]);
+                                                      string mod = command[3];
+                                                      string rconPass = command[4];
+                                                      string[] commands = command[5].Split('&');
+                                                      int port;
+                                                      for (port = Settings.Default.portRangeStart;
+                                                          port < Settings.Default.portRangeEnd;
+                                                          port++)
+                                                      {
+                                                          if (manager.IsPortFree(port) && Utils.IsPortOpen(port))
+                                                          {
+                                                              break;
+                                                          }
+                                                      }
+                                                      log.Debug("Picked port " + port + " id " + id + " dev " + dev +
+                                                                " mod " + mod + " rconPass " + rconPass);
+                                                      var serv = manager.LaunchServer(id, port, dev, mod, rconPass,
+                                                          commands);
+                                                      serv.OnReady +=
+                                                          (sender, args) =>
+                                                              Send(
+                                                                  JObject.FromObject(new OnServerLaunched()
+                                                                                     {
+                                                                                         id = id,
+                                                                                         port = port
+                                                                                     })
+                                                                      .ToString(Formatting.None));
+                                                      serv.OnShutdown +=
+                                                          (sender, args) =>
+                                                              Send(
+                                                                  JObject.FromObject(new OnServerShutdown() {id = id})
+                                                                      .ToString(Formatting.None));
+                                                      break;
+                                                  }
+                                                  case "setMaxLobbies":
+                                                  {
+                                                      int max = int.Parse(command[1]);
+                                                      Settings.Default["serverCount"] = max;
+                                                      var configPath =
+                                                          ConfigurationManager.OpenExeConfiguration(
+                                                              ConfigurationUserLevel.PerUserRoaming).FilePath;
+                                                      Settings.Default.Save();
+                                                      log.Info("Server set the max lobby count to " + max);
+                                                      log.Debug("Saved config: " + configPath);
+                                                      break;
+                                                  }
+                                                  case "setServerRegion":
+                                                  {
+                                                      Settings.Default["serverRegion"] =
+                                                          (ServerRegion) int.Parse(command[1]);
+                                                      Settings.Default.Save();
+                                                      log.Debug("The server region was set to " + command[1]);
+                                                      break;
+                                                  }
+                                                      ;
+                                                  case "setServerName":
+                                                  {
+                                                      Settings.Default["serverName"] = command[1];
+                                                      Settings.Default.Save();
+                                                      log.Debug("Server set our name to " + command[1]);
+                                                      break;
+                                                  }
+                                                  case "shutdownServer":
+                                                  {
+                                                      int id = int.Parse(command[1]);
+                                                      manager.ShutdownServer(id);
+                                                  }
+                                                      break;
+                                                  case "authFail":
+                                                      log.Debug("Auth password is invalid.");
+                                                      log.Fatal(
+                                                          "Server doesn't like our init info (we're probably out of date), shutting down...");
+                                                      infoValid = false;
+                                                      Environment.Exit(0);
+                                                      break;
+                                                  case "outOfDate":
+                                                      if (updating) return;
+                                                      log.Info("Server is out of date (current version is " +
+                                                               Init.Version +
+                                                               "), updating...");
+                                                      updating = true;
+                                                      client.Close();
+                                                      if (!Settings.Default.disableUpdate)
+                                                      {
+                                                          var url = command[1];
+                                                          log.Debug("Downloading update from " + url + "...");
+                                                          ServerUpdater.UpdateFromURL(url);
+                                                          break;
+                                                      }
+                                                      else
+                                                      {
+                                                          log.Fatal(
+                                                              "Server out of date but auto updating disabled. Exiting...");
+                                                          Program.shutdown = true;
+                                                      }
+                                                      break;
+                                              }
+                                          }
+                                      }
+                                      catch (Exception ex)
+                                      {
+                                          log.Error("Issue processing command", ex);
+                                      }
+                                  });
+
         }
 
         public void SendPing(string msg)

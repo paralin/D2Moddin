@@ -27,9 +27,23 @@ namespace D2MPMaster.WebHandler
             JArray servers;
             data["servers"] =servers= new JArray();
 
-            foreach (var serv in ServerService.Servers.Find(m=>m.Inited))
+            foreach (var server in ServerService.Servers.Find(m=>m.Inited))
             {
-                servers.Add(JObject.FromObject(serv));
+                JObject serverj = new JObject();
+                serverj["name"] = server.InitData.name;
+                serverj["ip"] = server.Address;
+                serverj["activeinstances"] = server.Instances.Count;
+                serverj["maxinstances"] = server.InitData.serverCount;
+                serverj["region"] = JArray.FromObject(server.InitData.regions);
+                JArray instances = new JArray();
+                foreach (var instance in server.Instances.Values)
+                {
+                    JObject jinstance = new JObject();
+                    jinstance["id"] = instance.ID;
+                    jinstance["lobby"] = JObject.FromObject(instance.lobby);
+                    instances.Add(jinstance);
+                }
+                servers.Add(serverj);
             }
 
             return data.ToString(Formatting.Indented);
