@@ -156,15 +156,19 @@ namespace D2MPClientInstaller
                     Log("Downloading/unzipping new version...");
                     try
                     {
+                        var dlPath = Path.Combine(installdir, "archive.zip");
                         using(WebClient client = new WebClient())
                         {
-                            d2mp.UnZip.unzipFromStream(client.OpenRead(info[1]), installdir);
+                            client.DownloadFile(info[1], dlPath);
                         }
+                        d2mp.UnZip.unzipFromStream(File.OpenRead(dlPath), installdir);
+                        File.Delete(dlPath);
                     }
                     catch (Exception ex)
                     {
                         Log(ex.ToString());
                         ShowError("Problem downloading new D2Moddin launcher: " + ex);
+                        ShowError("You can manually download the client from " + info[1]);
                         return;
                     }
                 }
