@@ -14,6 +14,7 @@ using D2MPMaster.LiveData;
 using D2MPMaster.Model;
 using D2MPMaster.Server;
 using d2mpserver;
+using MongoDB.Driver.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using XSockets.Core.Common.Globals;
@@ -209,13 +210,25 @@ namespace D2MPMaster.Lobbies
                     log.DebugFormat("Cleared lobby {0} for inactivity.", lobby.id);
                 }
                 //All playing lobbies with no server with an instance that has the lobby
-                lobbies =
-                    LobbyID.Values.Where(
-                        m => m.status==LobbyStatus.Play&&!ServerService.Servers.Find(z => z.Instances.Any(f => f.Value.lobby.id == m.id)).Any());
-                foreach (var lobby in lobbies)
-                {
-                    CloseLobby(lobby);
-                    log.DebugFormat("Cleared orphan lobby {0}.", lobby.id);
+                lock (PlayingLobbies) { 
+                    lobbies =
+                        LobbyID.Values.Where(
+                            m => m.status==LobbyStatus.Play&&!ServerService.Servers.Find(z => z.Instances.Any(f => f.Value.lobby.id == m.id)).Any());
+                    foreach (var lobby in lobbies)
+                    {
+                        CloseLobby(lobby);
+                        log.DebugFormat("Cleared orphan lobby {0}.", lobby.id);
+                    }
+
+                    foreach (var server in ServerService.Servers.Find(m=>m.Inited))
+                    {
+                        var instances = server.Instances.Where(m => !LobbyID.Keys.Contains(m.Value.lobby.id));
+                        foreach (var instance in instances)
+                        {
+                            GameInstance inst;
+                            server.Instances.TryRemove(instance.Key, out inst);
+                        }
+                    }
                 }
             }
         }

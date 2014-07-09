@@ -20,6 +20,7 @@ namespace d2mpserver
         public bool infoValid = true;
         private ServerManager manager;
         private XSocketClient client;
+        private bool updating = false;
 
         public ServerConnection(ServerManager manager)
         {
@@ -43,7 +44,6 @@ namespace d2mpserver
 #else
             client = new XSocketClient(Settings.Default.serverIP, "*");
 #endif
-            client.OnClose += (sender, args) => log.Debug("Disconnected from the server");
             client.OnError += (sender, args) => log.Error("Socket error: " + args.data);
             client.OnPing += OnPing;
 
@@ -60,7 +60,8 @@ namespace d2mpserver
             client.OnClose += (sender, args) =>
             {
                 log.Info("Disconnected from the server.");
-                AttemptReconnect();
+                if (!updating)
+                    AttemptReconnect();
             };
         }
 
@@ -210,7 +211,10 @@ namespace d2mpserver
                     Environment.Exit(0);
                     break;
                 case "outOfDate":
+                    if (updating) return;
                     log.Info("Server is out of date (current version is " + Init.Version + "), updating...");
+                    updating = true;
+                    client.Close();
                     if (!Settings.Default.disableUpdate)
                     {
                         var url = command[1];

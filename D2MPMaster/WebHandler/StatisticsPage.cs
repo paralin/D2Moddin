@@ -15,6 +15,61 @@ namespace D2MPMaster.WebHandler
         public StatisticsPage()
         {
             Get["/stats/general"] = data => HandleStatsGeneral();
+            Get["/stats/lobbies"] = data => HandleStatsLobbies();
+            Get["/stats/servers"] = data => HandleStatsServers();
+            Get["/stats/mods"] = data => HandleStatsMods();
+        }
+
+        private string HandleStatsServers()
+        {
+            JObject data = new JObject();
+
+            JArray servers;
+            data["servers"] =servers= new JArray();
+
+            foreach (var serv in ServerService.Servers.Find(m=>m.Inited))
+            {
+                servers.Add(JObject.FromObject(serv));
+            }
+
+            return data.ToString(Formatting.Indented);
+        }
+
+        private string HandleStatsMods()
+        {
+            JObject data = new JObject();
+
+            JArray mods;
+            data["mods"] = mods = new JArray();
+
+            foreach (var mod in Mods.Mods.ModCache.Values)
+            {
+                var modj = new JObject();
+                modj["name"] = mod.name;
+                modj["version"] = mod.version;
+                modj["lobbies"] = LobbyManager.LobbyID.Values.Count(m => m.mod == mod.Id);
+                mods.Add(modj);
+            }
+
+            return data.ToString(Formatting.Indented);
+        }
+
+        private string HandleStatsLobbies()
+        {
+            JObject data = new JObject();
+
+            JArray lobbies;
+            data["lobbies"] = lobbies = new JArray();
+
+            lock (LobbyManager.PublicLobbies)
+            {
+                foreach (var lob in LobbyManager.LobbyID.Values)
+                {
+                    lobbies.Add(JObject.FromObject(lob));
+                }
+            }
+
+            return data.ToString(Formatting.Indented);
         }
 
         private string HandleStatsGeneral()
@@ -59,18 +114,6 @@ namespace D2MPMaster.WebHandler
                     serverj["maxinstances"] = server.InitData.serverCount;
                     serverj["region"] = JArray.FromObject(server.InitData.regions);
                     servers.Add(serverj);
-                }
-
-                JArray mods;
-                data["mods"] = mods = new JArray();
-
-                foreach (var mod in Mods.Mods.ModCache.Values)
-                {
-                    var modj = new JObject();
-                    modj["name"] = mod.name;
-                    modj["version"] = mod.version;
-                    modj["lobbies"] = LobbyManager.LobbyID.Values.Count(m => m.mod == mod.Id);
-                    mods.Add(modj);
                 }
 
                 return data.ToString(Formatting.Indented);
