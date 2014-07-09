@@ -5,6 +5,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Timers;
 using D2MPMaster.Lobbies;
 using D2MPMaster.Properties;
 using d2mpserver;
@@ -26,6 +27,7 @@ namespace D2MPMaster.Server
         public Init InitData;
         public string Address;
         public int IDCounter;
+        private Timer mAckTimer = new Timer(30000);//30 seconds
         public ConcurrentDictionary<int, GameInstance> Instances = new ConcurrentDictionary<int, GameInstance>();
         public bool Inited { get; set; }
         private object ConcurrentLock = new object();
@@ -35,10 +37,19 @@ namespace D2MPMaster.Server
             ID = Utils.RandomString(10);
             this.OnOpen += OnClientConnect;
             this.OnClose += OnClosed;
+            //force the connection closed when the server does not ACK
+            mAckTimer.Elapsed += (sender, args) =>
+            {
+                log.Info("Server did not respond in time");
+                mAckTimer.Stop();
+                this.Close();
+            };
         }
 
         private void OnClientConnect(object sender, OnClientConnectArgs e)
         {
+            //stop the timer if the server ACK
+            this.ProtocolInstance.OnPing += (s, args) => mAckTimer.Stop();//protocol instance is null until someone connects
         }
 
         public void OnClosed(object sender, OnClientDisconnectArgs onClientDisconnectArgs)
@@ -56,6 +67,8 @@ namespace D2MPMaster.Server
         public void Send(string msg)
         {
             this.AsyncSend(new TextArgs(msg, "commands"), req => { });
+            this.SendJson(msg, "commands");
+            this.mAckTimer.Start();
         }
 
         public override void OnMessage(XSockets.Core.Common.Socket.Event.Interface.ITextArgs textArgs)
