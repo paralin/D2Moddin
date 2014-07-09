@@ -46,6 +46,7 @@ namespace d2mp
 #else
         private static string server = "ws://net1.d2modd.in:4502/ClientController";
 #endif
+        private const string installerURL = "https://s3-us-west-2.amazonaws.com/d2mpclient/D2MPLauncher.exe";
         public static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
         private static string addonsDir;
         public static string d2mpDir;
@@ -182,7 +183,7 @@ namespace d2mp
             var updaterPath = Path.Combine(Directory.GetParent(ourDir).FullName, "updater.exe");
             using (WebClient wc = new WebClient())
             {
-                wc.DownloadFile("https://s3-us-west-2.amazonaws.com/d2mpclient/StartD2MP.exe", updaterPath);
+                wc.DownloadFile(installerURL, updaterPath);
                 Process.Start(updaterPath);
                 Application.Exit();
             }
