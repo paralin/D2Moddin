@@ -127,6 +127,7 @@ namespace d2mpserver
         private void ProcessMessage(string data)
         {
             string[] command = data.Split('|');
+            SendPing(command[0]);
             switch (command[0])
             {
                 case "shutdown":
@@ -223,6 +224,12 @@ namespace d2mpserver
                     }
                     break;
             }
+        }
+
+        public void SendPing(string msg)
+        {
+            log.DebugFormat("Sending ACK for command [{0}]", msg);
+            client.Ping(new byte[] { 1 });
         }
 
         void Send(string message)
