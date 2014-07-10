@@ -244,6 +244,8 @@ namespace D2MPMaster.Lobbies
 
         public static PlayerLocation FindPlayerLocationU(string userid, Lobby lobby)
         {
+			if (userid == null || lobby == null)
+				return null;
             User user = Mongo.Users.FindOneAs<User>(Query.EQ("_id", userid));
             if (user == null) return null;
             return FindPlayerLocation(user, lobby);
@@ -251,8 +253,10 @@ namespace D2MPMaster.Lobbies
 
         public static PlayerLocation FindPlayerLocation(User user, Lobby lobby)
         {
+			if (user == null || lobby == null)
+				return null;
             Player plyr;
-            plyr = lobby.radiant.FirstOrDefault(player => player.steam == user.steam.steamid);
+            plyr = lobby.radiant.FirstOrDefault(player => player!=null&&player.steam == user.steam.steamid);
             if (plyr != null)
             {
                 return new PlayerLocation()
@@ -262,7 +266,7 @@ namespace D2MPMaster.Lobbies
                     player = plyr
                 };
             }
-            plyr = lobby.dire.FirstOrDefault(player => player.steam == user.steam.steamid);
+            plyr = lobby.dire.FirstOrDefault(player => player!=null&&player.steam == user.steam.steamid);
             if (plyr != null)
             {
                 return new PlayerLocation()
