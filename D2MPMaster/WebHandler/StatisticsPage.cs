@@ -36,6 +36,7 @@ namespace D2MPMaster.WebHandler
                 serverj["maxinstances"] = server.InitData.serverCount;
                 serverj["region"] = JArray.FromObject(server.InitData.regions);
                 JArray instances = new JArray();
+                serverj["instances"] = instances;
                 foreach (var instance in server.Instances.Values)
                 {
                     JObject jinstance = new JObject();
