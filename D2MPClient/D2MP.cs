@@ -285,7 +285,6 @@ namespace d2mp
             var info = new ProcessStartInfo("cmd.exe");
             info.Arguments = "/C timeout 3 & Del /s /f /q " + installdir + " & exit";
             info.CreateNoWindow = true;
-            info.RedirectStandardOutput = true;
             info.UseShellExecute = false;
             Process.Start(info);
         }
