@@ -15,7 +15,6 @@
 // <email>kidovate@gmail.com</email>
 // <date>2014-05-10</date>
 // <summary>Core D2Moddin client functions.</summary>
-
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;

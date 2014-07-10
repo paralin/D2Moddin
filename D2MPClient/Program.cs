@@ -22,6 +22,7 @@ using System.Reflection;
 using System.Threading;
 using System.Windows.Forms;
 using log4net.Config;
+using Microsoft.VisualBasic.Logging;
 
 namespace d2mp
 {
@@ -41,21 +42,8 @@ namespace d2mp
             //delete the pid to shut down the other instance
             if (File.Exists(pid)) File.Delete(pid);
 
-            //wait for it to close
-            do
-            {
-                Thread.Sleep(100);
-            }
-            while (IsAlreadyRunning());
-
             XmlConfigurator.Configure();
             D2MP.main();
-        }
-
-        static bool IsAlreadyRunning()
-        {
-            Process[] localByName = Process.GetProcessesByName(Path.GetFileNameWithoutExtension(Assembly.GetEntryAssembly().Location));
-            return localByName.Length > 1;
         }
     }
 }
