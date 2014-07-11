@@ -37,6 +37,7 @@ namespace D2MPMaster.Model
         public bool ranked { get; set; }
 
         public bool disableGG { get; set; }
+        public bool enablePause { get; set; }
 
         /// <summary>
         /// Use some other static hosting off of AWS

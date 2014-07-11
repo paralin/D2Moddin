@@ -603,7 +603,8 @@ namespace D2MPMaster.Lobbies
                 LobbyType = LobbyType.PlayerTest,
                 requiresFullLobby = false,
                 status = LobbyStatus.Start,
-                serverIP = string.Empty
+                serverIP = string.Empty,
+                disablePause = !mod.enablePause
             };
             lob.radiant[0] = Player.FromUser(user, true);
             lock (PlayingLobbies)

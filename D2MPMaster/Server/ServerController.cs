@@ -194,6 +194,7 @@ namespace D2MPMaster.Server
 #endif
                 "set_match_id \"" + lobby.id + "\""
             };
+            if(lobby.disablePause) cmds.Add("d2l_disable_pause 1");
             cmds.AddRange(from plyr in lobby.radiant
                           where plyr != null
                           select string.Format("add_radiant_player \"{0}\" \"{1}\"", plyr.steam, Regex.Replace(plyr.name, "[^a-zA-Z0-9 -]", "")));
