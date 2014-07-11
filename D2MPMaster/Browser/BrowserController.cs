@@ -266,6 +266,12 @@ namespace D2MPMaster.Browser
                                                               "Can't find the mod, you probably don't have access.");
                                                           return;
                                                       }
+                                                      if (!mod.playable)
+                                                      {
+                                                          RespondError(jdata,
+                                                              "That mod is not playable right now.");
+                                                          return;
+                                                      }
                                                       //Find the client
                                                       var clients = ClientsController.Find(m => m.UID == user.Id);
                                                       if (
