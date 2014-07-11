@@ -553,7 +553,8 @@ namespace D2MPMaster.Lobbies
                                 !(user.authItems != null &&
                                  (user.authItems.Contains("developer") || user.authItems.Contains("admin") ||
                                   user.authItems.Contains("moderator"))),
-							serverIP = string.Empty
+							serverIP = string.Empty,
+                            disablePause = !mod.enablePause
                         };
             lob.radiant[0] = Player.FromUser(user, true);
             lock(PublicLobbies)
@@ -604,7 +605,7 @@ namespace D2MPMaster.Lobbies
                 requiresFullLobby = false,
                 status = LobbyStatus.Start,
                 serverIP = string.Empty,
-                disablePause = !mod.enablePause
+                disablePause = true
             };
             lob.radiant[0] = Player.FromUser(user, true);
             lock (PlayingLobbies)
