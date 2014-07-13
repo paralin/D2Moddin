@@ -714,28 +714,24 @@ namespace D2MPMaster.Lobbies
                 CloseLobby(instance.lobby);
         }
 
-		public static void OnServerShutdownNoInstance(Lobby lobby)
-		{
-			log.Error("Server shutdown (NO INSTANCE): " + lobby.id);
-			if (!LobbyID.Values.Contains(lobby) || lobby.status == LobbyStatus.Start) return;
-			if (lobby.LobbyType == LobbyType.PlayerTest)
-			{
-				log.Error("No match result info for test lobby, setting all to success.");
-				foreach (var browser in lobby.radiant.Where(player => player != null).Select(player => Browsers.Find(m => m.user != null && m.user.steam.steamid == player.steam).FirstOrDefault()).Where(browser => browser != null))
-				{
-					browser.SetTested(true);
-				}
-				foreach (var browser in lobby.dire.Where(player => player != null).Select(player => Browsers.Find(m => m.user != null && m.user.steam.steamid == player.steam).FirstOrDefault()).Where(browser => browser != null))
-				{
-					browser.SetTested(true);
-				}
-			}else if (lobby.LobbyType == LobbyType.Normal)
-			{
-				log.Error("No match result info for regular lobby, returning to wait.");
-				ReturnToWait(lobby);
-			}else
-				CloseLobby(lobby);
-		}
+        public static void OnServerShutdownNoInstance(Lobby lobby)
+        {
+            log.Error("Server shutdown (NO INSTANCE): " + lobby.id);
+            if (!LobbyID.Values.Contains(lobby) || lobby.status == LobbyStatus.Start) return;
+            if (lobby.LobbyType == LobbyType.PlayerTest)
+            {
+                log.Error("No match result info for test lobby, setting all to success.");
+                foreach (var browser in lobby.radiant.Where(player => player != null).Select(player => Browsers.Find(m => m.user != null && m.user.steam.steamid == player.steam).FirstOrDefault()).Where(browser => browser != null))
+                {
+                    browser.SetTested(true);
+                }
+                foreach (var browser in lobby.dire.Where(player => player != null).Select(player => Browsers.Find(m => m.user != null && m.user.steam.steamid == player.steam).FirstOrDefault()).Where(browser => browser != null))
+                {
+                    browser.SetTested(true);
+                }
+            }
+            CloseLobby(lobby);
+        }
 
         public static void OnServerReady(GameInstance instance)
         {
