@@ -172,6 +172,7 @@ namespace d2mpserver
                                                       string mod = command[3];
                                                       string rconPass = command[4];
                                                       string[] commands = command[5].Split('&');
+                                                      string map = command[6];
                                                       int port;
                                                       for (port = Settings.Default.portRangeStart;
                                                           port < Settings.Default.portRangeEnd;
@@ -182,10 +183,8 @@ namespace d2mpserver
                                                               break;
                                                           }
                                                       }
-                                                      log.Debug("Picked port " + port + " id " + id + " dev " + dev +
-                                                                " mod " + mod + " rconPass " + rconPass);
                                                       var serv = manager.LaunchServer(id, port, dev, mod, rconPass,
-                                                          commands);
+                                                          commands, map);
                                                       serv.OnReady +=
                                                           (sender, args) =>
                                                               Send(

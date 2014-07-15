@@ -421,13 +421,10 @@ namespace D2MPMaster.Lobbies
             if (lob.status > LobbyStatus.Queue) return;
             //Find the player
             var team = RemoveFromTeam(lob, controller.user.steam.steamid);
-            lob.status = LobbyStatus.Start;
-            if(team != null)
-                TransmitLobbyUpdate(lob, new[] { team, "status" });
             if ((lob.TeamCount(lob.dire) == 0 && lob.TeamCount(lob.radiant) == 0) || lob.creatorid == controller.user.Id)
             {
                 CloseLobby(lob);
-            }
+            }else if(lob.status == LobbyStatus.Queue) {CancelQueue(lob); TransmitLobbyUpdate(lob, new []{team});}
         }
 
         public static void ForceLeaveLobby(BrowserController controller)

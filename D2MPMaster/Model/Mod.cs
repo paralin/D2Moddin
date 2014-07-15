@@ -39,6 +39,8 @@ namespace D2MPMaster.Model
         public bool disableGG { get; set; }
         public bool enablePause { get; set; }
 
+        public string mapOverride { get; set; }
+
         /// <summary>
         /// Use some other static hosting off of AWS
         /// </summary>

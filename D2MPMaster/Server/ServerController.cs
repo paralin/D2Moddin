@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Timers;
 using D2MPMaster.Lobbies;
+using D2MPMaster.Model;
 using D2MPMaster.Properties;
 using d2mpserver;
 using Newtonsoft.Json.Linq;
@@ -166,17 +167,19 @@ namespace D2MPMaster.Server
         public GameInstance StartInstance(Lobby lobby)
         {
             IDCounter++;
+            Mod mod = Mods.Mods.ByID(lobby.mod);
             var instance = new GameInstance()
                            {
                                ID = IDCounter,
                                lobby = lobby,
                                RconPass = lobby.id + "R",
                                Server = this,
-                               state = GameState.Init
+                               state = GameState.Init,
+                               map = (mod.mapOverride ?? mod.name)
                            };
             var command = "launchServer|" + instance.ID + "|" +
                           (lobby.devMode ? bool.TrueString : bool.FalseString) + "|" + Mods.Mods.ByID(lobby.mod).name +
-                          "|" + instance.RconPass + "|" + string.Join("&", GenerateCommands(lobby));
+                          "|" + instance.RconPass + "|" + string.Join("&", GenerateCommands(lobby)) + "|" + instance.map;
             Send(command);
             Instances[instance.ID] = instance;
             return instance;

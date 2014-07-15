@@ -17,7 +17,11 @@ namespace d2mp
 {
     static class modController
     {
+#if DEV
+        private const string modUrlCheck = "http://104.131.255.27:3000/data/mods";
+#else
         private const string modUrlCheck = "http://d2modd.in/data/mods";
+#endif
         private const string modCDN = "https://s3-us-west-2.amazonaws.com/d2mpclient/";
         private static bool installing = false;
         private static List<RemoteMod> remoteMods = new List<RemoteMod>();

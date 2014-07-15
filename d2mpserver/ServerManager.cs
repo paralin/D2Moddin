@@ -32,10 +32,10 @@ namespace d2mpserver
         private static volatile bool shutdown;
         Dictionary<int, Server> servers = new Dictionary<int, Server>();
 
-        public Server LaunchServer(int id, int port, bool dev, string mod, string rconPass, string[] commands)
+        public Server LaunchServer(int id, int port, bool dev, string mod, string rconPass, string[] commands, string map)
         {
-            log.Info("Launching server, ID: " + id + " on port " + port + (dev ? " in devmode." : "."));
-            var serv = Server.Create(id, port, dev, mod, rconPass, commands);
+            log.Info("Launching server, ID: " + id + " with map "+map+" on port " + port + (dev ? " in devmode." : "."));
+            var serv = Server.Create(id, port, dev, mod, rconPass, commands, map);
             serv.OnShutdown += (sender, args) => servers.Remove(serv.id);
             servers.Add(id, serv);
             return serv;
@@ -241,7 +241,7 @@ namespace d2mpserver
             shutdown = true;
         }
 
-        public static Server Create(int id, int port, bool dev, string modp, string rconPass, string[] commands)
+        public static Server Create(int id, int port, bool dev, string modp, string rconPass, string[] commands, string map)
         {
             Process serverProc = new Process();
             ProcessStartInfo info = serverProc.StartInfo;
@@ -265,7 +265,7 @@ namespace d2mpserver
             info.Arguments += " +tv_maxclients 100 +tv_name D2Moddin +tv_delay 0 +tv_port " +
                               (port + 1000) + " +tv_autorecord 1 +tv_secret_code 0";
             info.Arguments += " +tv_enable 1";
-            info.Arguments += " +map " + mod;
+            info.Arguments += " +map " + map;
             string cfgText = commands.Aggregate("", (current, command) => current + (command + ";"));
             var cfgPath = Path.Combine(ServerManager.cfgPath, rconPass + ".cfg");
             File.WriteAllText(cfgPath, cfgText);
