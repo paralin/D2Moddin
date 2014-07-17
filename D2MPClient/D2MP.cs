@@ -393,9 +393,7 @@ namespace d2mp
                 Dictionary<int, string> usersDict = steam.FindUsers();
                 if (usersDict.Count > 0)
                 {
-                    string mainId = usersDict.OrderByDescending(x => x.Key).FirstOrDefault().Value;
-                    log.Debug("Selecting Steam ID to be sent: " + mainId);
-                    steamids.Add(mainId);
+                    steamids.AddRange(usersDict.OrderByDescending(x => x.Key).Select(m=>m.Value));
                 }
                 else
                 {

@@ -69,32 +69,24 @@ namespace D2MPMaster.Client
 		void RegisterClient()
 		{
 			//Figure out UID
-			var users = new List<User>();
+		    User user = null;
 			foreach (var steamid in InitData.SteamIDs.Where(steamid => steamid.Length == 17))
 			{
-				var user = Mongo.Users.FindOneAs<User>(Query.EQ("steam.steamid", steamid));
-				if (user != null) users.Add(user);
+				var userb = Mongo.Users.FindOneAs<User>(Query.EQ("steam.steamid", steamid));
+			    if (userb != null)
+			    {
+			        var browser = Browser.Find(m => m.user != null && m.user.Id == userb.Id);
+			        if (browser.Any()) user = userb;
+			    }
 			}
 
-			if (users.Count == 0)
+			if (user == null)
 			{
-                this.AsyncSend(NotifyMessage("No registered account found","No D2Moddin account found for your active Steam account. Please login to Steam using your registered D2Moddin account and restart the client.", true) , ar => { });
-                log.Debug("Can't find any users for client.");
+                this.AsyncSend(NotifyMessage("Account link unsuccessful","Sign into the same account on the website and in Steam.", true) , ar => { });
 				return;
 			}
-			SteamID = users.FirstOrDefault ().steam.steamid;
-			UID = users.FirstOrDefault ().Id;
-
-			/*
-			var tbrowser = users.Select(user => Browser.Find(m => m.user != null && m.user.Id == user.Id).FirstOrDefault()).FirstOrDefault(browser => browser != null);
-
-			if (tbrowser != null)
-				UID = tbrowser.user.Id;
-			else
-			{
-				var usr = users.FirstOrDefault();
-				if (usr != null) UID = usr.Id;
-			}*/
+			SteamID = user.steam.steamid;
+			UID = user.Id;
 
 			Inited = true;
 
