@@ -27,6 +27,7 @@ using System.Threading;
 using System.Windows.Forms;
 using ClientCommon.Data;
 using ClientCommon.Methods;
+using ICSharpCode.SharpZipLib.Zip;
 using log4net;
 using Microsoft.VisualBasic.FileIO;
 using Microsoft.Win32;
@@ -721,6 +722,126 @@ namespace d2mp
         {
             creditsForm frm = new creditsForm();
             frm.Show();
+        }
+
+        internal static void manualInstallMod()
+        {
+            if (isInstalling)
+            {
+                notifier.Notify(3, "Already downloading a mod", "Please try again after a few seconds.");
+                return;
+            }
+            isInstalling = true;
+
+            using (var dlg = new OpenFileDialog()
+            {
+                CheckFileExists = true,
+                CheckPathExists = true,
+                DefaultExt = "zip",
+                Filter = "Zip Files|*.zip",
+                FilterIndex = 1,
+                Multiselect = false,
+                Title = "Choose the mod zip to install"
+            })
+            {
+                //user pressed ok
+                if (dlg.ShowDialog() == DialogResult.OK)
+                {
+                    //open the file in a stream
+                    using (var fileStream = dlg.OpenFile())
+                    {
+                        ZipFile zip = new ZipFile(fileStream);
+
+                        //check integrity
+                        if (zip.TestArchive(true))
+                        {
+                            //look for the map file. It contains the mod name
+                            ZipEntry map = zip.Cast<ZipEntry>().FirstOrDefault(a => a.Name.ToLower().EndsWith(".bsp"));
+
+                            if (map != null)
+                            {
+                                //look for the version file
+                                int entry = zip.FindEntry("addoninfo.txt", true);
+                                if (entry >= 0)
+                                {
+                                    string allText = string.Empty;
+
+                                    using (var infoStream = new StreamReader(zip.GetInputStream(entry)))
+                                        allText = infoStream.ReadToEnd();
+
+                                    string version = modController.ReadAddonVersion(allText);
+
+                                    if (!string.IsNullOrEmpty(version))
+                                    {
+                                        Version v = new Version(version);
+                                        string name = Path.GetFileNameWithoutExtension(map.Name).ToLower();
+
+                                        //check if this same mod is already installed and if it needs an update
+                                        if (modController.clientMods.Any(
+                                            a => a.name.ToLower().Equals(name) && new Version(a.version) >= v))
+                                        {
+                                            MessageBox.Show("The mod you are trying to install is already installed or outdated.", "Mod Manual Install",
+                                                MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                                        }
+                                        else
+                                        {
+                                            string targetDir = Path.Combine(d2mpDir, name);
+                                            if (Directory.Exists(targetDir))
+                                                Directory.Delete(targetDir, true);
+                                            //Make the dir again
+                                            Directory.CreateDirectory(targetDir);
+
+                                            if (UnzipWithTemp(fileStream, targetDir))
+                                            {
+                                                refreshMods();
+                                                log.Info("Mod manually installed!");
+                                                notifier.Notify(1, "Mod installed", "The following mod has been installed successfully: " + name);
+
+                                                var mod = new ClientMod() {name = name, version = v.ToString()};
+                                                var msg = new OnInstalledMod() {Mod = mod};
+
+                                                Send(JObject.FromObject(msg).ToString(Formatting.None));
+
+                                                var existing = modController.clientMods.FirstOrDefault(m => m.name == mod.name);
+                                                if (existing != null) modController.clientMods.Remove(existing);
+                                                
+                                                modController.clientMods.Add(mod);
+                                            }
+                                            else
+                                            {
+                                                MessageBox.Show("The mod could not be installed. Read the log file for details.", "Mod Manual Install",
+                                                    MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                                            }
+                                        }
+                                    }
+                                    else
+                                    {
+                                        MessageBox.Show("Could not read the mod version from the zip file.", "Mod Manual Install",
+                                            MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                                    }
+                                }
+                                else
+                                {
+                                    MessageBox.Show("No mod info was found in the zip file.", "Mod Manual Install",
+                                        MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                                }
+                            }
+                            else
+                            {
+                                MessageBox.Show("No mod map was found in the zip file.", "Mod Manual Install",
+                                    MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                            }
+                        }
+                        else
+                        {
+                            MessageBox.Show("The zip file you selected seems to be invalid.", "Mod Manual Install",
+                                MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                        }
+                    }
+                }
+            }
+
+            isInstalling = false;
         }
     }
 
