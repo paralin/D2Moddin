@@ -76,7 +76,7 @@ namespace D2MPMaster.Client
 			    if (userb != null)
 			    {
 			        var browser = Browser.Find(m => m.user != null && m.user.Id == userb.Id);
-			        if (browser.Any()) user = userb;
+					if (browser.Any()) {user = userb; break;};
 			    }
 			}
 
