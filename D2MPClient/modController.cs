@@ -46,23 +46,38 @@ namespace d2mp
                 {
                     versionFile = File.ReadAllText(infoPath);
                 }
-                Match match = Regex.Match(versionFile, @"(addonversion)(\s+)(\d+\.)?(\d+\.)?(\d+\.)?(\*|\d+)",
-                    RegexOptions.IgnoreCase);
-                if (match.Success)
+
+                string version = ReadAddonVersion(versionFile);
+
+                if (!string.IsNullOrEmpty(version))
                 {
-                    string version = match.Groups.Cast<Group>()
-                        .ToList()
-                        .Skip(3)
-                        .Aggregate("", (current, part) => current + part.Value);
+                    clientMods.Add(new ClientCommon.Data.ClientMod {name = modName, version = version});
                     D2MP.log.Debug(modName + "=" + version);
-                    clientMods.Add(new ClientCommon.Data.ClientMod { name = modName, version = version });
                 }
                 else
                 {
-                    D2MP.log.Error("Can't find version info for mod: " + modName + ", not including");
+                    D2MP.log.Error("Can't find version info for mod: " + modName + ", not including");   
                 }
             }
             return clientMods;
+        }
+
+        public static string ReadAddonVersion(string wholeAddonFile)
+        {
+            Match match = Regex.Match(wholeAddonFile, @"(addonversion)(\s+)(\d+\.)?(\d+\.)?(\d+\.)?(\*|\d+)",
+                    RegexOptions.IgnoreCase);
+
+            string version = string.Empty;
+            
+            if (match.Success)
+            {
+                version = match.Groups.Cast<Group>()
+                    .ToList()
+                    .Skip(3)
+                    .Aggregate("", (current, part) => current + part.Value);
+            }
+
+            return version;
         }
 
         public static List<RemoteMod> getRemoteMods()

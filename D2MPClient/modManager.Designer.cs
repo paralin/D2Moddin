@@ -38,6 +38,7 @@
             this.author = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.status = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.gbxModActions = new System.Windows.Forms.GroupBox();
+            this.ckbUpdate = new System.Windows.Forms.CheckBox();
             this.btnUninstallAll = new System.Windows.Forms.Button();
             this.btnInstallAll = new System.Windows.Forms.Button();
             this.btnUpdateAll = new System.Windows.Forms.Button();
@@ -48,7 +49,6 @@
             this.setActiveToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.updateModToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.removeModToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.ckbUpdate = new System.Windows.Forms.CheckBox();
             this.gbxMods.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.modsGridView)).BeginInit();
             this.gbxModActions.SuspendLayout();
@@ -62,7 +62,7 @@
             this.gbxMods.Controls.Add(this.modsGridView);
             this.gbxMods.Location = new System.Drawing.Point(12, 12);
             this.gbxMods.Name = "gbxMods";
-            this.gbxMods.Size = new System.Drawing.Size(585, 168);
+            this.gbxMods.Size = new System.Drawing.Size(619, 168);
             this.gbxMods.TabIndex = 0;
             this.gbxMods.TabStop = false;
             this.gbxMods.Text = "Available Mods";
@@ -99,7 +99,7 @@
             this.modsGridView.RowTemplate.ReadOnly = true;
             this.modsGridView.RowTemplate.Resizable = System.Windows.Forms.DataGridViewTriState.False;
             this.modsGridView.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
-            this.modsGridView.Size = new System.Drawing.Size(573, 143);
+            this.modsGridView.Size = new System.Drawing.Size(607, 143);
             this.modsGridView.TabIndex = 0;
             this.modsGridView.CellMouseDown += new System.Windows.Forms.DataGridViewCellMouseEventHandler(this.modsGridView_CellMouseDown);
             // 
@@ -142,10 +142,20 @@
             this.gbxModActions.Controls.Add(this.btnRefresh);
             this.gbxModActions.Location = new System.Drawing.Point(12, 186);
             this.gbxModActions.Name = "gbxModActions";
-            this.gbxModActions.Size = new System.Drawing.Size(585, 59);
+            this.gbxModActions.Size = new System.Drawing.Size(619, 59);
             this.gbxModActions.TabIndex = 1;
             this.gbxModActions.TabStop = false;
             this.gbxModActions.Text = "Actions";
+            // 
+            // ckbUpdate
+            // 
+            this.ckbUpdate.Location = new System.Drawing.Point(430, 19);
+            this.ckbUpdate.Name = "ckbUpdate";
+            this.ckbUpdate.Size = new System.Drawing.Size(120, 30);
+            this.ckbUpdate.TabIndex = 4;
+            this.ckbUpdate.Text = "Update all outdated mods at startup";
+            this.ckbUpdate.UseVisualStyleBackColor = true;
+            this.ckbUpdate.CheckedChanged += new System.EventHandler(this.ckbUpdate_CheckedChanged);
             // 
             // btnUninstallAll
             // 
@@ -233,21 +243,11 @@
             this.removeModToolStripMenuItem.Text = "Remove Mod";
             this.removeModToolStripMenuItem.Click += new System.EventHandler(this.removeModToolStripMenuItem_Click);
             // 
-            // ckbUpdate
-            // 
-            this.ckbUpdate.Location = new System.Drawing.Point(430, 19);
-            this.ckbUpdate.Name = "ckbUpdate";
-            this.ckbUpdate.Size = new System.Drawing.Size(120, 30);
-            this.ckbUpdate.TabIndex = 4;
-            this.ckbUpdate.Text = "Update all outdated mods at startup";
-            this.ckbUpdate.UseVisualStyleBackColor = true;
-            this.ckbUpdate.CheckedChanged += new System.EventHandler(this.ckbUpdate_CheckedChanged);
-            // 
             // modManager
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(609, 257);
+            this.ClientSize = new System.Drawing.Size(643, 257);
             this.Controls.Add(this.gbxModActions);
             this.Controls.Add(this.gbxMods);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;

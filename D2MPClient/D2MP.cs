@@ -27,6 +27,7 @@ using System.Threading;
 using System.Windows.Forms;
 using ClientCommon.Data;
 using ClientCommon.Methods;
+using ICSharpCode.SharpZipLib.Zip;
 using log4net;
 using Microsoft.VisualBasic.FileIO;
 using Microsoft.Win32;
@@ -107,7 +108,7 @@ namespace d2mp
             client = new XSocketClient(server, "*");
             client.OnOpen += (sender, args) =>
             {
-                notifier.Notify(1, hasConnected ? "Reconnected" : "Connected", hasConnected ? "Connection to the server has been reestablished" : "Client has been connected to the server.");
+                notifier.Notify(NotificationType.Success, hasConnected ? "Reconnected" : "Connected", hasConnected ? "Connection to the server has been reestablished" : "Client has been connected to the server.");
                 hasConnected = true;
 
                 log.Debug("Sending init, version: " + ClientCommon.Version.ClientVersion);
@@ -130,7 +131,7 @@ namespace d2mp
                 {
                     case Shutdown.Msg:
                         log.Debug("Shutting down due to server request. Client not up to date.");
-                        notifier.Notify(2, "Outdated version", "Updating to new version...");
+                        notifier.Notify(NotificationType.Info, "Outdated version", "Updating to new version...");
                         updateClient();
                         shutDown = true;
                         return;
@@ -198,7 +199,7 @@ namespace d2mp
 
             if (hasConnected)
             {
-                notifier.Notify(3, "Lost connection", "Attempting to reconnect...");
+                notifier.Notify(NotificationType.Warning, "Lost connection", "Attempting to reconnect...");
                 hasConnected = false;
             }
 
@@ -220,7 +221,7 @@ namespace d2mp
         /// <summary>
         /// Pipe a zip download directly through the decompressor
         /// </summary>
-        private static bool UnzipWithTemp(Stream zipStream, string outFolder)
+        private static bool UnzipWithTemp(InstallMod op, Stream zipStream, string outFolder)
         {
             try
             {
@@ -230,7 +231,8 @@ namespace d2mp
             catch (Exception ex)
             {
                 log.Error("Error extracting files. Downloaded archive is possibly corrupt." , ex);
-                notifier.Notify(4, "Mod installation failed", "Error extracted files. Downloaded archive is corrupt.");
+                if (op != null)
+                    AskTryAgain(op, "Error Extracting Files", "Downloaded archive is possibly corrupt");
                 return false;
             }
 
@@ -251,7 +253,8 @@ namespace d2mp
             catch (Exception ex)
             {
                 log.Error("Error moving extracted files from temporary folder.", ex);
-                notifier.Notify(4, "Mod installation failed", "Error moving extracted files from temporary folder.");
+                if (op != null)
+                    AskTryAgain(op, "Error Installing Mod", "Error moving extracted files from temporary folder");
             }
 
             return false;
@@ -423,7 +426,7 @@ namespace d2mp
                 }
                 catch (Exception)
                 {
-                    notifier.Notify(4, "Server error", "Can't connect to the lobby server!");
+                    notifier.Notify(NotificationType.Error, "Server error", "Can't connect to the lobby server!");
                     Wait(5);
                     HandleClose();
                 }
@@ -487,14 +490,14 @@ namespace d2mp
                 FileSystem.CopyDirectory(Path.Combine(d2mpDir, op.Mod.name), modDir);
                 File.WriteAllText(Path.Combine(modDir, "modname.txt"),
                     JObject.FromObject(op.Mod).ToString(Formatting.Indented));
-                notifier.Notify(1, "Active mod", "The current active mod has been set to " + op.Mod.name + ".");
+                notifier.Notify(NotificationType.Success, "Active mod", "The current active mod has been set to " + op.Mod.name + ".");
                 refreshMods();
                 //icon.DisplayBubble("Set active mod to " + op.Mod.name + "!");
             }
             catch (Exception ex)
             {
                 log.Error("Can't set mod " + op.Mod.name + ".", ex);
-                notifier.Notify(4, "Active mod", "Unable to set active mod, try closing Dota first.");
+                notifier.Notify(NotificationType.Error, "Active mod", "Unable to set active mod, try closing Dota first.");
                 //icon.DisplayBubble("Unable to set active mod, try closing Dota first.");
             }
         }
@@ -515,7 +518,7 @@ namespace d2mp
                     log.Debug("Patched file to add d2moddin search path.");
                     if (Dota2Running())
                     {
-                        notifier.Notify(2, "Added mod", "Restarting Dota 2 to apply changes...");
+                        notifier.Notify(NotificationType.Info, "Added mod", "Restarting Dota 2 to apply changes...");
                         //icon.DisplayBubble("Restarting Dota 2 for you...");
                         KillDota2();
                         LaunchDota2();
@@ -583,11 +586,11 @@ namespace d2mp
             var op = state as InstallMod;
             if (isInstalling)
             {
-                notifier.Notify(3, "Already downloading a mod", "Please try again after a few seconds.");
+                notifier.Notify(NotificationType.Warning, "Already downloading a mod", "Please try again after a few seconds.");
                 return;
             }
             isInstalling = true;
-            notifier.Notify(5, "Downloading mod", "Downloading " + op.Mod.name + "...");
+            notifier.Notify(NotificationType.Progress, "Downloading mod", "Downloading " + op.Mod.name + "...");
 
             log.Info("Server requested that we install mod " + op.Mod.name + " from download " + op.url);
 
@@ -622,16 +625,16 @@ namespace d2mp
                         catch(Exception ex)
                         {
                             log.Error("Error downloading mod", ex);
-                            notifier.Notify(4, "Error downloading mod", "The connection forcibly closed by the remote host. Please try again.");
+                            AskTryAgain(op, "Error Downloading Mod", "The connection was forcibly closed by the remote host");
+                            return;
                         }
-                        notifier.Notify(2, "Extracting mod", "Download completed, extracting files...");
+                        notifier.Notify(NotificationType.Info, "Extracting mod", "Download completed, extracting files...");
                         Stream s = new MemoryStream(buffer);
-                        if (UnzipWithTemp(s, targetDir))
+                        if (UnzipWithTemp(op, s, targetDir))
                         {
-                            dlRetry = false;
                             refreshMods();
                             log.Info("Mod installed!");
-                            notifier.Notify(1, "Mod installed",
+                            notifier.Notify(NotificationType.Success, "Mod installed",
                                 "The following mod has been installed successfully: " + op.Mod.name);
                             var msg = new OnInstalledMod()
                             {
@@ -641,36 +644,39 @@ namespace d2mp
                             var existing = modController.clientMods.FirstOrDefault(m => m.name == op.Mod.name);
                             if (existing != null) modController.clientMods.Remove(existing);
                             modController.clientMods.Add(op.Mod);
-                        }
-                        else if(!dlRetry)
-                        {
-                            dlRetry = true;
                             isInstalling = false;
-                            log.Error("Retrying to download mod...");
-                            InstallMod(op);
+                            dlRetry = false;
                         }
-                        isInstalling = false;
                     };
                     wc.DownloadDataAsync(new Uri(op.url));
                 }
             }
             catch (Exception ex)
             {
-                isInstalling = false;
                 log.Error("Failed to download mod " + op.Mod.name + ".", ex);
-                if (!dlRetry)
-                {
-                    log.Debug("Retrying to download mod...");
-                    dlRetry = true;
-                    InstallMod(op);
-                }
-                else
-                {
-                    notifier.Notify(4, "Error downloading mod", "Failed to download mod " + op.Mod.name + ".");
-                }
-                return;
+                AskTryAgain(op, "Error Downloading Mod", "Error downloading mod " + op.Mod.name);
             }
         }
+
+        private static void AskTryAgain(InstallMod op, string title, string msg)
+        {
+            isInstalling = false;
+            dlRetry = true;
+            notifier.NotifyTryAgain(title, msg,
+                () => InstallMod(op), //try again
+                () => //cancel
+                {
+                    dlRetry = false;
+                    log.Info("User don't want to try again");
+                },
+                () => //download manually
+                {
+                    dlRetry = false;
+                    log.Info("Downloading mod manually");
+                    Process.Start(op.url);
+                });
+        }
+
         public static void DeleteMods()
         {
             if (Directory.Exists(modDir)) Directory.Delete(modDir, true);
@@ -721,6 +727,126 @@ namespace d2mp
         {
             creditsForm frm = new creditsForm();
             frm.Show();
+        }
+
+        internal static void manualInstallMod()
+        {
+            if (isInstalling)
+            {
+                notifier.Notify(NotificationType.Warning, "Already downloading a mod", "Please try again after a few seconds.");
+                return;
+            }
+            isInstalling = true;
+
+            using (var dlg = new OpenFileDialog()
+            {
+                CheckFileExists = true,
+                CheckPathExists = true,
+                DefaultExt = "zip",
+                Filter = "Zip Files|*.zip",
+                FilterIndex = 1,
+                Multiselect = false,
+                Title = "Choose the mod zip to install"
+            })
+            {
+                //user pressed ok
+                if (dlg.ShowDialog() == DialogResult.OK)
+                {
+                    //open the file in a stream
+                    using (var fileStream = dlg.OpenFile())
+                    {
+                        ZipFile zip = new ZipFile(fileStream);
+
+                        //check integrity
+                        if (zip.TestArchive(true))
+                        {
+                            //look for the map file. It contains the mod name
+                            ZipEntry map = zip.Cast<ZipEntry>().FirstOrDefault(a => a.Name.ToLower().EndsWith(".bsp"));
+
+                            if (map != null)
+                            {
+                                //look for the version file
+                                int entry = zip.FindEntry("addoninfo.txt", true);
+                                if (entry >= 0)
+                                {
+                                    string allText = string.Empty;
+
+                                    using (var infoStream = new StreamReader(zip.GetInputStream(entry)))
+                                        allText = infoStream.ReadToEnd();
+
+                                    string version = modController.ReadAddonVersion(allText);
+
+                                    if (!string.IsNullOrEmpty(version))
+                                    {
+                                        Version v = new Version(version);
+                                        string name = Path.GetFileNameWithoutExtension(map.Name).ToLower();
+
+                                        //check if this same mod is already installed and if it needs an update
+                                        if (modController.clientMods.Any(
+                                            a => a.name.ToLower().Equals(name) && new Version(a.version) >= v))
+                                        {
+                                            MessageBox.Show("The mod you are trying to install is already installed or outdated.", "Mod Manual Install",
+                                                MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                                        }
+                                        else
+                                        {
+                                            string targetDir = Path.Combine(d2mpDir, name);
+                                            if (Directory.Exists(targetDir))
+                                                Directory.Delete(targetDir, true);
+                                            //Make the dir again
+                                            Directory.CreateDirectory(targetDir);
+
+                                            if (UnzipWithTemp(null, fileStream, targetDir))
+                                            {
+                                                refreshMods();
+                                                log.Info("Mod manually installed!");
+                                                notifier.Notify(NotificationType.Success, "Mod installed", "The following mod has been installed successfully: " + name);
+
+                                                var mod = new ClientMod() {name = name, version = v.ToString()};
+                                                var msg = new OnInstalledMod() {Mod = mod};
+
+                                                Send(JObject.FromObject(msg).ToString(Formatting.None));
+
+                                                var existing = modController.clientMods.FirstOrDefault(m => m.name == mod.name);
+                                                if (existing != null) modController.clientMods.Remove(existing);
+                                                
+                                                modController.clientMods.Add(mod);
+                                            }
+                                            else
+                                            {
+                                                MessageBox.Show("The mod could not be installed. Read the log file for details.", "Mod Manual Install",
+                                                    MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                                            }
+                                        }
+                                    }
+                                    else
+                                    {
+                                        MessageBox.Show("Could not read the mod version from the zip file.", "Mod Manual Install",
+                                            MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                                    }
+                                }
+                                else
+                                {
+                                    MessageBox.Show("No mod info was found in the zip file.", "Mod Manual Install",
+                                        MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                                }
+                            }
+                            else
+                            {
+                                MessageBox.Show("No mod map was found in the zip file.", "Mod Manual Install",
+                                    MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                            }
+                        }
+                        else
+                        {
+                            MessageBox.Show("The zip file you selected seems to be invalid.", "Mod Manual Install",
+                                MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                        }
+                    }
+                }
+            }
+
+            isInstalling = false;
         }
     }
 
