@@ -546,10 +546,14 @@ namespace D2MPMaster.Lobbies
 							password = string.Empty,
                             state = GameState.Init,
 							LobbyType = LobbyType.Normal,
+#if DEBUG
+                            requiresFullLobby = false,
+#else
                             requiresFullLobby =
                                 !(user.authItems != null &&
                                  (user.authItems.Contains("developer") || user.authItems.Contains("admin") ||
                                   user.authItems.Contains("moderator"))),
+#endif
 							serverIP = string.Empty,
                             disablePause = !mod.enablePause
                         };

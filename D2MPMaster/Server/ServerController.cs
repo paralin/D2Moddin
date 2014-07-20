@@ -188,22 +188,29 @@ namespace D2MPMaster.Server
         private string[] GenerateCommands(Lobby lobby)
         {
             var cmds = new List<string>
-            {
-                "d2lobby_gg_time " + (lobby.enableGG ? "20" : "-1"),
+                       {
+                           "d2lobby_gg_time " + (lobby.enableGG ? "20" : "-1"),
 #if DEBUG
-                "match_post_url \"http://127.0.0.1:8080/gdataapi/matchres\"",
+                           "match_post_url \"http://127.0.0.1:8080/gdataapi/matchres\"",
 #else
                 "match_post_url \"http://" + Settings.Default.WebAddress + "/gdataapi/matchres\"",
 #endif
-                "set_match_id \"" + lobby.id + "\"",
-                "d2l_disable_pause "+(lobby.disablePause?"1":"0")
-            };
-            cmds.AddRange(from plyr in lobby.radiant
-                          where plyr != null
-                          select string.Format("add_radiant_player \"{0}\" \"{1}\"", plyr.steam, Regex.Replace(plyr.name, "[^a-zA-Z0-9 -]", "")));
-            cmds.AddRange(from plyr in lobby.dire
-                          where plyr != null
-                          select string.Format("add_dire_player \"{0}\" \"{1}\"", plyr.steam, Regex.Replace(plyr.name, "[^a-zA-Z0-9 -]", "")));
+                           "set_match_id \"" + lobby.id + "\"",
+                           "d2l_disable_pause " + (lobby.disablePause ? "1" : "0")
+                       };
+            foreach (var plyr in lobby.radiant.Where(p => p != null))
+            {
+                var name = Regex.Replace(plyr.name, "[^a-zA-Z0-9 -]", "");
+                if (string.IsNullOrWhiteSpace(name)) name = "Player";
+                cmds.Add(string.Format("add_radiant_player \"{0}\" \"{1}\"", plyr.steam, name));
+            }
+            
+            foreach (var plyr in lobby.dire.Where(p => p != null))
+            {
+                var name = Regex.Replace(plyr.name, "[^a-zA-Z0-9 -]", "");
+                if (string.IsNullOrWhiteSpace(name)) name = "Player";
+                cmds.Add(string.Format("add_dire_player \"{0}\" \"{1}\"", plyr.steam, name));
+            }
             return cmds.ToArray();
         }
     }
