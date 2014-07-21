@@ -424,7 +424,13 @@ namespace D2MPMaster.Lobbies
             if ((lob.TeamCount(lob.dire) == 0 && lob.TeamCount(lob.radiant) == 0) || lob.creatorid == controller.user.Id)
             {
                 CloseLobby(lob);
-            }else if(lob.status == LobbyStatus.Queue) {CancelQueue(lob); TransmitLobbyUpdate(lob, new []{team});}
+                return;
+            }
+            if (lob.status == LobbyStatus.Queue)
+            {
+                CancelQueue(lob);
+            }
+            TransmitLobbyUpdate(lob, new[] { "radiant", "dire" });
         }
 
         public static void ForceLeaveLobby(BrowserController controller)
