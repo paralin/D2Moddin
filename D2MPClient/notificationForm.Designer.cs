@@ -155,7 +155,7 @@
             this.MaximizeBox = false;
             this.MaximumSize = new System.Drawing.Size(350, 120);
             this.MinimizeBox = false;
-            this.MinimumSize = new System.Drawing.Size(350, 85);
+            this.MinimumSize = new System.Drawing.Size(350, 100);
             this.Name = "notificationForm";
             this.ShowIcon = false;
             this.ShowInTaskbar = false;
