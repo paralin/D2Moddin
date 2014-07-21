@@ -9,6 +9,7 @@ using D2MPMaster.Database;
 using D2MPMaster.LiveData;
 using D2MPMaster.Lobbies;
 using D2MPMaster.Model;
+using D2MPMaster.Friends;
 using d2mpserver;
 using MongoDB.Driver.Builders;
 using Newtonsoft.Json;
@@ -18,6 +19,7 @@ using XSockets.Core.Common.Socket.Event.Interface;
 using XSockets.Core.XSocket;
 using XSockets.Core.XSocket.Helpers;
 using InstallMod = D2MPMaster.Browser.Methods.InstallMod;
+using System.Collections.Generic;
 
 
 namespace D2MPMaster.Browser
@@ -67,6 +69,8 @@ namespace D2MPMaster.Browser
                 }
             }
         }
+
+        public List<Friend> friendlist = null;
 
         #endregion
 
@@ -208,6 +212,7 @@ namespace D2MPMaster.Browser
                                                               this.SendJson("{\"msg\": \"auth\", \"status\": true}",
                                                                   "auth");
                                                               this.Send(PublicLobbySnapshot());
+                                                              FriendManager.buildList(this);
                                                               SendManagerStatus();
                                                           }
                                                           else
@@ -793,8 +798,11 @@ namespace D2MPMaster.Browser
 
         public void OnClosed(object sender, OnClientDisconnectArgs e)
         {
-            if(!isDuplicate)
+            if (!isDuplicate)
+            {
                 LobbyManager.ForceLeaveLobby(this);
+                FriendManager.PlayerQuit(this.user.steam.steamid);
+            }
         }
 
         public static ITextArgs ClearLobbyR()
@@ -853,6 +861,29 @@ namespace D2MPMaster.Browser
             upd["msg"] = "colupd";
             upd["ops"] = ops;
             return new TextArgs(upd.ToString(Formatting.None), "lobby");
+        }
+
+        public static ITextArgs FriendsSnapshot(List<Friend> l)
+        {
+            var upd = new JObject();
+            var ops = new JArray { DiffGenerator.RemoveAll("friends") };
+            try
+            {
+                Friend[] snap;
+                snap = l.ToArray();
+                foreach (var friend in snap)
+                {
+                    if (friend != null)
+                        ops.Add(friend.Add("friends"));
+                }
+            }
+            catch (Exception ex)
+            {
+                log.Error("Problem creating friend snapshot: ", ex);
+            }
+            upd["msg"] = "colupd";
+            upd["ops"] = ops;
+            return new TextArgs(upd.ToString(Formatting.None), "friend");
         }
 
         public static ITextArgs ClearPublicLobbies()

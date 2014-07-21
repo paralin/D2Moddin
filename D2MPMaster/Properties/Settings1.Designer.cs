@@ -144,5 +144,17 @@ namespace D2MPMaster.Properties {
                 this["WebAddress"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("CBD4B6FF1511AD17841196BCE6B1E3E4")]
+        public string SteamWebAPIKey {
+            get {
+                return ((string)(this["SteamWebAPIKey"]));
+            }
+            set {
+                this["SteamWebAPIKey"] = value;
+            }
+        }
     }
 }

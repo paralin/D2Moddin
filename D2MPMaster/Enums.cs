@@ -63,4 +63,15 @@ namespace d2mpserver
         Configure=2,
         Play=3
     }
+
+    public enum FriendStatus : int
+    {
+        Offline=0,
+        Online=1,
+        Idle=2,
+        InLobby=3,
+        InGame=4,
+        Spectating=5,
+        NotRegistered=6
+    }
 }
