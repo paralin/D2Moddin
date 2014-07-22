@@ -16,6 +16,7 @@
 // <date>2014-05-10</date>
 // <summary>Entry point for the d2moddin plugin.</summary>
 using System;
+using System.Configuration;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
@@ -42,8 +43,31 @@ namespace d2mp
             //delete the pid to shut down the other instance
             if (File.Exists(pid)) File.Delete(pid);
 
+            if (CheckSettings())
+            {
+                MessageBox.Show("Your user.config file was corrupted and needed to be deleted.\nAll your settings have been reset to default.\nNo further action is required.",
+                    "D2Moddin", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+
             XmlConfigurator.Configure();
             D2MP.main();
+        }
+
+        static bool CheckSettings()
+        {
+            try
+            {
+                Properties.Settings.Default.Reload();
+                return false;
+            }
+            catch (ConfigurationErrorsException ex)
+            {
+                string filename = ((ConfigurationErrorsException)ex.InnerException).Filename;
+
+                File.Delete(filename);
+                CheckSettings();
+                return true;
+            }
         }
     }
 }
