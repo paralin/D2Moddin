@@ -304,7 +304,7 @@ namespace d2mp
                 List<ClientMod> lstLocal = modController.getLocalMods();
 
                 //find all local mods that aren't in the remote list
-                lstLocal.FindAll(a => lstRemote.All(b => b.name != a.name))
+                lstLocal.FindAll(a => a.name != "checker" && lstRemote.All(b => b.name != a.name))
                     .ForEach((mod) => DeleteMod(new DeleteMod() {Mod = mod}));
 
                 lstRemote.FindAll(a => a.needsUpdate)
