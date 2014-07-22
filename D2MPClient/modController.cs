@@ -87,7 +87,7 @@ namespace d2mp
             {
                 msg = JArray.Parse(wc.DownloadString(modUrlCheck));
                 remoteMods.Clear();
-                foreach (var mod in msg)
+                foreach (var mod in msg.Where(m=>m["playable"].Value<bool>()))
                 {
                     remoteMods.Add(new RemoteMod { name = mod["name"].Value<string>(), fullname = mod["fullname"].Value<string>(), version = mod["version"].Value<string>(), author = mod["author"].Value<string>() });
                 }
