@@ -98,7 +98,11 @@ namespace D2MPMaster.Mods
                 LobbyManager.CloseAll(mod);
             }
             Clients.SendToAll(ClientController.UpdateMods());
-            Servers.SendTo(m=>m.Inited, new TextArgs("updateMods|"+string.Join(",", updatedMods.Select(m=>m.name)), "commands"));
+            foreach(var server in Servers.Find(m=>m.Inited))
+            {
+                server.Inited = false;
+                server.Send("updateMods|" + string.Join(",", updatedMods.Select(m => m.name)));
+            }
         }
 
         public static void StartUpdateTimer()

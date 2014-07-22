@@ -168,6 +168,7 @@ namespace d2mpserver
                                                   case "updateMods":
                                                   {
                                                       var mods = command[1].Split(',');
+                                                      log.Info("Updates pushed for mods: "+command[1]);
                                                       foreach (var mod in mods)
                                                       {
                                                           log.Info("Killing all servers for mod " + mod);

@@ -42,14 +42,10 @@ namespace d2mp
     public class D2MP
     {
         public const string PIDFile = "d2mp.pid";
-#if DEBUG
-        private static string server = "ws://127.0.0.1:4502/ClientController";
-#else
-#if DEV
+#if DEV||DEBUG
         private static string server = "ws://172.250.79.95:4502/ClientController";
 #else
         private static string server = "ws://net1.d2modd.in:4502/ClientController";
-#endif
 #endif
         private const string installerURL = "https://s3-us-west-2.amazonaws.com/d2mpclient/D2MPLauncher.exe";
         public static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
