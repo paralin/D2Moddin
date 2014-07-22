@@ -300,8 +300,16 @@ namespace d2mp
         {
             if (force || Settings.autoUpdateMods)
             {
-                List<RemoteMod> lst = modController.getRemoteMods();
-                lst.FindAll(a => a.needsUpdate).ForEach(mod => modController.installQueue.Enqueue(mod));
+                List<RemoteMod> lstRemote = modController.getRemoteMods();
+                List<ClientMod> lstLocal = modController.getLocalMods();
+
+                //find all local mods that aren't in the remote list
+                lstLocal.FindAll(a => lstRemote.All(b => b.name != a.name))
+                    .ForEach((mod) => DeleteMod(new DeleteMod() {Mod = mod}));
+
+                lstRemote.FindAll(a => a.needsUpdate)
+                    .ForEach(mod => modController.installQueue.Enqueue(mod));
+
                 if (modController.installQueue.Count > 0)
                     modController.InstallQueued();
             }
