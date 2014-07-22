@@ -2,6 +2,6 @@
 {
     public class Version
     {
-        public const string ClientVersion = "2.7.9";
+        public const string ClientVersion = "2.8.0";
     }
 }
