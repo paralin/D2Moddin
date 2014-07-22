@@ -17,6 +17,7 @@
 // <summary>Core D2Moddin client functions.</summary>
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -103,6 +104,20 @@ namespace d2mp
             }
         }
 
+        private static void SendInit()
+        {
+            log.Debug("Sending init, version: " + ClientCommon.Version.ClientVersion);
+            var init = new Init
+            {
+                SteamIDs = steamids.ToArray(),
+                Version = ClientCommon.Version.ClientVersion,
+                Mods = modController.clientMods.ToArray()
+            };
+            var json = JObject.FromObject(init).ToString(Formatting.None);
+            Send(json);
+            AutoUpdateMods();
+        }
+
         private static void SetupClient()
         {
             client = new XSocketClient(server, "*");
@@ -110,17 +125,7 @@ namespace d2mp
             {
                 notifier.Notify(NotificationType.Success, hasConnected ? "Reconnected" : "Connected", hasConnected ? "Connection to the server has been reestablished" : "Client has been connected to the server.");
                 hasConnected = true;
-
-                log.Debug("Sending init, version: " + ClientCommon.Version.ClientVersion);
-                var init = new Init
-                {
-                    SteamIDs = steamids.ToArray(),
-                    Version = ClientCommon.Version.ClientVersion,
-                    Mods = modController.clientMods.ToArray()
-                };
-                var json = JObject.FromObject(init).ToString(Formatting.None);
-                Send(json);
-                AutoUpdateMods();
+                SendInit();
             };
 
             client.Bind("commands", e =>
@@ -166,6 +171,9 @@ namespace d2mp
                         break;
                     case ClientCommon.Methods.NotifyMessage.Msg:
                         ThreadPool.QueueUserWorkItem(NotifyMessage, msg.ToObject<NotifyMessage>());
+                        break;
+                    case ClientCommon.Methods.UpdateMods.Msg:
+                        ThreadPool.QueueUserWorkItem(UpdateMods, msg.ToObject<UpdateMods>());
                         break;
                     default:
                         log.Error("Command not recognized.");
@@ -475,6 +483,12 @@ namespace d2mp
         private static void LaunchDota(object state)
         {
             if (!Dota2Running()) LaunchDota2();
+        }
+
+        public static void UpdateMods(object state)
+        {
+            refreshMods();
+            SendInit();
         }
 
         public static void SetMod(object state)

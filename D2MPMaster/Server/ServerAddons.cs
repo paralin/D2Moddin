@@ -14,6 +14,7 @@ namespace D2MPMaster.Server
         public static void Init(Dictionary<string, Mod>.ValueCollection values)
         {
             var addons = JArray.Parse(Settings.Default.ServerAddons).ToObject<ServerAddon[]>();
+            Addons.Clear();
             foreach (var addon in addons)
             {
                 Addons.Add(addon);
