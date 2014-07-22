@@ -72,13 +72,15 @@ namespace D2MPMaster.Mods
                 var omod = ModCache[mod.Id];
                 var diff = logic.Compare(mod, omod);
                 if (diff.AreEqual) continue;
-                dirty = true;
                 log.InfoFormat("Mod [{0}] updated!", mod.fullname);
                 foreach (var difference in diff.Differences)
                 {
                     log.Info(difference.PropertyName+": "+difference.Object1Value+" => "+difference.Object2Value);
                 }
-                if(mod.version!=omod.version) updatedMods.Add(mod);
+                if(mod.version!=omod.version||mod.isPublic != omod.isPublic || mod.playable != omod.playable) {
+                    updatedMods.Add(mod);
+                    dirty = true;
+                }
                 ModCache[mod.Id] = mod;
             }
             foreach (var mod in ModCache.Where(mod => !modIds.Contains(mod.Key)))
@@ -89,7 +91,7 @@ namespace D2MPMaster.Mods
                 ModCache.Remove(mod.Key);
             }
             if (!dirty) return;
-            log.InfoFormat("[{0}] mods updated, re-initing all clients and servers.");
+            log.InfoFormat("[{0}] mods updated, re-initing all clients and servers.", updatedMods.Count);
             ServerAddons.Init(ModCache.Values);
             foreach (var mod in updatedMods)
             {
