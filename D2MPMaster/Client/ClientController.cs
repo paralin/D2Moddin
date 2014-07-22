@@ -216,9 +216,14 @@ namespace D2MPMaster.Client
             }
         }
 
-        public static ITextArgs Shutdown()
+        public static ITextArgs Shutdown(bool restart)
         {
-            return new TextArgs(JObject.FromObject(new ClientCommon.Methods.Shutdown()).ToString(), "commands");
+            return new TextArgs(JObject.FromObject(new ClientCommon.Methods.Shutdown(){restart=restart}).ToString(), "commands");
+        }
+
+        public static ITextArgs UpdateMods()
+        {
+            return new TextArgs(JObject.FromObject(new ClientCommon.Methods.UpdateMods()).ToString(), "commands");
         }
     }
 }

@@ -424,7 +424,13 @@ namespace D2MPMaster.Lobbies
             if ((lob.TeamCount(lob.dire) == 0 && lob.TeamCount(lob.radiant) == 0) || lob.creatorid == controller.user.Id)
             {
                 CloseLobby(lob);
-            }else if(lob.status == LobbyStatus.Queue) {CancelQueue(lob); TransmitLobbyUpdate(lob, new []{team});}
+                return;
+            }
+            if (lob.status == LobbyStatus.Queue)
+            {
+                CancelQueue(lob);
+            }
+            TransmitLobbyUpdate(lob, new[] { "radiant", "dire" });
         }
 
         public static void ForceLeaveLobby(BrowserController controller)
@@ -976,6 +982,22 @@ namespace D2MPMaster.Lobbies
 			}catch(Exception ex){
 				log.Error("Failed to clear idle lobbies!", ex);
 			}
+        }
+
+        public static void CloseAll(Mod mod)
+        {
+            lock (PublicLobbies)
+            {
+                lock (PlayingLobbies)
+                {
+                    var lobbies = LobbyID.Values.Where(m => m.mod == mod.Id);
+                    foreach (var lobby in lobbies)
+                    {
+                        log.InfoFormat("Closing lobby [{0}] for mod update.", lobby.id);
+                        CloseLobby(lobby);
+                    }
+                }
+            }
         }
     }
 }

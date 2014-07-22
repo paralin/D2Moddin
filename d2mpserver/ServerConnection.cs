@@ -165,6 +165,18 @@ namespace d2mpserver
                                                       ThreadPool.QueueUserWorkItem(PerformAddonOps, command);
                                                   }
                                                       break;
+                                                  case "updateMods":
+                                                  {
+                                                      var mods = command[1].Split(',');
+                                                      log.Info("Updates pushed for mods: "+command[1]);
+                                                      foreach (var mod in mods)
+                                                      {
+                                                          log.Info("Killing all servers for mod " + mod);
+                                                          manager.ShutdownAllMod(mod);
+                                                      }
+                                                      SendInit();
+                                                  }
+                                                      break;
                                                   case "launchServer":
                                                   {
                                                       int id = int.Parse(command[1]);

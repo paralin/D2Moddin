@@ -14,6 +14,7 @@ using Newtonsoft.Json.Linq;
 using ServerCommon.Data;
 using ServerCommon.Methods;
 using XSockets.Core.Common.Socket.Event.Arguments;
+using XSockets.Core.Common.Socket.Event.Interface;
 using XSockets.Core.XSocket;
 using XSockets.Core.XSocket.Helpers;
 using System.Diagnostics;

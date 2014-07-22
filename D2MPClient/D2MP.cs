@@ -17,6 +17,7 @@
 // <summary>Core D2Moddin client functions.</summary>
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -41,14 +42,10 @@ namespace d2mp
     public class D2MP
     {
         public const string PIDFile = "d2mp.pid";
-#if DEBUG
-        private static string server = "ws://127.0.0.1:4502/ClientController";
-#else
-#if DEV
+#if DEV||DEBUG
         private static string server = "ws://172.250.79.95:4502/ClientController";
 #else
         private static string server = "ws://net1.d2modd.in:4502/ClientController";
-#endif
 #endif
         private const string installerURL = "https://s3-us-west-2.amazonaws.com/d2mpclient/D2MPLauncher.exe";
         public static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
@@ -103,6 +100,20 @@ namespace d2mp
             }
         }
 
+        private static void SendInit()
+        {
+            log.Debug("Sending init, version: " + ClientCommon.Version.ClientVersion);
+            var init = new Init
+            {
+                SteamIDs = steamids.ToArray(),
+                Version = ClientCommon.Version.ClientVersion,
+                Mods = modController.clientMods.ToArray()
+            };
+            var json = JObject.FromObject(init).ToString(Formatting.None);
+            Send(json);
+            AutoUpdateMods(false);
+        }
+
         private static void SetupClient()
         {
             client = new XSocketClient(server, "*");
@@ -110,17 +121,7 @@ namespace d2mp
             {
                 notifier.Notify(NotificationType.Success, hasConnected ? "Reconnected" : "Connected", hasConnected ? "Connection to the server has been reestablished" : "Client has been connected to the server.");
                 hasConnected = true;
-
-                log.Debug("Sending init, version: " + ClientCommon.Version.ClientVersion);
-                var init = new Init
-                {
-                    SteamIDs = steamids.ToArray(),
-                    Version = ClientCommon.Version.ClientVersion,
-                    Mods = modController.clientMods.ToArray()
-                };
-                var json = JObject.FromObject(init).ToString(Formatting.None);
-                Send(json);
-                AutoUpdateMods();
+                SendInit();
             };
 
             client.Bind("commands", e =>
@@ -166,6 +167,9 @@ namespace d2mp
                         break;
                     case ClientCommon.Methods.NotifyMessage.Msg:
                         ThreadPool.QueueUserWorkItem(NotifyMessage, msg.ToObject<NotifyMessage>());
+                        break;
+                    case ClientCommon.Methods.UpdateMods.Msg:
+                        ThreadPool.QueueUserWorkItem(UpdateMods, msg.ToObject<UpdateMods>());
                         break;
                     default:
                         log.Error("Command not recognized.");
@@ -292,12 +296,20 @@ namespace d2mp
             Process.Start(info);
         }
 
-        private static void AutoUpdateMods()
+        private static void AutoUpdateMods(bool force)
         {
-            if (Settings.autoUpdateMods)
+            if (force || Settings.autoUpdateMods)
             {
-                List<RemoteMod> lst = modController.getRemoteMods();
-                lst.FindAll(a => a.needsUpdate).ForEach(mod => modController.installQueue.Enqueue(mod));
+                List<RemoteMod> lstRemote = modController.getRemoteMods();
+                List<ClientMod> lstLocal = modController.getLocalMods();
+
+                //find all local mods that aren't in the remote list
+                lstLocal.FindAll(a => a.name != "checker" && lstRemote.All(b => b.name != a.name))
+                    .ForEach((mod) => DeleteMod(new DeleteMod() {Mod = mod}));
+
+                lstRemote.FindAll(a => a.needsUpdate)
+                    .ForEach(mod => modController.installQueue.Enqueue(mod));
+
                 if (modController.installQueue.Count > 0)
                     modController.InstallQueued();
             }
@@ -475,6 +487,11 @@ namespace d2mp
         private static void LaunchDota(object state)
         {
             if (!Dota2Running()) LaunchDota2();
+        }
+
+        public static void UpdateMods(object state)
+        {
+            AutoUpdateMods(true);
         }
 
         public static void SetMod(object state)

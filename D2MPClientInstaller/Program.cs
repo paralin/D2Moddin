@@ -31,11 +31,12 @@ namespace D2MPClientInstaller
     {
         private const bool doLog = true;
         private const string logFile = "d2mpinstaller.log";
+        private static string ourDir;
         private static string installdir;
         static void Log(string text)
         {
             if (doLog)
-                File.AppendAllText(logFile, text + "\n");
+                File.AppendAllText(Path.Combine(ourDir, logFile), text + "\n");
         }
 
         static void DeleteOurselves(string path)
@@ -105,6 +106,8 @@ namespace D2MPClientInstaller
         [STAThread]
         static void Main()
         {
+            ourDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+
             AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
             {
                 string msg = string.Format("Unhandled exception: {0}", args.ExceptionObject);

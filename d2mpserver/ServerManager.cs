@@ -203,6 +203,15 @@ namespace d2mpserver
         {
             return servers.Values.All(m => m.port != port);
         }
+
+        public void ShutdownAllMod(string mod)
+        {
+            var toKill = servers.Values.Where(m => m.mod == mod).ToArray();
+            foreach (var server in toKill)
+            {
+                ShutdownServer(server.id);
+            }
+        }
     }
 
     //Stores info on a server
@@ -215,14 +224,15 @@ namespace d2mpserver
         public bool shutdown = false;
         public event ShutdownEventHandler OnShutdown;
         public event ShutdownEventHandler OnReady;
-        private string mod = "";
+        public string mod = "";
 
 
-        private Server(Process serverProc, int id, int port, bool dev)
+        private Server(Process serverProc, int id, int port, bool dev, string mod)
         {
             this.id = id;
             this.serverProc = serverProc;
             this.port = port;
+            this.mod = mod;
         }
 
         public void StartThread()
@@ -276,7 +286,7 @@ namespace d2mpserver
             info.WorkingDirectory = ServerManager.workingdir;
             //info.EnvironmentVariables.Add("LD_LIBRARY_PATH", info.WorkingDirectory + ":" + info.WorkingDirectory + "/bin");
             log.Debug(info.FileName + " " + info.Arguments);
-            Server serv = new Server(serverProc, id, port, dev);
+            Server serv = new Server(serverProc, id, port, dev, mod);
             if (Settings.Default.headlessSRCDS)
                 serverProc.OutputDataReceived += serv.OnOutputDataReceived;
             serverProc.Start();
