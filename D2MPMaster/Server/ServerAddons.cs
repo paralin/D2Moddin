@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using D2MPMaster.Model;
 using D2MPMaster.Properties;
 using Newtonsoft.Json.Linq;
@@ -19,7 +20,7 @@ namespace D2MPMaster.Server
             {
                 Addons.Add(addon);
             }
-            foreach (var mod in values)
+            foreach (var mod in values.Where(m=>m.playable))
             {
                 Addons.Add(new ServerAddon()
                            {
