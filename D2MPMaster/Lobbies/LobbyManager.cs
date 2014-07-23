@@ -481,7 +481,7 @@ namespace D2MPMaster.Lobbies
             }
         }
 
-        public static void JoinLobby(Lobby lobby, User user, BrowserController controller)
+        public static void JoinLobby(Lobby lobby, User user, BrowserController controller, string friendId = null)
         {
             if (lobby==null || user == null) return;
             foreach (var result in Browsers.Find(m => m.user != null && m.user.Id == user.Id && m.lobby!=null))
@@ -491,7 +491,18 @@ namespace D2MPMaster.Lobbies
             var direCount = lobby.TeamCount(lobby.dire);
             var radCount = lobby.TeamCount(lobby.radiant);
             if (direCount >= 5 && radCount >= 5) return;
-            if (direCount < radCount || direCount == radCount)
+            if (friendId != null)
+            {
+                if (radCount < 5 && lobby.radiant.Where(l => l.steam == friendId).Any())
+                {
+                    lobby.AddPlayer(lobby.radiant, Player.FromUser(user, lobby.creatorid == user.Id));
+                }
+                else
+                {
+                    lobby.AddPlayer(lobby.dire, Player.FromUser(user, lobby.creatorid == user.Id));
+                }
+            }
+            else if (direCount < radCount || direCount == radCount)
             {
                 lobby.AddPlayer(lobby.dire, Player.FromUser(user, lobby.creatorid == user.Id));
             }
@@ -902,16 +913,7 @@ namespace D2MPMaster.Lobbies
             }
             else if (lob.LobbyType == LobbyType.PlayerTest)
             {
-                foreach (var player in lob.radiant)
-                {
-                    if (player == null) continue;
-                    var browser = Browsers.Find(m => m.user != null && m.user.steam.steamid == player.steam).FirstOrDefault();
-                    if (browser != null)
-                    {
-                        browser.SetTested(!player.failedConnect);
-                    }
-                }
-                foreach (var player in lob.dire)
+                foreach (var player in lob.getPlayers())
                 {
                     if (player == null) continue;
                     var browser = Browsers.Find(m => m.user != null && m.user.steam.steamid == player.steam).FirstOrDefault();

@@ -21,6 +21,7 @@ using D2MPMaster.LiveData;
 using D2MPMaster.Browser;
 using System.Reflection;
 using XSockets.Core.Common.Socket.Event.Arguments;
+using D2MPMaster.Lobbies;
 
 
 namespace D2MPMaster.Friends
@@ -55,8 +56,7 @@ namespace D2MPMaster.Friends
                         {
                             var usr = users.Where(x => x.steam.steamid == (string)friend.steamid).FirstOrDefault();
                             list.Add(new Friend() {
-                                id = Utils.RandomString(17),
-                                steamid = (string)friend.steamid,
+                                id = (string)friend.steamid,
                                 status = usr == null ? FriendStatus.NotRegistered : getFriendStatus((string)friend.steamid),
                                 avatar = usr == null? null : (string)usr.steam.avatar 
                             });
@@ -92,15 +92,28 @@ namespace D2MPMaster.Friends
                 return FriendStatus.Offline;
         }
 
-        public static void PlayerQuit(string steamid)
+        public static void updateStatus(string steamid, FriendStatus status, string modname = null)
         {
-            foreach (var friendBrowser in Browsers.Find(m => m.user != null && m.friendlist.Any(x => x.steamid == steamid)))
+            foreach (var friendBrowser in Browsers.Find(m => m.user != null && m.friendlist.Any(x => x.id == steamid)))
             {
                 lock (friendBrowser.friendlist)
                 {
-                    var friend = friendBrowser.friendlist.Find(f => f.steamid == steamid);
-                    friend.status = FriendStatus.Offline;
-                    TransmitFriendUpdate(friend, new [] {"status"});
+                    var friend = friendBrowser.friendlist.Find(f => f.id == steamid);
+                    if (friend.status != status || friend.modname != modname)
+                    {
+                        List<String> fields = new List<string>();
+                        if (status != friend.status)
+                        {
+                            friend.status = status;
+                            fields.Add("status");
+                        }
+                        if (modname != null && modname != friend.modname)
+                        {
+                            friend.modname = modname;
+                            fields.Add("modname");
+                        }
+                        TransmitFriendUpdate(friend, fields.ToArray());
+                    }
                 }
             }
         }
@@ -111,8 +124,13 @@ namespace D2MPMaster.Friends
             var upd = new JObject();
             upd["msg"] = "colupd";
             upd["ops"] = new JArray { friend.Update("friends", fields) };
-            Browsers.AsyncSendTo(m => m.friendlist.Any(x => x.steamid == friend.steamid), new TextArgs(upd.ToString(Formatting.None), "friend"),
+            Browsers.AsyncSendTo(m => m.friendlist.Any(x => x.id == friend.id), new TextArgs(upd.ToString(Formatting.None), "friend"),
                 req => { });
+        }
+
+        public static void InviteFriend(BrowserController c, string steamid)
+        {
+            Browsers.AsyncSendTo(m => m.user != null && m.user.steam.steamid == steamid, BrowserController.inviteFriend(c.lobby, c.user.steam.steamid), req => { });
         }
 
         public void Dispose()

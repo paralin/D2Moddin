@@ -114,6 +114,7 @@
     <Compile Include="Browser\Methods\ChatMessage.cs" />
     <Compile Include="Browser\Methods\CreateLobby.cs" />
     <Compile Include="Browser\Methods\InstallMod.cs" />
+    <Compile Include="Browser\Methods\InviteFriend.cs" />
     <Compile Include="Browser\Methods\JoinLobby.cs" />
     <Compile Include="Browser\Methods\KickPlayer.cs" />
     <Compile Include="Browser\Methods\SetOption.cs" />
