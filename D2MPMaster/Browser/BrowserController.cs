@@ -881,5 +881,12 @@ namespace D2MPMaster.Browser
             upd["message"] = message;
             return new TextArgs(upd.ToString(Formatting.None), "lobby");
         }
+
+        public static ITextArgs UpdateMods()
+        {
+            var upd = new JObject();
+            upd["msg"] = "updatemods";
+            return new TextArgs(upd.ToString(Formatting.None), "updatemods");
+        }
     }
 }

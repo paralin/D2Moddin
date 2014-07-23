@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Timers;
+using D2MPMaster.Browser;
 using D2MPMaster.Client;
 using D2MPMaster.Database;
 using D2MPMaster.Lobbies;
@@ -24,6 +25,7 @@ namespace D2MPMaster.Mods
         public static Dictionary<string, Mod> ModCache = new Dictionary<string, Mod>(); 
         private static ClientController Clients = new ClientController();
         private static ServerController Servers = new ServerController();
+        private static BrowserController Browser = new BrowserController();
 
         private static Timer UpdateTimer;
 
@@ -95,6 +97,7 @@ namespace D2MPMaster.Mods
                 LobbyManager.CloseAll(mod);
             }
             Clients.SendToAll(ClientController.UpdateMods());
+            Browser.SendToAll(BrowserController.UpdateMods());
             foreach(var server in Servers.Find(m=>m.Inited))
             {
                 server.Inited = false;
