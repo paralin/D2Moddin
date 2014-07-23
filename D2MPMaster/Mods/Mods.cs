@@ -57,7 +57,7 @@ namespace D2MPMaster.Mods
             var updatedMods = new HashSet<Mod>();
             log.Info("Checking for updates to mods...");
             var logic = new CompareLogic(){Config = new ComparisonConfig(){Caching = false, MaxDifferences = 100}};
-            var modIds = new List<string>();
+            var modIds = new HashSet<string>();
             foreach (var mod in mods)
             {
                 modIds.Add(mod.Id);
@@ -69,7 +69,7 @@ namespace D2MPMaster.Mods
                     continue;
                 }
                 var omod = ModCache[mod.Id];
-                var diff = logic.Compare(mod, omod);
+                var diff = logic.Compare(omod, mod);
                 if (diff.AreEqual) continue;
                 log.InfoFormat("Mod [{0}] updated!", mod.fullname);
                 foreach (var difference in diff.Differences)
@@ -81,11 +81,11 @@ namespace D2MPMaster.Mods
                 }
                 ModCache[mod.Id] = mod;
             }
-            foreach (var mod in ModCache.Where(mod => !modIds.Contains(mod.Key)))
+            foreach (var mod in ModCache.Where(mod => !modIds.Contains(mod.Key)).ToArray())
             {
-                log.InfoFormat("Mod [{0}] deleted!", mod.Value.fullname);
                 updatedMods.Add(mod.Value);
                 ModCache.Remove(mod.Value.Id);
+                log.InfoFormat("Mod [{0}] deleted!", mod.Value.fullname);
             }
             if (updatedMods.Count == 0) return;
             log.InfoFormat("[{0}] mods updated, re-initing all clients and servers.", updatedMods.Count);
