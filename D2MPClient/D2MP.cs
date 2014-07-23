@@ -111,7 +111,7 @@ namespace d2mp
             };
             var json = JObject.FromObject(init).ToString(Formatting.None);
             Send(json);
-            AutoUpdateMods(false);
+            ThreadPool.QueueUserWorkItem(new WaitCallback(a => AutoUpdateMods(false)));
         }
 
         private static void SetupClient()
