@@ -60,6 +60,7 @@ namespace D2MPMaster.Mods
             log.Info("Checking for updates to mods...");
             var logic = new CompareLogic(){Config = new ComparisonConfig(){Caching = false, MaxDifferences = 100}};
             var modIds = new HashSet<string>();
+            bool cosmeticsChanged = false;
             foreach (var mod in mods)
             {
                 modIds.Add(mod.Id);
@@ -68,6 +69,7 @@ namespace D2MPMaster.Mods
                     ModCache.Add(mod.Id, mod);
                     updatedMods.Add(mod);
                     log.InfoFormat("Mod [{0}] added to database.", mod.fullname);
+                    cosmeticsChanged = true;
                     continue;
                 }
                 var omod = ModCache[mod.Id];
@@ -82,13 +84,16 @@ namespace D2MPMaster.Mods
                     updatedMods.Add(mod);
                 }
                 ModCache[mod.Id] = mod;
+                cosmeticsChanged = true;
             }
             foreach (var mod in ModCache.Where(mod => !modIds.Contains(mod.Key)).ToArray())
             {
                 updatedMods.Add(mod.Value);
                 ModCache.Remove(mod.Value.Id);
+                cosmeticsChanged = true;
                 log.InfoFormat("Mod [{0}] deleted!", mod.Value.fullname);
             }
+            if(cosmeticsChanged) Browser.SendToAll(BrowserController.UpdateMods());
             if (updatedMods.Count == 0) return;
             log.InfoFormat("[{0}] mods updated, re-initing all clients and servers.", updatedMods.Count);
             ServerAddons.Init(ModCache.Values);
@@ -97,7 +102,6 @@ namespace D2MPMaster.Mods
                 LobbyManager.CloseAll(mod);
             }
             Clients.SendToAll(ClientController.UpdateMods());
-            Browser.SendToAll(BrowserController.UpdateMods());
             foreach(var server in Servers.Find(m=>m.Inited))
             {
                 server.Inited = false;
