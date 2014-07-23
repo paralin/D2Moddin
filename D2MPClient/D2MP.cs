@@ -300,18 +300,24 @@ namespace d2mp
         {
             if (force || Settings.autoUpdateMods)
             {
-                List<RemoteMod> lstRemote = modController.getRemoteMods();
-                List<ClientMod> lstLocal = modController.getLocalMods();
+                try
+                {
+                    List<RemoteMod> lstRemote = modController.getRemoteMods();
 
-                //find all local mods that aren't in the remote list
-                lstLocal.FindAll(a => a.name != "checker" && lstRemote.All(b => b.name != a.name))
-                    .ForEach((mod) => DeleteMod(new DeleteMod() {Mod = mod}));
+                    //find all local mods that aren't in the remote list
+                    modController.clientMods.FindAll(a => a.name != "checker" && lstRemote.All(b => b.name != a.name))
+                        .ForEach((mod) => DeleteMod(new DeleteMod() {Mod = mod}));
 
-                lstRemote.FindAll(a => a.needsUpdate)
-                    .ForEach(mod => modController.installQueue.Enqueue(mod));
+                    lstRemote.FindAll(a => a.needsUpdate)
+                        .ForEach(mod => modController.installQueue.Enqueue(mod));
 
-                if (modController.installQueue.Count > 0)
-                    modController.InstallQueued();
+                    if (modController.installQueue.Count > 0)
+                        modController.InstallQueued();
+                }
+                catch (Exception ex)
+                {
+                    log.Error("Could not auto update mods.", ex);
+                }
             }
         }
 
