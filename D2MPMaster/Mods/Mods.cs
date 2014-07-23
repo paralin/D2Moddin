@@ -54,8 +54,7 @@ namespace D2MPMaster.Mods
         {
              
             var mods = Mongo.Mods.FindAllAs<Mod>();
-            List<Mod> updatedMods = new List<Mod>();
-            var dirty = false;
+            var updatedMods = new HashSet<Mod>();
             log.Info("Checking for updates to mods...");
             var logic = new CompareLogic(){Config = new ComparisonConfig(){Caching = false, MaxDifferences = 100}};
             var modIds = new List<string>();
@@ -64,8 +63,8 @@ namespace D2MPMaster.Mods
                 modIds.Add(mod.Id);
                 if (!ModCache.ContainsKey(mod.Id))
                 {
-                    dirty = true;
                     ModCache.Add(mod.Id, mod);
+                    updatedMods.Add(mod);
                     log.InfoFormat("Mod [{0}] added to database.", mod.fullname);
                     continue;
                 }
@@ -79,18 +78,16 @@ namespace D2MPMaster.Mods
                 }
                 if(mod.version!=omod.version||mod.isPublic != omod.isPublic || mod.playable != omod.playable) {
                     updatedMods.Add(mod);
-                    dirty = true;
                 }
                 ModCache[mod.Id] = mod;
             }
             foreach (var mod in ModCache.Where(mod => !modIds.Contains(mod.Key)))
             {
-                dirty = true;
                 log.InfoFormat("Mod [{0}] deleted!", mod.Value.fullname);
                 updatedMods.Add(mod.Value);
-                ModCache.Remove(mod.Key);
+                ModCache.Remove(mod.Value.Id);
             }
-            if (!dirty) return;
+            if (updatedMods.Count == 0) return;
             log.InfoFormat("[{0}] mods updated, re-initing all clients and servers.", updatedMods.Count);
             ServerAddons.Init(ModCache.Values);
             foreach (var mod in updatedMods)
