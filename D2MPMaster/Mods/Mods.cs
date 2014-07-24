@@ -93,7 +93,10 @@ namespace D2MPMaster.Mods
                 cosmeticsChanged = true;
                 log.InfoFormat("Mod [{0}] deleted!", mod.Value.fullname);
             }
-            if(cosmeticsChanged) Browser.SendToAll(BrowserController.UpdateMods());
+			if (cosmeticsChanged) {
+				Browser.AsyncSendToAll (BrowserController.UpdateMods (), res => {});
+				log.Info ("Telling browsers to download new mod list!");
+			}
             if (updatedMods.Count == 0) return;
             log.InfoFormat("[{0}] mods updated, re-initing all clients and servers.", updatedMods.Count);
             ServerAddons.Init(ModCache.Values);
