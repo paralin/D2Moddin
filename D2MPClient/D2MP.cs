@@ -46,7 +46,11 @@ namespace d2mp
 #else
         private static string server = "ws://net1.d2modd.in:4502/ClientController";
 #endif
+#if LINUX
+		private const string installerURL = "https://s3-us-west-2.amazonaws.com/d2mpclient/D2MPLauncher.sh";
+#else
         private const string installerURL = "https://s3-us-west-2.amazonaws.com/d2mpclient/D2MPLauncher.exe";
+#endif
         public static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
         private static string addonsDir;
         public static string d2mpDir;
@@ -1086,6 +1090,10 @@ namespace d2mp
         }
         public bool checkProtocol()
         {
+			#if MONO
+			D2MP.log.Error("Protocol handler checking is not implemented on Mono.");
+			return true;
+			#else
             RegistryKey regKey = Registry.ClassesRoot;
             regKey = regKey.OpenSubKey(@"steam");
             if (regKey != null)
@@ -1099,6 +1107,7 @@ namespace d2mp
                 }
             }
             return false;
+			#endif
         }
     }
 }
