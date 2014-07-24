@@ -46,7 +46,7 @@ namespace d2mp
 #else
         private static string server = "ws://net1.d2modd.in:4502/ClientController";
 #endif
-#if LINUX
+#if MONO //linux
 		private const string installerURL = "https://s3-us-west-2.amazonaws.com/d2mpclient/D2MPLauncher.sh";
 #else
         private const string installerURL = "https://s3-us-west-2.amazonaws.com/d2mpclient/D2MPLauncher.exe";
@@ -68,7 +68,11 @@ namespace d2mp
 
         private static void SteamCommand(string command)
         {
+			#if MONO
+			Process.Start(Path.Combine(SteamFinder.FindSteam(false, false), "steam.sh"), command);
+			#else
             Process.Start("explorer.exe", "steam://" + command);
+			#endif
         }
 
         private static void LaunchDota2()
@@ -355,11 +359,10 @@ namespace d2mp
 
             try
             {
-                var steam = new SteamFinder();
-                if (!steam.checkProtocol())
+				if (!SteamFinder.checkProtocol())
                 {
                     log.Error("Steam protocol not found. Trying to repair...");
-                    var steamDir = steam.FindSteam(true, false);
+					var steamDir = SteamFinder.FindSteam(true, false);
                     var steamservicePath = Path.Combine(steamDir, @"bin\steamservice.exe");
                     if (File.Exists(steamservicePath))
                     {
@@ -383,8 +386,8 @@ namespace d2mp
                 }
                 if (!Directory.Exists(Settings.steamDir) || !Directory.Exists(Settings.dotaDir) || !SteamFinder.checkDotaDir(Settings.dotaDir))
                 {
-                    Settings.steamDir = steam.FindSteam(true);
-                    Settings.dotaDir = steam.FindDota(true);
+					Settings.steamDir = SteamFinder.FindSteam(true);
+					Settings.dotaDir = SteamFinder.FindDota(true);
                 }
 
                 if (Settings.steamDir == null || Settings.dotaDir == null)
@@ -408,7 +411,7 @@ namespace d2mp
 
                 modController.getLocalMods();
 
-                Dictionary<int, string> usersDict = steam.FindUsers();
+				Dictionary<int, string> usersDict = SteamFinder.FindUsers();
                 if (usersDict.Count > 0)
                 {
                     steamids.AddRange(usersDict.OrderByDescending(x => x.Key).Select(m=>m.Value));
@@ -870,7 +873,7 @@ namespace d2mp
         }
     }
 
-    public class SteamFinder
+    public static class SteamFinder
     {
 		#if !MONO
         private static readonly string[] knownLocations =
@@ -879,8 +882,8 @@ namespace d2mp
         };
 		#endif
 
-        private string cachedDotaLocation = "";
-        private string cachedLocation = "";
+        private static string cachedDotaLocation = "";
+		private static string cachedLocation = "";
 
 		#if !MONO
         private bool ContainsSteam(string dir)
@@ -889,7 +892,7 @@ namespace d2mp
         }
 		#endif
 
-        public string FindSteam(bool delCache, bool useProtocol = true)
+		public static string FindSteam(bool delCache, bool useProtocol = true)
         {
             if (delCache) cachedLocation = "";
             if (delCache || cachedLocation == "")
@@ -967,12 +970,11 @@ namespace d2mp
             return cachedLocation;
         }
 
-        public string FindDota(bool delCache, bool useProtocol = true)
+        public static string FindDota(bool delCache, bool useProtocol = true)
         {
             if (!delCache && cachedDotaLocation != null) return cachedDotaLocation;
             string steamDir = FindSteam(false);
 			#if MONO
-
 			if(steamDir != null)
 			{
 				var loc = Path.Combine(steamDir, "SteamApps", "common", "dota 2 beta");
@@ -1051,7 +1053,7 @@ namespace d2mp
             return null;
         }
 
-        public Dictionary<int, string> FindUsers()
+        public static Dictionary<int, string> FindUsers()
         {
             Dictionary<int, string> usersDict = new Dictionary<int, string>();
             string steamDir = FindSteam(false);
@@ -1088,7 +1090,7 @@ namespace d2mp
         {
             return Directory.Exists(path) && Directory.Exists(Path.Combine(path, "dota")) && File.Exists(Path.Combine(path, "dota/gameinfo.txt"));
         }
-        public bool checkProtocol()
+        public static bool checkProtocol()
         {
 			#if MONO
 			D2MP.log.Error("Protocol handler checking is not implemented on Mono.");
