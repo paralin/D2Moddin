@@ -94,7 +94,7 @@ namespace D2MPMaster.Friends
 
         public static void updateStatus(string steamid, FriendStatus status, string modname = null)
         {
-            foreach (var friendBrowser in Browsers.Find(m => m.user != null && m.friendlist.Any(x => x.id == steamid)))
+            foreach (var friendBrowser in Browsers.Find(m => m.user != null && m.friendlist != null && m.friendlist.Any(x => x.id == steamid)))
             {
                 lock (friendBrowser.friendlist)
                 {
