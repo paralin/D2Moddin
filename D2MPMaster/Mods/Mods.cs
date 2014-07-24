@@ -90,36 +90,39 @@ namespace D2MPMaster.Mods
             {
                 updatedMods.Add(mod.Value);
                 ModCache.Remove(mod.Value.Id);
-                cosmeticsChanged = true;
-                log.InfoFormat("Mod [{0}] deleted!", mod.Value.fullname);
-            }
-            if (cosmeticsChanged) Browser.AsyncSendToAll(BrowserController.UpdateMods(), resp => { });
-            if (updatedMods.Count == 0) return;
-            log.InfoFormat("[{0}] mods updated, re-initing all clients and servers.", updatedMods.Count);
-            ServerAddons.Init(ModCache.Values);
-            foreach (var mod in updatedMods)
-            {
-                LobbyManager.CloseAll(mod);
-            }
-            Clients.SendToAll(ClientController.UpdateMods());
-            foreach(var server in Servers.Find(m=>m.Inited))
-            {
-                server.Inited = false;
-                server.Send("updateMods|" + string.Join(",", updatedMods.Select(m => m.name)));
-            }
-        }
+		cosmeticsChanged = true;
+		log.InfoFormat("Mod [{0}] deleted!", mod.Value.fullname);
+	    }
+	    if (cosmeticsChanged) {
+		    Browser.AsyncSendToAll (BrowserController.UpdateMods (), res => {});
+		    log.Info ("Telling browsers to download new mod list!");
+	    }
+	    if (updatedMods.Count == 0) return;
+	    log.InfoFormat("[{0}] mods updated, re-initing all clients and servers.", updatedMods.Count);
+	    ServerAddons.Init(ModCache.Values);
+	    foreach (var mod in updatedMods)
+	    {
+		    LobbyManager.CloseAll(mod);
+	    }
+	    Clients.SendToAll(ClientController.UpdateMods());
+	    foreach(var server in Servers.Find(m=>m.Inited))
+	    {
+		    server.Inited = false;
+		    server.Send("updateMods|" + string.Join(",", updatedMods.Select(m => m.name)));
+	    }
+	}
 
-        public static void StartUpdateTimer()
-        {
-            UpdateTimer = new Timer(30000);
-            UpdateTimer.Elapsed += CheckForUpdates;
-            UpdateTimer.Start();
-        }
+	public static void StartUpdateTimer()
+	{
+		UpdateTimer = new Timer(30000);
+		UpdateTimer.Elapsed += CheckForUpdates;
+		UpdateTimer.Start();
+	}
 
-        public static void StopUpdateTimer()
-        {
-            UpdateTimer.Stop();
-            UpdateTimer.Close();
-        }
+	public static void StopUpdateTimer()
+	{
+		UpdateTimer.Stop();
+		UpdateTimer.Close();
+	}
     }
 }
