@@ -728,11 +728,11 @@ namespace D2MPMaster.Lobbies
                 log.Error("No match result info for test lobby, setting all to success.");
                 foreach (var browser in instance.lobby.radiant.Where(player => player != null).Select(player => Browsers.Find(m => m.user != null && m.user.steam.steamid == player.steam).FirstOrDefault()).Where(browser => browser != null))
                 {
-                    browser.SetTested(true);
+                    BrowserController.SetTested(browser.user, true);
                 }
                 foreach (var browser in instance.lobby.dire.Where(player => player != null).Select(player => Browsers.Find(m => m.user != null && m.user.steam.steamid == player.steam).FirstOrDefault()).Where(browser => browser != null))
                 {
-                    browser.SetTested(true);
+                    BrowserController.SetTested(browser.user, true);
                 }
             }else if (instance.lobby.LobbyType == LobbyType.Normal)
             {
@@ -751,11 +751,11 @@ namespace D2MPMaster.Lobbies
                 log.Error("No match result info for test lobby, setting all to success.");
                 foreach (var browser in lobby.radiant.Where(player => player != null).Select(player => Browsers.Find(m => m.user != null && m.user.steam.steamid == player.steam).FirstOrDefault()).Where(browser => browser != null))
                 {
-                    browser.SetTested(true);
+                    BrowserController.SetTested(browser.user, true);
                 }
                 foreach (var browser in lobby.dire.Where(player => player != null).Select(player => Browsers.Find(m => m.user != null && m.user.steam.steamid == player.steam).FirstOrDefault()).Where(browser => browser != null))
                 {
-                    browser.SetTested(true);
+                    BrowserController.SetTested(browser.user, true);
                 }
             }
             CloseLobby(lobby);
@@ -882,11 +882,11 @@ namespace D2MPMaster.Lobbies
             {
                 foreach (var browser in lob.radiant.Where(player => player != null).Select(player => Browsers.Find(m => m.user != null && m.user.steam.steamid == player.steam).FirstOrDefault()).Where(browser => browser != null))
                 {
-                    browser.SetTested(true);
+                    BrowserController.SetTested(browser.user, true);
                 }
                 foreach (var browser in lob.dire.Where(player => player != null).Select(player => Browsers.Find(m => m.user != null && m.user.steam.steamid == player.steam).FirstOrDefault()).Where(browser => browser != null))
                 {
-                    browser.SetTested(true);
+                    BrowserController.SetTested(browser.user, true);
                 }
                 CloseLobby(lob);
             }
@@ -915,7 +915,7 @@ namespace D2MPMaster.Lobbies
                     var browser = Browsers.Find(m => m.user != null && m.user.steam.steamid == steam).FirstOrDefault();
                     if (browser != null)
                     {
-                        browser.SetTested(false);
+                        BrowserController.SetTested(browser.user, false);
                         log.Debug(matchid + " -> marked " + steam + " as FAIL");
                     }
                 }
@@ -929,7 +929,7 @@ namespace D2MPMaster.Lobbies
                     var browser = Browsers.Find(m => m.user != null && m.user.steam.steamid == player.steam).FirstOrDefault();
                     if (browser != null)
                     {
-                        browser.SetTested(!player.failedConnect);
+                        BrowserController.SetTested(browser.user, !player.failedConnect);
                     }
                 }
                 foreach (var player in lob.dire)
@@ -938,7 +938,7 @@ namespace D2MPMaster.Lobbies
                     var browser = Browsers.Find(m => m.user != null && m.user.steam.steamid == player.steam).FirstOrDefault();
                     if (browser != null)
                     {
-                        browser.SetTested(!player.failedConnect);
+                        BrowserController.SetTested(browser.user, !player.failedConnect);
                     }
                 }
                 CloseLobby(lob);
@@ -966,6 +966,22 @@ namespace D2MPMaster.Lobbies
                     if (plyr != null)
                     {
                         log.Debug(lob.id + " -> player connected: " + plyr.player.name);
+                        if (lob.LobbyType == LobbyType.Normal && lob.state < GameState.PostGame)
+                        {
+                            var browser =
+                                Browsers.Find(m => m.user != null && m.user.steam.steamid == plyr.player.steam)
+                                    .FirstOrDefault();
+                            if (browser != null)
+                            {
+                                BrowserController.SetTested(browser.user, true);
+                            }
+                            else
+                            {
+                                var user = Mongo.Users.FindOneAs<User>(Query.EQ("steam.steamid", plyr.player.steam));
+                                if(user != null)
+                                    BrowserController.SetTested(user, true);
+                            }
+                        }
                     }
                     break;
                 }
@@ -984,6 +1000,22 @@ namespace D2MPMaster.Lobbies
                     if (plyr != null)
                     {
                         log.Debug(lob.id + " -> player disconnected: " + plyr.player.name);
+                        if (lob.LobbyType == LobbyType.Normal && lob.state < GameState.PostGame)
+                        {
+                            var browser =
+                                Browsers.Find(m => m.user != null && m.user.steam.steamid == plyr.player.steam)
+                                    .FirstOrDefault();
+                            if (browser != null)
+                            {
+                                BrowserController.SetTested(browser.user, false);
+                            }
+                            else
+                            {
+                                var user = Mongo.Users.FindOneAs<User>(Query.EQ("steam.steamid", plyr.player.steam));
+                                if (user != null)
+                                    BrowserController.SetTested(user, false);
+                            }
+                        }
                     }
                     break;
                 }

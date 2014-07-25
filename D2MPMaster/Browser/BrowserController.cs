@@ -105,7 +105,7 @@ namespace D2MPMaster.Browser
         /// Has the user completed the test procedure?
         /// </summary>
         /// <param name="isTested">If set to <c>true</c> is tested.</param>
-        public void SetTested(bool isTested){
+        public static void SetTested(User user, bool isTested){
             if(user == null) return;
             if(isTested){
                 if(!user.authItems.Contains("tested")){
@@ -117,16 +117,13 @@ namespace D2MPMaster.Browser
                     }
                     arr[user.authItems.Length] = "tested";
                     user.authItems = arr;
-                    SaveUser();
+                    Mongo.Users.Save(user);
                 }
             }else{
                 if(user.authItems.Contains("tested")){
                     user.authItems = user.authItems.Where(m=>m!="tested").ToArray();
-                    SaveUser();
+                    Mongo.Users.Save(user);
                 }
-            }
-            foreach(var browser in this.Find(m=>m.user != null&&m.user.Id==user.Id&&m!=this)){
-                browser.RefreshUser();
             }
         }
 
