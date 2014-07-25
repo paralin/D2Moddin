@@ -36,6 +36,11 @@ namespace D2MPMaster.Model
 
         public bool ranked { get; set; }
 
+        public bool disableGG { get; set; }
+        public bool enablePause { get; set; }
+
+        public string mapOverride { get; set; }
+
         /// <summary>
         /// Use some other static hosting off of AWS
         /// </summary>
@@ -48,6 +53,19 @@ namespace D2MPMaster.Model
                        name = name,
                        version = version
                    };
+        }
+
+        public override bool Equals(object obj)
+        {
+            try
+            {
+                var other = obj as Mod;
+                return other.name == name;
+            }
+            catch
+            {
+                return false;
+            }
         }
     }
 }

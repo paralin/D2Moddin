@@ -39,7 +39,7 @@ namespace D2MPMaster
             Mongo.Setup();
 
             log.Info("Caching mods...");
-            Mods.Mods.Cache();
+            Mods.Mods.InitCache();
             log.Info(Mods.Mods.ModCache.Count+" mods cached.");
 
             log.Info("Generating server addon list...");
@@ -78,11 +78,15 @@ namespace D2MPMaster
                 using (var server = Composable.GetExport<IXSocketServerContainer>())
                 {
                     server.StartServers();
+                    Mods.Mods.StartUpdateTimer();
+					Lobbies.LobbyManager.Start ();
                     log.Info("Server running!");
                     while (!shutdown)
                     {
                         Thread.Sleep(100);
                     }
+					Lobbies.LobbyManager.Stop ();
+					Mods.Mods.StopUpdateTimer();
                     server.StopServers();
                 }
                 nancyServer.Stop();

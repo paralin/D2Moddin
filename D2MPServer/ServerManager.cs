@@ -32,10 +32,10 @@ namespace d2mpserver
         private static volatile bool shutdown;
         Dictionary<int, Server> servers = new Dictionary<int, Server>();
 
-        public Server LaunchServer(int id, int port, bool dev, string mod, string rconPass, string[] commands)
+        public Server LaunchServer(int id, int port, bool dev, string mod, string rconPass, string[] commands, string map)
         {
-            log.Info("Launching server, ID: " + id + " on port " + port + (dev ? " in devmode." : "."));
-            var serv = Server.Create(id, port, dev, mod, rconPass, commands);
+            log.Info("Launching server, ID: " + id + " with map "+map+" on port " + port + (dev ? " in devmode." : "."));
+            var serv = Server.Create(id, port, dev, mod, rconPass, commands, map);
             serv.OnShutdown += (sender, args) => servers.Remove(serv.id);
             servers.Add(id, serv);
             return serv;
@@ -93,21 +93,35 @@ namespace d2mpserver
 
                     log.Debug("Working directory: " + workingdir);
 
-                    log.Debug("Searching for SteamCMD...");
-                    steamCmdPath = Path.Combine(workingdir, "steam/steamcmd.exe");
-                    if (!File.Exists(steamCmdPath))
+                    if (Settings.Default.disableSteamCMD)
                     {
-                        log.Debug("Downloading SteamCMD....");
-                        client.DownloadFile(Settings.Default.steamcmd, steamCmdPath);
+                        log.Debug("STEAMCMD disabled! Skipping step...");
                     }
-                    log.Debug("SteamCMD path: " + steamCmdPath);
+                    else
+                    {
+                        log.Debug("Searching for SteamCMD...");
+                        steamCmdPath = Path.Combine(workingdir, "steam/steamcmd.exe");
+                        if (!File.Exists(steamCmdPath))
+                        {
+                            log.Debug("Downloading SteamCMD....");
+                            client.DownloadFile(Settings.Default.steamcmd, steamCmdPath);
+                        }
+                        log.Debug("SteamCMD path: " + steamCmdPath);
 
-                    log.Debug("Launching SteamCMD to update Dota (570)...");
-                    activeSteamCMD = SteamCMD.LaunchSteamCMD("+app_update 570"+(Settings.Default.steamVerify ? " validate" : ""));
-                    activeSteamCMD.WaitForExitSync();
-                    log.Debug("SteamCMD finished! Continuing...");
-                    activeSteamCMD = null;
-                    if(shutdown) { log.Debug("Environment setup canceled!"); return false;}
+                        log.Debug("Launching SteamCMD to update Dota (570)...");
+                        activeSteamCMD =
+                            SteamCMD.LaunchSteamCMD("+app_update 570" +
+                                                    (Settings.Default.steamVerify ? " validate" : ""));
+                        activeSteamCMD.WaitForExitSync();
+                        log.Debug("SteamCMD finished! Continuing...");
+                        activeSteamCMD = null;
+                    }
+
+                    if (shutdown)
+                    {
+                        log.Debug("Environment setup canceled!");
+                        return false;
+                    }
 
                     log.Debug("Finding dota.exe (Dota 2 root)...");
                     var files = Directory.GetFiles(Path.Combine(workingdir, "game"), "dota.exe",
@@ -184,6 +198,20 @@ namespace d2mpserver
                 name = Path.GetFileName(directory), version = AddonInfo.DetectVersion(directory)
             }).ToArray();
         }
+
+        public bool IsPortFree(int port)
+        {
+            return servers.Values.All(m => m.port != port);
+        }
+
+        public void ShutdownAllMod(string mod)
+        {
+            var toKill = servers.Values.Where(m => m.mod == mod).ToArray();
+            foreach (var server in toKill)
+            {
+                ShutdownServer(server.id);
+            }
+        }
     }
 
     //Stores info on a server
@@ -191,19 +219,20 @@ namespace d2mpserver
     {
         private Process serverProc;
         public int id;
-        private int port;
+        public int port;
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         public bool shutdown = false;
         public event ShutdownEventHandler OnShutdown;
         public event ShutdownEventHandler OnReady;
-        private string mod = "";
+        public string mod = "";
 
 
-        private Server(Process serverProc, int id, int port, bool dev)
+        private Server(Process serverProc, int id, int port, bool dev, string mod)
         {
             this.id = id;
             this.serverProc = serverProc;
             this.port = port;
+            this.mod = mod;
         }
 
         public void StartThread()
@@ -222,7 +251,7 @@ namespace d2mpserver
             shutdown = true;
         }
 
-        public static Server Create(int id, int port, bool dev, string modp, string rconPass, string[] commands)
+        public static Server Create(int id, int port, bool dev, string modp, string rconPass, string[] commands, string map)
         {
             Process serverProc = new Process();
             ProcessStartInfo info = serverProc.StartInfo;
@@ -246,7 +275,7 @@ namespace d2mpserver
             info.Arguments += " +tv_maxclients 100 +tv_name D2Moddin +tv_delay 0 +tv_port " +
                               (port + 1000) + " +tv_autorecord 1 +tv_secret_code 0";
             info.Arguments += " +tv_enable 1";
-            info.Arguments += " +map " + mod;
+            info.Arguments += " +map " + map;
             string cfgText = commands.Aggregate("", (current, command) => current + (command + ";"));
             var cfgPath = Path.Combine(ServerManager.cfgPath, rconPass + ".cfg");
             File.WriteAllText(cfgPath, cfgText);
@@ -257,7 +286,7 @@ namespace d2mpserver
             info.WorkingDirectory = ServerManager.workingdir;
             //info.EnvironmentVariables.Add("LD_LIBRARY_PATH", info.WorkingDirectory + ":" + info.WorkingDirectory + "/bin");
             log.Debug(info.FileName + " " + info.Arguments);
-            Server serv = new Server(serverProc, id, port, dev);
+            Server serv = new Server(serverProc, id, port, dev, mod);
             if (Settings.Default.headlessSRCDS)
                 serverProc.OutputDataReceived += serv.OnOutputDataReceived;
             serverProc.Start();

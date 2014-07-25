@@ -21,7 +21,7 @@ namespace D2MPMaster.LiveData
             var obj = new JObject();
             obj["_o"] = "update";
             obj["_c"] = collection;
-            obj["id"] = (string)source.GetType().GetProperty("id").GetValue(source, null);
+            obj["_id"] = (string)source.GetType().GetProperty("id").GetValue(source, null);
             foreach (var field in fields)
             {
                 try
@@ -75,7 +75,7 @@ namespace D2MPMaster.LiveData
             var obj = new JObject();
             obj["_o"] = "remove";
             obj["_c"] = collection;
-            obj["id"] = (string)source.GetType().GetProperty("id").GetValue(source, null);
+            obj["_id"] = (string)source.GetType().GetProperty("id").GetValue(source, null);
             return obj;
         }
 

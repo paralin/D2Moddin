@@ -49,7 +49,14 @@ namespace D2MPMaster.Model
     public class Profile
     {
         public string name { get; set; }
-        public Dictionary<string, int> mmr { get; set; }
-        public DateTime PreventMMUntil { get; set; }
+        /// <summary>
+        /// Null on default, if they want a special icon
+        /// </summary>
+        public string playerIcon { get; set; }
+
+        /// <summary>
+        /// Contribution description (probably null)
+        /// </summary>
+        public string contribDesc { get; set; }
     }
 }

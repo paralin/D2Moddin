@@ -31,10 +31,20 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
-  <PropertyGroup>
-    <ApplicationManifest>app.manifest</ApplicationManifest>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Development|AnyCPU'">
+    <OutputPath>bin\Development\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="KellermanSoftware.Compare-NET-Objects">
+      <HintPath>..\packages\CompareNETObjects.3.00.0.0\lib\net45\KellermanSoftware.Compare-NET-Objects.dll</HintPath>
+    </Reference>
     <Reference Include="log4net">
       <HintPath>..\packages\log4net.2.0.3\lib\net40-full\log4net.dll</HintPath>
     </Reference>
@@ -50,40 +60,52 @@
     <Reference Include="Nancy.Hosting.Self">
       <HintPath>..\packages\Nancy.Hosting.Self.0.23.0\lib\net40\Nancy.Hosting.Self.dll</HintPath>
     </Reference>
+    <Reference Include="ServiceStack.Text, Version=3.9.69.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\XSockets.Core.3.0.6\lib\net40\ServiceStack.Text.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="XSockets.Controllers">
-      <HintPath>..\packages\XSockets.Server.3.0.6\lib\net40\XSockets.Controllers.dll</HintPath>
-    </Reference>
-    <Reference Include="XSockets.Core.Communication">
-      <HintPath>..\packages\XSockets.Server.3.0.6\lib\net40\XSockets.Core.Communication.dll</HintPath>
-    </Reference>
-    <Reference Include="XSockets.Protocol">
-      <HintPath>..\packages\XSockets.Server.3.0.6\lib\net40\XSockets.Protocol.dll</HintPath>
-    </Reference>
-    <Reference Include="XSockets.Serialization">
-      <HintPath>..\packages\XSockets.Core.3.0.6\lib\net40\XSockets.Serialization.dll</HintPath>
-    </Reference>
-    <Reference Include="XSockets.Server">
-      <HintPath>..\packages\XSockets.Server.3.0.6\lib\net40\XSockets.Server.dll</HintPath>
-    </Reference>
-    <Reference Include="XSockets.WebRTC">
-      <HintPath>..\packages\XSockets.Server.3.0.6\lib\net40\XSockets.WebRTC.dll</HintPath>
-    </Reference>
     <Reference Include="AWSSDK">
       <HintPath>..\packages\AWSSDK.2.1.1.0\lib\net45\AWSSDK.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\packages\Newtonsoft.Json.6.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
-    <Reference Include="XSockets.Core">
+    <Reference Include="XSockets.Controllers">
+      <HintPath>..\packages\XSockets.Server.3.0.6\lib\net40\XSockets.Controllers.dll</HintPath>
+    </Reference>
+    <Reference Include="XSockets.Core, Version=3.0.6.0, Culture=neutral, PublicKeyToken=e0d515f22052a108, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\XSockets.Core.3.0.6\lib\net40\XSockets.Core.dll</HintPath>
     </Reference>
-    <Reference Include="XSockets.Core.Common">
+    <Reference Include="XSockets.Core.Common, Version=3.0.6.0, Culture=neutral, PublicKeyToken=e0d515f22052a108, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\XSockets.Core.3.0.6\lib\net40\XSockets.Core.Common.dll</HintPath>
     </Reference>
-    <Reference Include="XSockets.Plugin.Framework">
+    <Reference Include="XSockets.Core.Communication, Version=3.0.6.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\XSockets.Server.3.0.6\lib\net40\XSockets.Core.Communication.dll</HintPath>
+    </Reference>
+    <Reference Include="XSockets.Plugin.Framework, Version=1.4.3.0, Culture=neutral, PublicKeyToken=e0d515f22052a108, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\XSockets.Plugin.Framework.1.4.3\lib\XSockets.Plugin.Framework.dll</HintPath>
+    </Reference>
+    <Reference Include="XSockets.Protocol, Version=3.0.6.0, Culture=neutral, PublicKeyToken=e0d515f22052a108, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\XSockets.Server.3.0.6\lib\net40\XSockets.Protocol.dll</HintPath>
+    </Reference>
+    <Reference Include="XSockets.Serialization, Version=3.0.6.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\XSockets.Core.3.0.6\lib\net40\XSockets.Serialization.dll</HintPath>
+    </Reference>
+    <Reference Include="XSockets.Server, Version=3.0.6.0, Culture=neutral, PublicKeyToken=e0d515f22052a108, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\XSockets.Server.3.0.6\lib\net40\XSockets.Server.dll</HintPath>
+    </Reference>
+    <Reference Include="XSockets.WebRTC, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\XSockets.Server.3.0.6\lib\net40\XSockets.WebRTC.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -149,7 +171,6 @@
       <Name>ServerCommon</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

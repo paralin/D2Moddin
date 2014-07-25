@@ -14,7 +14,8 @@ namespace d2mp
 {
     static class Settings
     {
-        public static string steamDir {
+        public static string steamDir
+        {
             get
             {
                 return Properties.Settings.Default.steamDir;
@@ -34,6 +35,31 @@ namespace d2mp
             set
             {
                 Properties.Settings.Default.dotaDir = value;
+                Properties.Settings.Default.Save();
+            }
+        }
+        public static bool createShortcutAtStartup
+        {
+            get
+            {
+                return Properties.Settings.Default.shortcut;
+            }
+            set
+            {
+                Properties.Settings.Default.shortcut = value;
+                Properties.Settings.Default.Save();
+            }
+        }
+
+        public static bool autoUpdateMods
+        {
+            get
+            {
+                return Properties.Settings.Default.autoUpdate;
+            }
+            set
+            {
+                Properties.Settings.Default.autoUpdate = value;
                 Properties.Settings.Default.Save();
             }
         }

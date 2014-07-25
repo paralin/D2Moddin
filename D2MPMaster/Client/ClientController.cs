@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Threading.Tasks;
+using System.Timers;
 using ClientCommon.Data;
 using ClientCommon.Methods;
 using D2MPMaster.Browser;
@@ -28,19 +28,35 @@ namespace D2MPMaster.Client
         public Init InitData;
         public string UID;
         public string SteamID;
+        private Timer mAckTimer = new Timer(10000);//10 seconds
+
         public bool Inited { get; set; }
 
-        private object MsgLock = new object();
+        private object ConcurrentLock = new object();
 
         public ClientController()
         {
             this.OnOpen += OnClientConnect;
             this.OnClose += DeregisterClient;
             this.OnError += OnClientError;
+            //force the connection closed when the client does not ACK
+            mAckTimer.Elapsed += (sender, args) =>
+            {
+                log.Info("Client did not respond in time");
+                mAckTimer.Stop();
+                this.Close();
+            };
         }
 
         private void OnClientConnect(object sender, OnClientConnectArgs e)
         {
+            //stop the timer if the client ACK
+            this.ProtocolInstance.OnPing += (s, args) => mAckTimer.Stop();//protocol instance is null until someone connects
+        }
+
+        private void OnClientError(object sender, OnErrorArgs args)
+        {
+            log.Error(args.Message, args.Exception);
         }
 
         private void OnClientError(object sender, OnErrorArgs args)
@@ -61,32 +77,24 @@ namespace D2MPMaster.Client
 		void RegisterClient()
 		{
 			//Figure out UID
-			var users = new List<User>();
+		    User user = null;
 			foreach (var steamid in InitData.SteamIDs.Where(steamid => steamid.Length == 17))
 			{
-				var user = Mongo.Users.FindOneAs<User>(Query.EQ("steam.steamid", steamid));
-				if (user != null) users.Add(user);
+				var userb = Mongo.Users.FindOneAs<User>(Query.EQ("steam.steamid", steamid));
+			    if (userb != null)
+			    {
+			        var browser = Browser.Find(m => m.user != null && m.user.Id == userb.Id);
+					if (browser.Any()) {user = userb; break;};
+			    }
 			}
 
-			if (users.Count == 0)
+			if (user == null)
 			{
-                this.AsyncSend(NotifyMessage("No registered account found","No D2Moddin account found for your active Steam account. Please login to Steam using your registered D2Moddin account and restart the client.", true) , ar => { });
-                log.Debug("Can't find any users for client.");
+                this.AsyncSend(NotifyMessage("Account link unsuccessful","Sign into the same account on the website and in Steam.", true) , ar => { });
 				return;
 			}
-			SteamID = users.FirstOrDefault ().steam.steamid;
-			UID = users.FirstOrDefault ().Id;
-
-			/*
-			var tbrowser = users.Select(user => Browser.Find(m => m.user != null && m.user.id == user.id).FirstOrDefault()).FirstOrDefault(browser => browser != null);
-
-			if (tbrowser != null)
-				UID = tbrowser.user.id;
-			else
-			{
-				var usr = users.FirstOrDefault();
-				if (usr != null) UID = usr.id;
-			}*/
+			SteamID = user.steam.steamid;
+			UID = user.Id;
 
 			Inited = true;
 
@@ -95,13 +103,23 @@ namespace D2MPMaster.Client
 			foreach (var browser in browsersn)
 			{
 				browser.SendManagerStatus(true);
+                //set the current mod (helps after manager restart)
+                if( browser.lobby != null )
+			        SetMod(SteamID, D2MPMaster.Mods.Mods.ByID(browser.lobby.mod));
 			}
 		}
 
-        public static ITextArgs InstallMod(Mod mod)
+        public void InstallMod(string pUID, Mod mod)
         {
-            var msg = JObject.FromObject(new InstallMod() { Mod = mod.ToClientMod(), url = Program.S3.GenerateModURL(mod) }).ToString(Formatting.None);
-            return new TextArgs(msg, "commands");
+            //find the correct client
+            ClientController client = this.Find(c => !string.IsNullOrEmpty(c.UID) && c.UID == pUID).FirstOrDefault();
+            if (client != null)
+            {
+                var msg = JObject.FromObject(new InstallMod() { Mod = mod.ToClientMod(), url = Program.S3.GenerateModURL(mod) }).ToString(Formatting.None);
+                client.AsyncSend(new TextArgs(msg, "commands"),
+                    req => { });
+                client.mAckTimer.Start();
+            }
         }
 
         public static ITextArgs LaunchDota()
@@ -119,10 +137,16 @@ namespace D2MPMaster.Client
             return new TextArgs(JObject.FromObject(new NotifyMessage() { message = new Message() { title = title, message = message, shutdown = shutdown } }).ToString(Formatting.None), "commands");
         }
 
-        public static ITextArgs SetMod(Mod mod)
+        public void SetMod(string pSteamId, Mod mod)
         {
-            var msg = JObject.FromObject(new SetMod() { Mod = mod.ToClientMod() }).ToString(Formatting.None);
-            return new TextArgs(msg, "commands");
+            //find the correct client
+            ClientController client = this.Find(c => !string.IsNullOrEmpty(c.SteamID) && c.SteamID == pSteamId).FirstOrDefault();
+            if (client != null)
+            {
+                var msg = JObject.FromObject(new SetMod() { Mod = mod.ToClientMod() }).ToString(Formatting.None);
+                client.AsyncSend(new TextArgs(msg, "commands"), req => { });
+                client.mAckTimer.Start();
+            }
         }
 
         public override void OnMessage(ITextArgs textArgs)
@@ -135,7 +159,7 @@ namespace D2MPMaster.Client
                 var command = id.Value<string>();
                 Task.Factory.StartNew(() =>
                 {
-                    lock (MsgLock)
+                    lock (ConcurrentLock)
                     {
                         try
                         {
@@ -143,61 +167,7 @@ namespace D2MPMaster.Client
                             {
                                 case OnInstalledMod.Msg:
                                 {
-                                    var msg = jdata.ToObject<OnInstalledMod>();
-                                    log.Debug(SteamID + " -> installed " + msg.Mod.name + ".");
-                                    Mods.Add(msg.Mod);
-                                    Browser.AsyncSendTo(
-                                        x => x.user != null && x.user.steam.steamid == SteamID,
-                                        BrowserController.InstallResponse(
-                                            "The mod has been installed.", true),
-                                        rf => { });
-                                    break;
-                                }
-                                case OnDeletedMod.Msg:
-                                {
-                                    var msg = jdata.ToObject<OnDeletedMod>();
-                                    log.Debug(SteamID + " -> removed " + msg.Mod.name + ".");
-                                    var localMod = Mods.FirstOrDefault(m => Equals(msg.Mod, m));
-                                    if (localMod != null) Mods.Remove(localMod);
-                                    break;
-                                }
-                                case Init.Msg:
-                                {
-                                    var msg = jdata.ToObject<Init>();
-                                    InitData = msg;
-                                    if (msg.Version != Version.ClientVersion)
-                                    {
-                                        this.SendJson(
-                                            JObject.FromObject(new Shutdown())
-                                                .ToString(Formatting.None),
-                                            "commands");
-                                        return;
-                                    }
-                                    foreach (
-                                        var mod in
-                                            msg.Mods.Where(
-                                                mod => mod.name != null && mod.version != null))
-                                        Mods.Add(mod);
-                                    //Insert the client into the DB
-                                    RegisterClient();
-                                    break;
-                                }
-                                case RequestMod.Msg:
-                                {
-                                    var msg = jdata.ToObject<RequestMod>();
-                                    var mod = D2MPMaster.Mods.Mods.ByName(msg.Mod.name);
-                                    if (mod != null && mod.playable)
-                                    {
-                                        if (
-                                            !Mods.Any(
-                                                m =>
-                                                    m.name == mod.name && m.version == mod.version))
-                                        {
-                                            this.AsyncSend(InstallMod(mod), rf => { });
-                                        }
-                                    }
-
-                                    break;
+                                    this.InstallMod(this.UID, mod);
                                 }
                             }
                         }
@@ -214,14 +184,26 @@ namespace D2MPMaster.Client
             }
         }
 
-        public static ITextArgs ConnectDota(string serverIp)
+        public void ConnectDota(string pSteamId, string serverIp)
         {
-            return new TextArgs(JObject.FromObject(new ConnectDota() { ip = serverIp }).ToString(Formatting.None), "commands");
+            //find the correct client
+            ClientController client = this.Find(c => !string.IsNullOrEmpty(c.SteamID) && c.SteamID == pSteamId).FirstOrDefault();
+            if (client != null)
+            {
+                var msg = JObject.FromObject(new ConnectDota() { ip = serverIp }).ToString(Formatting.None);
+                client.AsyncSend(new TextArgs(msg, "commands"), arg=>{});
+                client.mAckTimer.Start();
+            }
         }
 
-        public static ITextArgs Shutdown()
+        public static ITextArgs Shutdown(bool restart)
         {
-            return new TextArgs(JObject.FromObject(new ClientCommon.Methods.Shutdown()).ToString(), "commands");
+            return new TextArgs(JObject.FromObject(new ClientCommon.Methods.Shutdown(){restart=restart}).ToString(), "commands");
+        }
+
+        public static ITextArgs UpdateMods()
+        {
+            return new TextArgs(JObject.FromObject(new ClientCommon.Methods.UpdateMods()).ToString(), "commands");
         }
         
         public static ITextArgs Uninstall()

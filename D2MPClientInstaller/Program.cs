@@ -29,20 +29,25 @@ namespace D2MPClientInstaller
 {
     static class Program
     {
-        private static bool doLog = false;
+        private const bool doLog = true;
+        private const string logFile = "d2mpinstaller.log";
+        private static string ourDir;
         private static string installdir;
         static void Log(string text)
         {
             if (doLog)
-                File.AppendAllText("d2mpinstaller.log", text + "\n");
+                File.AppendAllText(Path.Combine(ourDir, logFile), text + "\n");
         }
 
         static void DeleteOurselves(string path)
         {
             ProcessStartInfo info = new ProcessStartInfo("cmd.exe");
-            info.Arguments = "/C timeout 3 & Del \"" + path+"\"";
+            info.Arguments = "/C timeout 2 & Del \"" + path+"\"";
+
+            if (doLog)
+                info.Arguments += " & Del \"" + Path.Combine(Path.GetDirectoryName(path), logFile) + "\"";
+
             info.CreateNoWindow = true;
-            info.RedirectStandardOutput = true;
             info.UseShellExecute = false;
             Process.Start(info);
         }
@@ -101,6 +106,16 @@ namespace D2MPClientInstaller
         [STAThread]
         static void Main()
         {
+            ourDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+
+            AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
+            {
+                string msg = string.Format("Unhandled exception: {0}", args.ExceptionObject);
+                Log(msg);
+                ShowError(msg);
+                Environment.Exit(1);
+            };
+
             Log("Finding install directories...");
             installdir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "D2MP");
             var verpath = Path.Combine(installdir, "version.txt");
@@ -144,15 +159,19 @@ namespace D2MPClientInstaller
                     Log("Downloading/unzipping new version...");
                     try
                     {
+                        var dlPath = Path.Combine(installdir, "archive.zip");
                         using(WebClient client = new WebClient())
                         {
-                            d2mp.UnZip.unzipFromStream(client.OpenRead(info[1]), installdir);
+                            client.DownloadFile(info[1], dlPath);
                         }
+                        d2mp.UnZip.unzipFromStream(File.OpenRead(dlPath), installdir);
                     }
                     catch (Exception ex)
                     {
                         Log(ex.ToString());
                         ShowError("Problem downloading new D2Moddin launcher: " + ex);
+                        ShowError("You can manually download the client from " + info[1]);
+                        return;
                     }
                 }
             }
@@ -166,6 +185,7 @@ namespace D2MPClientInstaller
                 {
                     Log("Problem uninstalling D2MP: " + ex);
                 }
+                return;
             }
 
             Log("Launching D2MP...");
@@ -181,7 +201,6 @@ namespace D2MPClientInstaller
             {
                 Log("Problem deleting ourselves: " + ex);
             }
-            return;
         }
     }
 }

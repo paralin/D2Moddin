@@ -44,6 +44,7 @@ namespace D2MPMaster.Lobbies
         public string mod { get; set; }
         [ExcludeField(Collections = new[] { "publicLobbies" })]
         public string serverIP { get; set; }
+        [ExcludeField(Collections = new[] { "publicLobbies", "lobbies" })]
         public bool isPublic { get; set; }
         [ExcludeField(Collections = new[] { "publicLobbies" })]
         public bool requiresFullLobby { get; set; }
@@ -59,6 +60,9 @@ namespace D2MPMaster.Lobbies
         [ExcludeField(Collections = new[] { "publicLobbies", "lobbies" })]
         public DateTime IdleSince { get; set; }
         public LobbyType LobbyType {get;set;}
+
+        [ExcludeField(Collections = new[] { "publicLobbies", "lobbies"})]
+        public bool disablePause { get; set; }
 
         public int TeamCount(Player[] team)
         {
