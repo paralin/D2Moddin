@@ -122,7 +122,6 @@
     <Compile Include="Database\Mongo.cs" />
     <Compile Include="Enums.cs" />
     <Compile Include="LiveData\DiffGenerator.cs" />
-    <Compile Include="LiveData\ServersStatus.cs" />
     <Compile Include="Lobbies\Lobby.cs" />
     <Compile Include="Lobbies\LobbyManager.cs" />
     <Compile Include="Lobbies\Player.cs" />

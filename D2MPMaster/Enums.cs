@@ -11,6 +11,13 @@ namespace d2mpserver
 	}
 
     [Serializable]
+    public enum MatchmakeStatus : int
+    {
+        PlayerQueue = 0,
+        TeamQueue = 1
+    }
+
+    [Serializable]
     public enum ServerRegion : int
     {
         UNKNOWN=0,

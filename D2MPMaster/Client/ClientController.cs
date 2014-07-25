@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Timers;
@@ -32,8 +31,6 @@ namespace D2MPMaster.Client
 
         public bool Inited { get; set; }
 
-        private object ConcurrentLock = new object();
-
         public ClientController()
         {
             this.OnOpen += OnClientConnect;
@@ -52,11 +49,6 @@ namespace D2MPMaster.Client
         {
             //stop the timer if the client ACK
             this.ProtocolInstance.OnPing += (s, args) => mAckTimer.Stop();//protocol instance is null until someone connects
-        }
-
-        private void OnClientError(object sender, OnErrorArgs args)
-        {
-            log.Error(args.Message, args.Exception);
         }
 
         private void OnClientError(object sender, OnErrorArgs args)
@@ -157,30 +149,58 @@ namespace D2MPMaster.Client
                 var id = jdata["msg"];
                 if (id == null) return;
                 var command = id.Value<string>();
-                Task.Factory.StartNew(() =>
+                switch (command)
                 {
-                    lock (ConcurrentLock)
-                    {
-                        try
+                    case OnInstalledMod.Msg:
                         {
-                            switch (command)
+                            var msg = jdata.ToObject<OnInstalledMod>();
+                            log.Debug(SteamID + " -> installed " + msg.Mod.name + ".");
+                            Mods.Add(msg.Mod);
+                            Browser.AsyncSendTo(x => x.user != null && x.user.steam.steamid == SteamID, BrowserController.InstallResponse("The mod has been installed.", true), rf => { });
+                            break;
+                        }
+                    case OnDeletedMod.Msg:
+                        {
+                            var msg = jdata.ToObject<OnDeletedMod>();
+                            log.Debug(SteamID + " -> removed " + msg.Mod.name + ".");
+                            var localMod = Mods.FirstOrDefault(m => Equals(msg.Mod, m));
+                            if (localMod != null) Mods.Remove(localMod);
+                            break;
+                        }
+                    case Init.Msg:
+                        {
+                            var msg = jdata.ToObject<Init>();
+                            InitData = msg;
+                            if (msg.Version != Version.ClientVersion)
                             {
-                                case OnInstalledMod.Msg:
+                                this.SendJson(JObject.FromObject(new Shutdown()).ToString(Formatting.None), "commands");
+                                return;
+                            }
+                            foreach (var mod in msg.Mods.Where(mod => mod.name != null && mod.version != null)) Mods.Add(mod);
+                            //Insert the client into the DB
+                            RegisterClient();
+                            break;
+                        }
+                    case RequestMod.Msg:
+                        {
+                            var msg = jdata.ToObject<RequestMod>();
+                            var mod = D2MPMaster.Mods.Mods.ByName(msg.Mod.name);
+                            if (mod != null && mod.playable)
+                            {
+                                if (!Mods.Any(m => m.name == mod.name && m.version == mod.version))
                                 {
                                     this.InstallMod(this.UID, mod);
                                 }
                             }
+
+                            break;
                         }
-                        catch (Exception ex)
-                        {
-                            //log.Error("Parsing client message.", ex);
-                        }
-                    }
-                });
+                }
+
             }
             catch (Exception ex)
             {
-                
+                //log.Error("Parsing client message.", ex);
             }
         }
 
@@ -204,11 +224,6 @@ namespace D2MPMaster.Client
         public static ITextArgs UpdateMods()
         {
             return new TextArgs(JObject.FromObject(new ClientCommon.Methods.UpdateMods()).ToString(), "commands");
-        }
-        
-        public static ITextArgs Uninstall()
-        {
-            return new TextArgs(JObject.FromObject(new ClientCommon.Methods.Uninstall()).ToString(), "commands");
         }
     }
 }

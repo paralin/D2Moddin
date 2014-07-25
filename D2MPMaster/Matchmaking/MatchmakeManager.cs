@@ -4,15 +4,20 @@
 //
 using D2MPMaster.Browser;
 using D2MPMaster.Database;
+using D2MPMaster.LiveData;
 using D2MPMaster.Lobbies;
 using D2MPMaster.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using d2mpserver;
 using MongoDB.Driver.Builders;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using XSockets.Core.Common.Globals;
 using XSockets.Core.Common.Socket;
+using XSockets.Core.Common.Socket.Event.Arguments;
 using XSockets.Core.XSocket;
 using XSockets.Core.XSocket.Helpers;
 using XSockets.Plugin.Framework;
@@ -146,7 +151,7 @@ namespace D2MPMaster.Matchmaking
                     }
 
                     //if we are crowded
-                        if (matchFound.Users.Count == TEAM_PLAYERS)
+                    if (matchFound.Users.Count == TEAM_PLAYERS)
                     {
                         //reset the tries and dont ignore it
                         matchFound.TryCount = 1;
@@ -161,6 +166,12 @@ namespace D2MPMaster.Matchmaking
                         {
                             inTeamMatchmaking.Add(matchFound);
                         }
+                        match.Status = MatchmakeStatus.TeamQueue;
+                        TransmitMatchmakeUpdate(match, new[] {"Status", "UserCount"});
+                    }
+                    else
+                    {
+                        TransmitMatchmakeUpdate(match, new[] { "UserCount" });
                     }
                 }
 #if DEBUG
@@ -179,6 +190,8 @@ namespace D2MPMaster.Matchmaking
                     {
                         inTeamMatchmaking.Add(match);
                     }
+                    match.Status = MatchmakeStatus.TeamQueue;
+                    TransmitMatchmakeUpdate(match, new[] { "Status", "UserCount" });
                 }
 #endif
                 else
@@ -307,7 +320,19 @@ namespace D2MPMaster.Matchmaking
                 {
                     inMatchmaking.Add(mm);
                 }
+                mm.Status = MatchmakeStatus.PlayerQueue;
+                TransmitMatchmakeUpdate(mm, new []{"Status", "UserCount"});
             }
+        }
+
+        public static void TransmitMatchmakeUpdate(Matchmake matchmake, string[] fields)
+        {
+            //Generate message
+            var upd = new JObject();
+            upd["msg"] = "colupd";
+            upd["ops"] = new JArray { matchmake.Update("matchmake", fields) };
+            Browsers.AsyncSendTo(m => m.matchmake != null && m.matchmake.id == matchmake.id, new TextArgs(upd.ToString(Formatting.None), "lobby"),
+                req => { });
         }
 
         public static void CalculateAfterMatch(Model.MatchData pMatchData)

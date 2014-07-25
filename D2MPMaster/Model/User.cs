@@ -58,5 +58,8 @@ namespace D2MPMaster.Model
         /// Contribution description (probably null)
         /// </summary>
         public string contribDesc { get; set; }
+
+        public Dictionary<string, int> mmr { get; set; }
+        public DateTime PreventMMUntil { get; set; }
     }
 }

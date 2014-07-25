@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using d2mpserver;
 
 namespace D2MPMaster.Matchmaking
 {
@@ -30,11 +31,21 @@ namespace D2MPMaster.Matchmaking
         public List<User> Users { get; set; }
         // Mod ids
         public string[] Mods { get; set; }
+
          [ExcludeField(Collections = new[] { "matchmake" })]
         public Dictionary<string, int> Ratings { get; set; }
+
         public int TryCount { get; set; }
+
         [ExcludeField(Collections = new[] { "matchmake" })]
         public bool Ignore { get; set; }
+
+        public int UserCount
+        {
+            get { return Users.Count; }
+        }
+
+        public MatchmakeStatus Status = MatchmakeStatus.PlayerQueue;
 
         /// <summary>
         /// Merge pMatch into this
