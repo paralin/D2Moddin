@@ -34,15 +34,12 @@ namespace D2MPMaster.Matchmaking
 
         public int TryCount { get; set; }
 
-        [ExcludeField(Collections = new[] { "matchmake" })]
-        public bool Ignore { get; set; }
-
         public int UserCount
         {
             get { return Users.Count; }
         }
 
-        public MatchmakeStatus Status = MatchmakeStatus.PlayerQueue;
+        public MatchmakeStatus Status { get; set; }
 
         /// <summary>
         /// Merge pMatch into this

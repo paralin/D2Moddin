@@ -33,11 +33,11 @@ namespace D2MPMaster
             return -1;
         }
 
-        public static string TimeFromNow(DateTime dt)
+        public static string TimeFromNow(DateTime dt, bool useUtc)
         {
             if (dt < DateTime.Now)
                 return "about sometime ago";
-            TimeSpan span = dt - DateTime.Now;
+            TimeSpan span = dt - (useUtc ? DateTime.UtcNow : DateTime.Now);
             if (span.Days > 365)
             {
                 int years = (span.Days / 365);

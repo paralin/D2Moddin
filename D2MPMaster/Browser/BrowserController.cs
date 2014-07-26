@@ -51,9 +51,7 @@ namespace D2MPMaster.Browser
             get { return _match; }
             set
             {
-                var sendUpdate = _match != value;
                 _match = value;
-                if (!sendUpdate) return;
                 if (value != null)
                 {
                     this.AsyncSend(ClearPublicLobbies(),
@@ -372,7 +370,7 @@ namespace D2MPMaster.Browser
                                                           {
                                                               RespondError(jdata,
                                                                   "You are prevented from matchmaking until " +
-                                                                  Utils.TimeFromNow(user.profile.PreventMMUntil) + ".");
+                                                                  Utils.TimeFromNow(user.profile.PreventMMUntil, true) + ".");
                                                               return;
                                                           }
                                                           // Parse the Matchmake request
