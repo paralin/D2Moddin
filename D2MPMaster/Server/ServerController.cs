@@ -9,7 +9,6 @@ using System.Timers;
 using D2MPMaster.Lobbies;
 using D2MPMaster.Model;
 using D2MPMaster.Properties;
-using d2mpserver;
 using Newtonsoft.Json.Linq;
 using ServerCommon.Data;
 using ServerCommon.Methods;

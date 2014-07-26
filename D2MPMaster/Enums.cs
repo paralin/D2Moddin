@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace d2mpserver
+namespace D2MPMaster
 {
 	[Serializable]
 	public enum LobbyType : int

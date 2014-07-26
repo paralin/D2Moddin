@@ -1,9 +1,6 @@
 ﻿using System.Linq;
-using System.Runtime.ExceptionServices;
 using D2MPMaster.Lobbies;
 using D2MPMaster.Server;
-using d2mpserver;
-using MongoDB.Driver.Linq;
 using XSockets.Core.XSocket.Helpers;
 
 namespace D2MPMaster

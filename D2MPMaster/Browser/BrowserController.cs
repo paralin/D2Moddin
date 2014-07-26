@@ -11,7 +11,6 @@ using D2MPMaster.LiveData;
 using D2MPMaster.Lobbies;
 using D2MPMaster.Matchmaking;
 using D2MPMaster.Model;
-using d2mpserver;
 using MongoDB.Driver.Builders;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;

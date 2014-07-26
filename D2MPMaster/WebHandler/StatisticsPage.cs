@@ -2,7 +2,6 @@
 using System.Linq;
 using D2MPMaster.Lobbies;
 using D2MPMaster.Server;
-using d2mpserver;
 using Nancy;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;

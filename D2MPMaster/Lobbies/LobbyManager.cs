@@ -5,17 +5,13 @@ using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Linq;
 using System.Text.RegularExpressions;
-using System.Threading;
 using System.Timers;
-using Amazon.DataPipeline.Model;
 using D2MPMaster.Browser;
 using D2MPMaster.Client;
 using D2MPMaster.Database;
 using D2MPMaster.LiveData;
 using D2MPMaster.Model;
 using D2MPMaster.Server;
-using d2mpserver;
-using MongoDB.Driver.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using XSockets.Core.Common.Globals;
@@ -1110,32 +1106,46 @@ namespace D2MPMaster.Lobbies
                     }
                 case GameEvents.PlayerConnect:
                     {
-                        var plyr =
-                            FindPlayerLocation(
-                                new User() { steam = new SteamService() { steamid = data.Value<int>("player").ToSteamID64() } },
-                                lob);
-                        if (plyr != null)
+                        var plyr = FindPlayerLocation(new User(){steam =new SteamService(){steamid = data.Value<int>("player").ToSteamID64()}}, lob);
+                        log.Debug(lob.id + " -> player connected: " + plyr.player.name);
+                        if (lob.LobbyType == LobbyType.Normal && lob.state < GameState.PostGame)
                         {
-                            plyr.player.failedConnect = false;
-                            log.Debug(lob.id + " -> player connected: " + plyr.player.name);
+                            var browser =
+                                Browsers.Find(m => m.user != null && m.user.steam.steamid == plyr.player.steam)
+                                    .FirstOrDefault();
+                            if (browser != null)
+                            {
+                                BrowserController.SetTested(browser.user, true);
+                            }
+                            else
+                            {
+                                var user = Mongo.Users.FindOneAs<User>(Query.EQ("steam.steamid", plyr.player.steam));
+                                if(user != null)
+                                    BrowserController.SetTested(user, true);
+                            }
                         }
                         break;
                     }
                 case GameEvents.PlayerDisconnect:
                 {
-                    var plyr =
-                        FindPlayerLocation(
-                            new User()
-                            {
-                                steam =
-                                    new SteamService()
-                                    {
-                                        steamid = data.Value<int>("player").ToSteamID64()
-                                    }
-                            }, lob);
+                    var plyr = FindPlayerLocation(new User() { steam = new SteamService() { steamid = data.Value<int>("player").ToSteamID64() } }, lob);
                     if (plyr != null)
                     {
                         log.Debug(lob.id + " -> player disconnected: " + plyr.player.name);
+                        if (lob.LobbyType == LobbyType.Normal && lob.state < GameState.PostGame)
+                        {
+                            var browser = Browsers.Find(m => m.user != null && m.user.steam.steamid == plyr.player.steam).FirstOrDefault();
+                            if (browser != null)
+                            {
+                                BrowserController.SetTested(browser.user, false);
+                            }
+                            else
+                            {
+                                var user = Mongo.Users.FindOneAs<User>(Query.EQ("steam.steamid", plyr.player.steam));
+                                if (user != null)
+                                    BrowserController.SetTested(user, false);
+                            }
+                        }
                     }
                     break;
                 }

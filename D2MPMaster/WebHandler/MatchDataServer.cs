@@ -1,9 +1,5 @@
-﻿using System;
-using System.ComponentModel;
-using System.IO;
-using System.Linq;
+﻿using System.IO;
 using D2MPMaster.Lobbies;
-using d2mpserver;
 using Nancy;
 using Nancy.ErrorHandling;
 using Nancy.Responses;

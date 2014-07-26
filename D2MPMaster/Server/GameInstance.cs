@@ -1,5 +1,4 @@
 ﻿using D2MPMaster.Lobbies;
-using d2mpserver;
 
 namespace D2MPMaster.Server
 {

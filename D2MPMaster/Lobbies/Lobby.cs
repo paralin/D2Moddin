@@ -3,7 +3,6 @@ using System.Dynamic;
 using System.Linq;
 using System.Linq.Expressions;
 using D2MPMaster.LiveData;
-using d2mpserver;
 
 namespace D2MPMaster.Lobbies
 {
