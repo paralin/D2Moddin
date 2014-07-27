@@ -51,14 +51,17 @@ namespace D2MPMaster.Friends
                         {
                             queries.Add(Query.EQ("steam.steamid", (string)friend.steamid));
                         }
-                        var users = Mongo.Users.FindAs<User>(Query.Or(queries));
+                        var users = Mongo.Users.FindAs<User>(Query.Or(queries)).ToList();
                         foreach (var friend in result.friendslist.friends)
                         {
                             var usr = users.Where(x => x.steam.steamid == (string)friend.steamid).FirstOrDefault();
+                            // We skip not registered users... Fetching steam names and avatars cannot be fetched browser-side due to the lack of cross-origin support.
+                            if (usr == null) continue;
                             list.Add(new Friend() {
                                 id = (string)friend.steamid,
+                                name = usr.profile.name,
                                 status = usr == null ? FriendStatus.NotRegistered : getFriendStatus((string)friend.steamid),
-                                avatar = usr == null? null : (string)usr.steam.avatar 
+                                avatar = (string)usr.steam.avatar
                             });
                         }
                         controller.friendlist = list;

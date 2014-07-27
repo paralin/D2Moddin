@@ -19,6 +19,10 @@ namespace D2MPMaster.Friends
         /// </summary>
         public string id { get; set; }
         /// <summary>
+        /// Profile name
+        /// </summary>
+        public string name { get; set; }
+        /// <summary>
         /// Avatar image url
         /// </summary>
         public string avatar { get; set; }
