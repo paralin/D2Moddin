@@ -131,7 +131,7 @@ namespace D2MPMaster.Matchmaking
             foreach (var match in mmArray)
             {
                 //if the match was moved to the other queue, simply ignore it
-                if (inTeamMatchmaking.Contains(match))
+                if (match.Status == MatchmakeStatus.TeamQueue)
                     continue;
 
                 // Find match with a similar rating (search margin increases every try), enough free slots and a common mod
