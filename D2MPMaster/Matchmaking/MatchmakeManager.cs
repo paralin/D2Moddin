@@ -122,76 +122,84 @@ namespace D2MPMaster.Matchmaking
 
         private static void doMatchmake()
         {
+            Matchmake[] mmArray;
+
+            //we can't lock the whole thing, will make scale a pain
             lock (inMatchmaking)
+                mmArray = inMatchmaking.ToArray();
+
+            foreach (var match in mmArray)
             {
-                foreach (var match in inMatchmaking.ToArray())
+                //if the match was moved to the other queue, simply ignore it
+                if (inTeamMatchmaking.Contains(match))
+                    continue;
+
+                // Find match with a similar rating (search margin increases every try), enough free slots and a common mod
+                var matchFound = mmArray.FirstOrDefault(x => match.IsMatch(x));
+                if (matchFound != null)
                 {
-                    //if the match was moved to the other queue, simply ignore it
-                    if (inTeamMatchmaking.Contains(match))
-                        continue;
-
-                    // Find match with a similar rating (search margin increases every try), enough free slots and a common mod
-                    var matchFound = inMatchmaking.FirstOrDefault(x => match.IsMatch(x));
-                    if (matchFound != null)
+                    // Merge everything to the new match
+                    matchFound.MergeMatches(match);
+                    // update the browsers with the new match
+                    foreach (
+                        var browser in
+                            Browsers.Find(b => b.user != null && b.matchmake != null && b.matchmake.id == match.id))
                     {
-                        // Merge everything to the new match
-                        matchFound.MergeMatches(match);
-                        // update the browsers with the new match
-                        foreach (var browser in Browsers.Find(b => b.user != null && b.matchmake != null && b.matchmake.id == match.id))
-                        {
-                            browser.matchmake = matchFound;
-                        }
+                        browser.matchmake = matchFound;
+                    }
 
-                        log.InfoFormat(
-                            "Matchmake merged from {0} players to {1} players after {2} tries. New rating: {3}",
-                            match.Users.Count, matchFound.Users.Count, match.TryCount,
-                            string.Join(", ", matchFound.Ratings.Values));
+                    log.InfoFormat(
+                        "Matchmake merged from {0} players to {1} players after {2} tries. New rating: {3}",
+                        match.Users.Count, matchFound.Users.Count, match.TryCount,
+                        string.Join(", ", matchFound.Ratings.Values));
 
-                        //remove the old match, we dont need it
+                    //remove the old match, we dont need it
+                    lock (inMatchmaking)
                         inMatchmaking.Remove(match);
 
-                        //if we are crowded
-                        if (matchFound.Users.Count == TEAM_PLAYERS)
-                        {
-                            //reset the tries and dont ignore it
-                            matchFound.TryCount = 1;
-
-                            //move to team MM
-                            inMatchmaking.Remove(matchFound);
-                            lock (inTeamMatchmaking)
-                            {
-                                inTeamMatchmaking.Add(matchFound);
-                            }
-                            matchFound.Status = MatchmakeStatus.TeamQueue;
-                            TransmitMatchmakeUpdate(matchFound, new[] {"Status", "UserCount"});
-                        }
-                        else
-                        {
-                            TransmitMatchmakeUpdate(matchFound, new[] {"UserCount"});
-                        }
-                    }
-#if DEBUG
-                        // match is already full, add to teamMM, should only happen if TEAM_PLAYERS is 1 or when changing values in debug mode.
-                    else if (match.Users.Count == TEAM_PLAYERS)
+                    //if we are crowded
+                    if (matchFound.Users.Count == TEAM_PLAYERS)
                     {
                         //reset the tries and dont ignore it
-                        match.TryCount = 1;
+                        matchFound.TryCount = 1;
 
                         //move to team MM
-                        inMatchmaking.Remove(match);
+                        lock (inMatchmaking)
+                            inMatchmaking.Remove(matchFound);
+
                         lock (inTeamMatchmaking)
-                        {
-                            inTeamMatchmaking.Add(match);
-                        }
-                        match.Status = MatchmakeStatus.TeamQueue;
-                        TransmitMatchmakeUpdate(match, new[] {"Status", "UserCount"});
+                            inTeamMatchmaking.Add(matchFound);
+
+                        matchFound.Status = MatchmakeStatus.TeamQueue;
+                        TransmitMatchmakeUpdate(matchFound, new[] {"Status", "UserCount"});
                     }
-#endif
                     else
                     {
-                        //no match found, open the possibilities
-                        match.TryCount++;
+                        TransmitMatchmakeUpdate(matchFound, new[] {"UserCount"});
                     }
+                }
+#if DEBUG
+                // match is already full, add to teamMM, should only happen if TEAM_PLAYERS is 1 or when changing values in debug mode.
+                else if (match.Users.Count == TEAM_PLAYERS)
+                {
+                    //reset the tries and dont ignore it
+                    match.TryCount = 1;
+
+                    //move to team MM
+                    lock (inMatchmaking)
+                        inMatchmaking.Remove(match);
+
+                    lock (inTeamMatchmaking)
+                        inTeamMatchmaking.Add(match);
+
+                    match.Status = MatchmakeStatus.TeamQueue;
+                    TransmitMatchmakeUpdate(matchFound, new[] {"Status", "UserCount"});
+                }
+#endif
+                else
+                {
+                    //no match found, open the possibilities
+                    match.TryCount++;
                 }
             }
         }
@@ -199,37 +207,50 @@ namespace D2MPMaster.Matchmaking
         private static void doTeamMatchmake()
         {
             Random rnd = new Random();
-            lock (inTeamMatchmaking)
-            {
-                foreach (var match in inTeamMatchmaking.ToArray())
-                {
-                    lock (match)
-                    {
-                        // Find match with a similar rating (search margin increases every try) and a common mod
-                        var matchFound = inTeamMatchmaking.FirstOrDefault(x => match.IsMatch(x, true));
-                        if (matchFound != null)
-                        {
-                            //get available mods by rating
-                            var mods = match.GetMatchedMods(matchFound);
-                            //create a lobby with one of the mods
-                            var lobby = LobbyManager.CreateMatchedLobby(match, matchFound,
-                                mods[rnd.Next(0, mods.Length)]);
-                            //remove the matchmake from the browsers and set the lobby
-                            foreach (var browser in Browsers.Find(b => b.user != null && b.matchmake != null && (b.matchmake.id == match.id || b.matchmake.id == matchFound.id)))
-                            {
-                                browser.matchmake = null;
-                                browser.lobby = lobby;
-                                browser.AsyncSend(BrowserController.LobbySnapshot(lobby), res => { });
-                            }
+            Matchmake[] mmArray;
 
-                            //remove the matches from the queue
+            //we can't lock the whole thing, will make scale a pain
+            lock (inTeamMatchmaking)
+                mmArray = inTeamMatchmaking.ToArray();
+
+            foreach (var match in mmArray)
+            {
+                lock (match)
+                {
+                    //we do this cause the matchFound is still in the array. So we prevent matching it again
+                    if(match.Status == MatchmakeStatus.AlreadyMatched)
+                        continue;
+
+                    // Find match with a similar rating (search margin increases every try) and a common mod
+                    var matchFound = mmArray.FirstOrDefault(x => match.IsMatch(x, true));
+                    if (matchFound != null)
+                    {
+                        //get available mods by rating
+                        var mods = match.GetMatchedMods(matchFound);
+                        //create a lobby with one of the mods
+                        var lobby = LobbyManager.CreateMatchedLobby(match, matchFound, mods[rnd.Next(0, mods.Length)]);
+                        //remove the matchmake from the browsers and set the lobby
+                        foreach ( var browser in Browsers.Find( b => b.user != null && b.matchmake != null && (b.matchmake.id == match.id || b.matchmake.id == matchFound.id)))
+                        {
+                            browser.matchmake = null;
+                            browser.lobby = lobby;
+                            browser.AsyncSend(BrowserController.LobbySnapshot(lobby), res => { });
+                        }
+
+                        //prevent matches from matching again
+                        matchFound.Status = MatchmakeStatus.AlreadyMatched;
+                        match.Status = MatchmakeStatus.AlreadyMatched;
+
+                        //remove the matches from the queue
+                        lock (inTeamMatchmaking)
+                        {
                             inTeamMatchmaking.Remove(match);
                             inTeamMatchmaking.Remove(matchFound);
                         }
-                        else
-                        {
-                            match.TryCount++;
-                        }
+                    }
+                    else
+                    {
+                        match.TryCount++;
                     }
                 }
             }
