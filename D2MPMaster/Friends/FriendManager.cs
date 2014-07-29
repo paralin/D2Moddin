@@ -59,9 +59,9 @@ namespace D2MPMaster.Friends
                             if (usr == null) continue;
                             list.Add(new Friend() {
                                 id = (string)friend.steamid,
-                                name = usr.profile.name,
+                                name = usr == null ? null : usr.profile.name,
                                 status = usr == null ? FriendStatus.NotRegistered : getFriendStatus((string)friend.steamid),
-                                avatar = (string)usr.steam.avatar
+                                avatar = usr == null ? null : (string)usr.steam.avatar
                             });
                         }
                         controller.friendlist = list;
