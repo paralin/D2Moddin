@@ -36,7 +36,7 @@ namespace D2MPMaster.Matchmaking
         /// <summary>
         /// Base MMR for new players
         /// </summary>
-        private const int BaseMmr = 1500;
+        private const int BaseMmr = 2000;
 
         /// <summary>
         /// Minimum MMR archievable by a player
