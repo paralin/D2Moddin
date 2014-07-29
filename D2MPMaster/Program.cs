@@ -79,13 +79,15 @@ namespace D2MPMaster
                 {
                     server.StartServers();
                     Mods.Mods.StartUpdateTimer();
+					Lobbies.LobbyManager.Start ();
                     log.Info("Server running!");
                     while (!shutdown)
                     {
                         Thread.Sleep(100);
                     }
+					Lobbies.LobbyManager.Stop ();
+					Mods.Mods.StopUpdateTimer();
                     server.StopServers();
-                    Mods.Mods.StopUpdateTimer();
                 }
                 nancyServer.Stop();
             }

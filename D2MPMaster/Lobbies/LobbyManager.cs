@@ -6,6 +6,7 @@ using System.Collections.Specialized;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Timers;
 using Amazon.DataPipeline.Model;
 using D2MPMaster.Browser;
 using D2MPMaster.Client;
@@ -52,37 +53,75 @@ namespace D2MPMaster.Lobbies
 
         public static ConcurrentDictionary<string,Lobby> LobbyID = new ConcurrentDictionary<string,Lobby>(); 
 
-        public static volatile bool Registered = false;
+        public static volatile bool running = false;
 
         public static List<Lobby> LobbyQueue = new List<Lobby>();
 
         public static Queue<JObject> PublicLobbyUpdateQueue = new Queue<JObject>();
-        public static Thread LobbyUpdateThread;
-        public static Thread CalculateQueueThread;
-        public static Thread IdleLobbyThread;
-        public static Thread TestLobbyThread;
 
-        public static volatile bool shutdown = false;
+		public static System.Timers.Timer LobbyUpdateTimer;
+		public static System.Timers.Timer IdleLobbyTimer;
+		public static System.Timers.Timer CalculateQueueTimer;
+		public static System.Timers.Timer TestLobbyTimer;
 
-        public LobbyManager()
+        static LobbyManager()
         {
-            if (!Registered)
-            {
-                Registered = true;
-                IdleLobbyThread = new Thread(IdleLobbyProc);
-                IdleLobbyThread.Start();
-                LobbyUpdateThread = new Thread(LobbyUpdateProc);
-                LobbyUpdateThread.Start();
-                CalculateQueueThread = new Thread(CalculateQueueT);
-                CalculateQueueThread.Start();
-                TestLobbyThread = new Thread(TestLobbyProc);
-                TestLobbyThread.Start();
-                PublicLobbies.CollectionChanged += TransmitLobbiesChange;
-                PlayingLobbies.CollectionChanged += UpdateLobbyIDDict;
-            }
+			PublicLobbies.CollectionChanged += TransmitLobbiesChange;
+			PlayingLobbies.CollectionChanged += UpdateLobbyIDDict;
         }
 
-        private void UpdateLobbyIDDict(object sender, NotifyCollectionChangedEventArgs e)
+		public static void Start()
+		{
+			if (running)
+				return;
+			running = true;
+
+			//Send out public lobby list updates
+			LobbyUpdateTimer = new System.Timers.Timer (500);
+			LobbyUpdateTimer.Elapsed += LobbyUpdateProc;
+			LobbyUpdateTimer.Start ();
+
+			//Close any idle lobbies every 20 seconds
+			IdleLobbyTimer = new System.Timers.Timer (20000);
+			IdleLobbyTimer.Elapsed += IdleLobbyProc;
+			IdleLobbyTimer.Start ();
+
+			//Calculate server matches for lobbies
+			CalculateQueueTimer = new System.Timers.Timer (2000);
+			CalculateQueueTimer.Elapsed += CalculateQueue;
+			CalculateQueueTimer.Start ();
+
+			//Group test lobbies together
+			TestLobbyTimer = new System.Timers.Timer (30000);
+			TestLobbyTimer.Elapsed += TestLobbyProc;
+			TestLobbyTimer.Start ();
+		}
+
+		public static void Stop()
+		{
+			if(!running) return;
+			LobbyUpdateTimer.Stop();
+			LobbyUpdateTimer.Close();
+			LobbyUpdateTimer.Dispose();
+
+			IdleLobbyTimer.Stop();
+			IdleLobbyTimer.Close();
+			IdleLobbyTimer.Dispose();
+
+			CalculateQueueTimer.Stop();
+			CalculateQueueTimer.Close();
+			CalculateQueueTimer.Dispose();
+
+			TestLobbyTimer.Stop();
+			TestLobbyTimer.Close();
+			TestLobbyTimer.Dispose();
+		}
+
+		public void Dispose()
+		{
+		}
+
+        private static void UpdateLobbyIDDict(object sender, NotifyCollectionChangedEventArgs e)
         {
             if (e.Action == NotifyCollectionChangedAction.Reset)
             {
@@ -112,15 +151,8 @@ namespace D2MPMaster.Lobbies
             }
         }
 
-        public void Dispose()
+        public static void TransmitLobbiesChange(object s, NotifyCollectionChangedEventArgs e)
         {
-            shutdown = true;
-            Registered = false;
-        }
-
-        public void TransmitLobbiesChange(object s, NotifyCollectionChangedEventArgs e)
-        {
-            if (shutdown) return;
             if (e.Action == NotifyCollectionChangedAction.Reset)
             {
                 PublicLobbyUpdateQueue.Enqueue(DiffGenerator.RemoveAll("publicLobbies"));
@@ -148,89 +180,69 @@ namespace D2MPMaster.Lobbies
                         }
                     }
             }
-
         }
 
-        public void TestLobbyProc()
+		public static void TestLobbyProc(object source, ElapsedEventArgs e)
         {
-            while (!shutdown)
+			lock (TestLobbyQueue) {
+				lock (LobbyQueue) {
+					foreach (var lobby in TestLobbyQueue) {
+						LobbyQueue.Add (lobby);
+						lobby.status = LobbyStatus.Queue;
+						TransmitLobbyUpdate (lobby, new []{ "status" });
+					}
+					TestLobbyQueue.Clear ();
+				}
+			}
+        }
+
+		public static void LobbyUpdateProc(object source, ElapsedEventArgs e)
+        {
+			LobbyUpdateTimer.Stop ();
+            var upd = new JObject();
+            var updates = new JArray();
+            while (PublicLobbyUpdateQueue.Count > 0)
             {
-                Thread.Sleep(30000);
-                lock (TestLobbyQueue)
-                {
-                    lock (LobbyQueue)
-                    {
-                        foreach (var lobby in TestLobbyQueue)
-                        {
-                            LobbyQueue.Add(lobby);
-                            lobby.status = LobbyStatus.Queue;
-                            TransmitLobbyUpdate(lobby, new []{"status"});
-                        }
-                        TestLobbyQueue.Clear();
-                    }
-                }
+                var update = PublicLobbyUpdateQueue.Dequeue();
+                if (update == null) continue;
+                updates.Add(update);
             }
+			if (updates.Count != 0) {
+				upd ["msg"] = "colupd";
+				upd ["ops"] = updates;
+				var msg = upd.ToString (Formatting.None);
+				Browsers.AsyncSendTo (m => m.user != null && m.lobby == null, new TextArgs (msg, "publicLobbies"), ar => {
+				});
+			}
+			LobbyUpdateTimer.Start ();
         }
 
-        public void LobbyUpdateProc()
+		public static void IdleLobbyProc(object source, ElapsedEventArgs e)
         {
-            while (!shutdown)
+            var lobbies =
+                LobbyID.Values.Where(
+                    m =>
+                        m.status == LobbyStatus.Start &&
+                        !m.hasPassword &&
+					m.IdleSince < DateTime.Now.Subtract(TimeSpan.FromMinutes(3)));
+            foreach (var lobby in lobbies)
             {
-                Thread.Sleep(500);
-                var upd = new JObject();
-                var updates = new JArray();
-                while (PublicLobbyUpdateQueue.Count > 0)
-                {
-                    var update = PublicLobbyUpdateQueue.Dequeue();
-                    if (update == null) continue;
-                    updates.Add(update);
-                }
-                if (updates.Count == 0) continue;
-                upd["msg"] = "colupd";
-                upd["ops"] = updates;
-                var msg = upd.ToString(Formatting.None);
-                Browsers.AsyncSendTo(m=>m.user!=null&&m.lobby==null,new TextArgs(msg, "publicLobbies"), ar => { });
+                CloseLobby(lobby); 
+                log.DebugFormat("Cleared lobby {0} for inactivity.", lobby.id);
             }
-        }
-
-        public void IdleLobbyProc()
-        {
-            while (!shutdown)
-            {
-                Thread.Sleep(20000);
-                var lobbies =
+            //All playing lobbies with no server with an instance that has the lobby
+            lock (PlayingLobbies) { 
+                lobbies =
                     LobbyID.Values.Where(
-                        m =>
-                            m.status == LobbyStatus.Start &&
-                            !m.hasPassword &&
-						m.IdleSince < DateTime.Now.Subtract(TimeSpan.FromMinutes(3)));
+                        m => m.status==LobbyStatus.Play&&!ServerService.Servers.Find(z => z.Instances.Any(f => f.Value.lobby.id == m.id)).Any());
                 foreach (var lobby in lobbies)
                 {
-                    CloseLobby(lobby); 
-                    log.DebugFormat("Cleared lobby {0} for inactivity.", lobby.id);
-                }
-                //All playing lobbies with no server with an instance that has the lobby
-                lock (PlayingLobbies) { 
-                    lobbies =
-                        LobbyID.Values.Where(
-                            m => m.status==LobbyStatus.Play&&!ServerService.Servers.Find(z => z.Instances.Any(f => f.Value.lobby.id == m.id)).Any());
-                    foreach (var lobby in lobbies)
-                    {
-						OnServerShutdownNoInstance(lobby);
-                        log.DebugFormat("Cleared orphan lobby {0}.", lobby.id);
-                    }
+					OnServerShutdownNoInstance(lobby);
+                    log.DebugFormat("Cleared orphan lobby {0}.", lobby.id);
                 }
             }
         }
 
-        public void CalculateQueueT()
-        {
-            while (!shutdown)
-            {
-                Thread.Sleep(500);
-                CalculateQueue();
-            }
-        }
 
         /// <summary>
         /// See if a user is already in a lobby.
@@ -299,7 +311,7 @@ namespace D2MPMaster.Lobbies
             TransmitLobbyUpdate(lobby, new []{"status"});
         }
 
-        private static void CalculateQueue()
+		private static void CalculateQueue(object source, ElapsedEventArgs e)
         {
             lock (LobbyQueue)
             {
@@ -658,6 +670,15 @@ namespace D2MPMaster.Lobbies
                         req => { });
                     ClientsController.SetMod(user.steam.steamid, Mods.Mods.ByName("checker"));
                     ClientsController.AsyncSendTo(m => m.SteamID == user.steam.steamid, ClientController.LaunchDota(), req => { });
+					if (lobby.TeamCount (lobby.dire) + lobby.TeamCount (lobby.radiant) == 10) {
+						lock (LobbyQueue) {
+							TestLobbyQueue.Remove (lobby);
+							LobbyQueue.Add (lobby);
+							lobby.status = LobbyStatus.Queue;
+							TransmitLobbyUpdate (lobby, new []{ "status" });
+							log.Debug ("Test lobby " + lobby.id + " full, starting queue...");
+						}
+					}
                     return lobby;
                 }else{
                     lobby = CreateTestLobby(user);
@@ -718,11 +739,11 @@ namespace D2MPMaster.Lobbies
                 log.Error("No match result info for test lobby, setting all to success.");
                 foreach (var browser in instance.lobby.radiant.Where(player => player != null).Select(player => Browsers.Find(m => m.user != null && m.user.steam.steamid == player.steam).FirstOrDefault()).Where(browser => browser != null))
                 {
-                    browser.SetTested(true);
+                    BrowserController.SetTested(browser.user, true);
                 }
                 foreach (var browser in instance.lobby.dire.Where(player => player != null).Select(player => Browsers.Find(m => m.user != null && m.user.steam.steamid == player.steam).FirstOrDefault()).Where(browser => browser != null))
                 {
-                    browser.SetTested(true);
+                    BrowserController.SetTested(browser.user, true);
                 }
             }else if (instance.lobby.LobbyType == LobbyType.Normal)
             {
@@ -741,11 +762,11 @@ namespace D2MPMaster.Lobbies
                 log.Error("No match result info for test lobby, setting all to success.");
                 foreach (var browser in lobby.radiant.Where(player => player != null).Select(player => Browsers.Find(m => m.user != null && m.user.steam.steamid == player.steam).FirstOrDefault()).Where(browser => browser != null))
                 {
-                    browser.SetTested(true);
+                    BrowserController.SetTested(browser.user, true);
                 }
                 foreach (var browser in lobby.dire.Where(player => player != null).Select(player => Browsers.Find(m => m.user != null && m.user.steam.steamid == player.steam).FirstOrDefault()).Where(browser => browser != null))
                 {
-                    browser.SetTested(true);
+                    BrowserController.SetTested(browser.user, true);
                 }
             }
             CloseLobby(lobby);
@@ -872,11 +893,11 @@ namespace D2MPMaster.Lobbies
             {
                 foreach (var browser in lob.radiant.Where(player => player != null).Select(player => Browsers.Find(m => m.user != null && m.user.steam.steamid == player.steam).FirstOrDefault()).Where(browser => browser != null))
                 {
-                    browser.SetTested(true);
+                    BrowserController.SetTested(browser.user, true);
                 }
                 foreach (var browser in lob.dire.Where(player => player != null).Select(player => Browsers.Find(m => m.user != null && m.user.steam.steamid == player.steam).FirstOrDefault()).Where(browser => browser != null))
                 {
-                    browser.SetTested(true);
+                    BrowserController.SetTested(browser.user, true);
                 }
                 CloseLobby(lob);
             }
@@ -905,7 +926,7 @@ namespace D2MPMaster.Lobbies
                     var browser = Browsers.Find(m => m.user != null && m.user.steam.steamid == steam).FirstOrDefault();
                     if (browser != null)
                     {
-                        browser.SetTested(false);
+                        BrowserController.SetTested(browser.user, false);
                         log.Debug(matchid + " -> marked " + steam + " as FAIL");
                     }
                 }
@@ -919,7 +940,7 @@ namespace D2MPMaster.Lobbies
                     var browser = Browsers.Find(m => m.user != null && m.user.steam.steamid == player.steam).FirstOrDefault();
                     if (browser != null)
                     {
-                        browser.SetTested(!player.failedConnect);
+                        BrowserController.SetTested(browser.user, !player.failedConnect);
                     }
                 }
                 CloseLobby(lob);
@@ -947,6 +968,22 @@ namespace D2MPMaster.Lobbies
                     if (plyr != null)
                     {
                         log.Debug(lob.id + " -> player connected: " + plyr.player.name);
+                        if (lob.LobbyType == LobbyType.Normal && lob.state < GameState.PostGame && lob.state > GameState.WaitLoad)
+                        {
+                            var browser =
+                                Browsers.Find(m => m.user != null && m.user.steam.steamid == plyr.player.steam)
+                                    .FirstOrDefault();
+                            if (browser != null)
+                            {
+                                BrowserController.SetTested(browser.user, true);
+                            }
+                            else
+                            {
+                                var user = Mongo.Users.FindOneAs<User>(Query.EQ("steam.steamid", plyr.player.steam));
+                                if(user != null)
+                                    BrowserController.SetTested(user, true);
+                            }
+                        }
                     }
                     break;
                 }
@@ -965,6 +1002,22 @@ namespace D2MPMaster.Lobbies
                     if (plyr != null)
                     {
                         log.Debug(lob.id + " -> player disconnected: " + plyr.player.name);
+                        if (lob.LobbyType == LobbyType.Normal && lob.state < GameState.PostGame && lob.state > GameState.WaitLoad)
+                        {
+                            var browser =
+                                Browsers.Find(m => m.user != null && m.user.steam.steamid == plyr.player.steam)
+                                    .FirstOrDefault();
+                            if (browser != null)
+                            {
+                                BrowserController.SetTested(browser.user, false);
+                            }
+                            else
+                            {
+                                var user = Mongo.Users.FindOneAs<User>(Query.EQ("steam.steamid", plyr.player.steam));
+                                if (user != null)
+                                    BrowserController.SetTested(user, false);
+                            }
+                        }
                     }
                     break;
                 }

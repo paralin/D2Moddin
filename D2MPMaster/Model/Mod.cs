@@ -54,5 +54,18 @@ namespace D2MPMaster.Model
                        version = version
                    };
         }
+
+        public override bool Equals(object obj)
+        {
+            try
+            {
+                var other = obj as Mod;
+                return other.name == name;
+            }
+            catch
+            {
+                return false;
+            }
+        }
     }
 }

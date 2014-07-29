@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Windows.Forms;
 using ICSharpCode.SharpZipLib.Zip;
 using Newtonsoft.Json.Linq;
 
@@ -51,7 +52,27 @@ namespace D2MPBundler
         }
         static void Main(string[] args)
         {
-            var path = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
+            string path;
+            if (args.Length == 1)
+            {
+                path = args[0];
+                if(!Directory.Exists(path))
+                    path = Path.GetDirectoryName(path);
+            }
+            else
+            {
+                var folderBrowserDialog1 = new FolderBrowserDialog();
+                if (folderBrowserDialog1.ShowDialog() == DialogResult.OK)
+                {
+                    path = folderBrowserDialog1.SelectedPath;
+                }
+                else
+                {
+                    return;
+                }
+            }
+            var appPath = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
+            Console.WriteLine(path);
             var infoJson = Path.Combine(path, "info.json");
             if (!File.Exists(infoJson))
             {
@@ -68,6 +89,10 @@ namespace D2MPBundler
             var name = data.Value<string>("name");
             var modpath = Path.Combine(path, name);
             if(Directory.Exists(modpath)) Directory.Delete(modpath, true);
+            var srvZip = Path.Combine(path, "serv_" + name + ".zip");
+            var cliZip = Path.Combine(path,  name + ".zip");
+            if(File.Exists(srvZip)) File.Delete(srvZip);
+            if(File.Exists(cliZip)) File.Delete(cliZip);
             Directory.CreateDirectory(modpath);
             DirectoryCopy(Path.Combine(path, "itembuilds"), Path.Combine(modpath, "itembuilds"), true);
             DirectoryCopy(Path.Combine(path, "maps"), Path.Combine(modpath, "maps"), true);
@@ -82,8 +107,13 @@ namespace D2MPBundler
         addonversion            {1}
 }}", data.Value<string>("fullname"), data.Value<string>("version"));
             File.WriteAllText(Path.Combine(modpath, "addoninfo.txt"), addonInfo);
-            ZipFiles(modpath, Path.Combine(path, "serv_" + name + ".zip"), null);
-            ZipFilesB(modpath, Path.Combine(path, name + ".zip"));
+            ZipFiles(modpath, srvZip, null);
+            ZipFilesB(modpath, cliZip);
+            Directory.Delete(modpath, true);
+            var cdnPath = Path.Combine(appPath, "cdn");
+            if(Directory.Exists(cdnPath)) File.Copy(cliZip, Path.Combine(cdnPath, name+".zip"), true);
+            var awsPath = Path.Combine(appPath, "aws");
+            if (Directory.Exists(awsPath)) File.Copy(srvZip, Path.Combine(awsPath, "serv_" + name + ".zip"), true);
         }
         public static void ZipFiles(string inputFolderPath, string outputPathAndFile, string password)
         {
@@ -110,6 +140,7 @@ namespace D2MPBundler
                     obuffer = new byte[ostream.Length];
                     ostream.Read(obuffer, 0, obuffer.Length);
                     oZipStream.Write(obuffer, 0, obuffer.Length);
+                    ostream.Close();
                 }
             }
             oZipStream.Finish();
@@ -138,6 +169,7 @@ namespace D2MPBundler
                     obuffer = new byte[ostream.Length];
                     ostream.Read(obuffer, 0, obuffer.Length);
                     oZipStream.Write(obuffer, 0, obuffer.Length);
+                    ostream.Close();
                 }
             }
             oZipStream.Finish();

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Timers;
+using D2MPMaster.Browser;
 using D2MPMaster.Client;
 using D2MPMaster.Database;
 using D2MPMaster.Lobbies;
@@ -24,6 +25,7 @@ namespace D2MPMaster.Mods
         public static Dictionary<string, Mod> ModCache = new Dictionary<string, Mod>(); 
         private static ClientController Clients = new ClientController();
         private static ServerController Servers = new ServerController();
+        private static BrowserController Browser = new BrowserController();
 
         private static Timer UpdateTimer;
 
@@ -54,23 +56,24 @@ namespace D2MPMaster.Mods
         {
              
             var mods = Mongo.Mods.FindAllAs<Mod>();
-            List<Mod> updatedMods = new List<Mod>();
-            var dirty = false;
+            var updatedMods = new HashSet<Mod>();
             log.Info("Checking for updates to mods...");
             var logic = new CompareLogic(){Config = new ComparisonConfig(){Caching = false, MaxDifferences = 100}};
-            var modIds = new List<string>();
+            var modIds = new HashSet<string>();
+            bool cosmeticsChanged = false;
             foreach (var mod in mods)
             {
                 modIds.Add(mod.Id);
                 if (!ModCache.ContainsKey(mod.Id))
                 {
-                    dirty = true;
                     ModCache.Add(mod.Id, mod);
+                    updatedMods.Add(mod);
                     log.InfoFormat("Mod [{0}] added to database.", mod.fullname);
+                    cosmeticsChanged = true;
                     continue;
                 }
                 var omod = ModCache[mod.Id];
-                var diff = logic.Compare(mod, omod);
+                var diff = logic.Compare(omod, mod);
                 if (diff.AreEqual) continue;
                 log.InfoFormat("Mod [{0}] updated!", mod.fullname);
                 foreach (var difference in diff.Differences)
@@ -79,43 +82,47 @@ namespace D2MPMaster.Mods
                 }
                 if(mod.version!=omod.version||mod.isPublic != omod.isPublic || mod.playable != omod.playable) {
                     updatedMods.Add(mod);
-                    dirty = true;
                 }
                 ModCache[mod.Id] = mod;
+                cosmeticsChanged = true;
             }
-            foreach (var mod in ModCache.Where(mod => !modIds.Contains(mod.Key)))
+            foreach (var mod in ModCache.Where(mod => !modIds.Contains(mod.Key)).ToArray())
             {
-                dirty = true;
-                log.InfoFormat("Mod [{0}] deleted!", mod.Value.fullname);
                 updatedMods.Add(mod.Value);
-                ModCache.Remove(mod.Key);
-            }
-            if (!dirty) return;
-            log.InfoFormat("[{0}] mods updated, re-initing all clients and servers.", updatedMods.Count);
-            ServerAddons.Init(ModCache.Values);
-            foreach (var mod in updatedMods)
-            {
-                LobbyManager.CloseAll(mod);
-            }
-            Clients.SendToAll(ClientController.UpdateMods());
-            foreach(var server in Servers.Find(m=>m.Inited))
-            {
-                server.Inited = false;
-                server.Send("updateMods|" + string.Join(",", updatedMods.Select(m => m.name)));
-            }
-        }
+                ModCache.Remove(mod.Value.Id);
+		cosmeticsChanged = true;
+		log.InfoFormat("Mod [{0}] deleted!", mod.Value.fullname);
+	    }
+	    if (cosmeticsChanged) {
+		    Browser.AsyncSendToAll (BrowserController.UpdateMods (), res => {});
+		    log.Info ("Telling browsers to download new mod list!");
+	    }
+	    if (updatedMods.Count == 0) return;
+	    log.InfoFormat("[{0}] mods updated, re-initing all clients and servers.", updatedMods.Count);
+	    ServerAddons.Init(ModCache.Values);
+	    foreach (var mod in updatedMods)
+	    {
+		    LobbyManager.CloseAll(mod);
+	    }
+	    Clients.SendToAll(ClientController.UpdateMods());
+	    foreach(var server in Servers.Find(m=>m.Inited))
+	    {
+		    server.Inited = false;
+		    server.Send("updateMods|" + string.Join(",", updatedMods.Select(m => m.name)));
+	    }
+	}
 
-        public static void StartUpdateTimer()
-        {
-            UpdateTimer = new Timer(30000);
-            UpdateTimer.Elapsed += CheckForUpdates;
-            UpdateTimer.Start();
-        }
+	public static void StartUpdateTimer()
+	{
+		UpdateTimer = new Timer(30000);
+		UpdateTimer.Elapsed += CheckForUpdates;
+		UpdateTimer.Start();
+	}
 
-        public static void StopUpdateTimer()
-        {
-            UpdateTimer.Stop();
-            UpdateTimer.Close();
-        }
+	public static void StopUpdateTimer()
+	{
+		UpdateTimer.Stop();
+		UpdateTimer.Close();
+	}
     }
 }
