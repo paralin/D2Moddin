@@ -1,11 +1,16 @@
 ﻿using System;
 using System.Linq;
+using D2MPMaster.Database;
 using D2MPMaster.Lobbies;
 using D2MPMaster.Server;
 using d2mpserver;
+using MongoDB.Bson;
+using MongoDB.Driver;
+using MongoDB.Driver.Builders;
 using Nancy;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using ServiceStack.Text;
 using XSockets.Core.XSocket.Helpers;
 
 namespace D2MPMaster.WebHandler
@@ -18,6 +23,18 @@ namespace D2MPMaster.WebHandler
             Get["/stats/lobbies"] = data => HandleStatsLobbies();
             Get["/stats/servers"] = data => HandleStatsServers();
             Get["/stats/mods"] = data => HandleStatsMods();
+            Get["/stats/players"] = data => HandleStatsPlayers();
+        }
+
+        private string HandleStatsPlayers()
+        {
+            JObject data = new JObject();
+            
+            data["online"] = Mongo.Sessions.Count(new QueryDocument("session", new BsonRegularExpression(".*user.*")));
+            data["uniques"] = Mongo.Users.Count(Query.GT("steam.lastlogoff", DateTime.Now.AddDays(-30).ToUnixTime()));
+            data["playing"] = ServerService.Servers.Find(a => a.Inited).Sum(a => a.Instances.Sum(b => b.Value.totalPlayers));
+
+            return data.ToString(Formatting.Indented);
         }
 
         private string HandleStatsServers()

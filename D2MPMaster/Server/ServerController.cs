@@ -176,7 +176,8 @@ namespace D2MPMaster.Server
                                RconPass = lobby.id + "R",
                                Server = this,
                                state = GameState.Init,
-                               map = (mod.mapOverride ?? mod.name)
+                               map = (mod.mapOverride ?? mod.name),
+                               totalPlayers = lobby.TeamCount(lobby.radiant) + lobby.TeamCount(lobby.dire)
                            };
             var command = "launchServer|" + instance.ID + "|" +
                           (lobby.devMode ? bool.TrueString : bool.FalseString) + "|" + Mods.Mods.ByID(lobby.mod).name +
