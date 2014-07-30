@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using D2MPMaster.Browser;
 using D2MPMaster.Database;
 using D2MPMaster.Lobbies;
 using D2MPMaster.Server;
@@ -18,6 +19,9 @@ namespace D2MPMaster.WebHandler
     public class StatisticsPage : NancyModule
     {
         private const string secret = "3J6EB7QIWUsCyk4MKBSe8y";
+        private static readonly BrowserController Browsers = new BrowserController();
+        private int lastMonth = 0;
+        private DateTime lastupdated = DateTime.UtcNow;
         public StatisticsPage()
         {
             Get["/stats/general"] = data => HandleStatsGeneral();
@@ -30,10 +34,16 @@ namespace D2MPMaster.WebHandler
         private string HandleStatsPlayers()
         {
             JObject data = new JObject();
-            
-            data["online"] = Mongo.Sessions.Count(new QueryDocument("session", new BsonRegularExpression(".*user.*")));
-            data["uniques"] = Mongo.Users.Count(Query.GT("steam.lastlogoff", DateTime.Now.AddDays(-30).ToUnixTime()));
-            data["playing"] = ServerService.Servers.Find(a => a.Inited).Sum(a => a.Instances.Sum(b => b.Value.totalPlayers));
+
+            var browsers = Browsers.Find(m => m.user != null);
+            data["online"] = browsers.Count();
+            if(lastMonth == 0 || (DateTime.UtcNow-lastupdated).TotalHours>1)
+                data["lastmonth"] = lastMonth = (int)Mongo.Users.Count(Query.GT("steam.lastlogoff", DateTime.Now.AddDays(-30).ToUnixTime()));
+            else
+            {
+                data["lastmonth"] = lastMonth;
+            }
+            data["playing"] = browsers.Count(m=>m.lobby != null);
 
             return data.ToString(Formatting.Indented);
         }
