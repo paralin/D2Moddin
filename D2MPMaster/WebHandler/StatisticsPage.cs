@@ -20,8 +20,8 @@ namespace D2MPMaster.WebHandler
     {
         private const string secret = "3J6EB7QIWUsCyk4MKBSe8y";
         private static readonly BrowserController Browsers = new BrowserController();
-        private int lastMonth = 0;
-        private DateTime lastupdated = DateTime.UtcNow;
+        private static int lastMonth = 0;
+        private static DateTime lastupdated = DateTime.UtcNow;
         public StatisticsPage()
         {
             Get["/stats/general"] = data => HandleStatsGeneral();
