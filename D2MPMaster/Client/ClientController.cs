@@ -82,7 +82,7 @@ namespace D2MPMaster.Client
 
 			if (user == null)
 			{
-                this.AsyncSend(NotifyMessage("Account link unsuccessful","Sign into the same account on the website and in Steam.", true) , ar => { });
+				this.AsyncSend(NotifyMessage("Account Link","Sign into the same account on the website and in Steam, make sure your browser is connected to the lobby server (see the bottom right of the browser), and try again.", true) , ar => { });
 				return;
 			}
 			SteamID = user.steam.steamid;
