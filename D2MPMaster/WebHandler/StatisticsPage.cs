@@ -17,11 +17,12 @@ namespace D2MPMaster.WebHandler
 {
     public class StatisticsPage : NancyModule
     {
+        private const string secret = "3J6EB7QIWUsCyk4MKBSe8y";
         public StatisticsPage()
         {
             Get["/stats/general"] = data => HandleStatsGeneral();
-            Get["/stats/lobbies"] = data => HandleStatsLobbies();
-            Get["/stats/servers"] = data => HandleStatsServers();
+            Get["/stats/"+secret+"/lobbies"] = data => HandleStatsLobbies();
+            Get["/stats/"+secret+"/servers"] = data => HandleStatsServers();
             Get["/stats/mods"] = data => HandleStatsMods();
             Get["/stats/players"] = data => HandleStatsPlayers();
         }
