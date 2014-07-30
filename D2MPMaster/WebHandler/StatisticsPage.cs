@@ -41,7 +41,7 @@ namespace D2MPMaster.WebHandler
             {
                 data["lastmonth"] =
                     lastMonth =
-                        (int) Mongo.Users.Count(Query.GT("steam.lastlogoff", DateTime.Now.AddDays(-30).ToUnixTime()));
+                        (int) Mongo.Users.Count(Query.GT("steam.lastlogoff", DateTime.UtcNow.AddDays(-30).ToUnixTime()));
                 lastupdated = DateTime.UtcNow;
             }
             else
