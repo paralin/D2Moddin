@@ -1114,7 +1114,7 @@ namespace D2MPMaster.Lobbies
                     {
                         var plyr = FindPlayerLocation(new User(){steam =new SteamService(){steamid = data.Value<int>("player").ToSteamID64()}}, lob);
                         log.Debug(lob.id + " -> player connected: " + plyr.player.name);
-                        if (lob.LobbyType == LobbyType.Normal && lob.state < GameState.PostGame)
+                        if (lob.LobbyType == LobbyType.Normal && lob.state < GameState.PostGame && lob.state > GameState.WaitLoad)
                         {
                             var browser =
                                 Browsers.Find(m => m.user != null && m.user.steam.steamid == plyr.player.steam)
@@ -1138,7 +1138,7 @@ namespace D2MPMaster.Lobbies
                     if (plyr != null)
                     {
                         log.Debug(lob.id + " -> player disconnected: " + plyr.player.name);
-                        if (lob.LobbyType == LobbyType.Normal && lob.state < GameState.PostGame)
+                        if (lob.LobbyType == LobbyType.Normal && lob.state < GameState.PostGame && lob.state > GameState.WaitLoad)
                         {
                             var browser = Browsers.Find(m => m.user != null && m.user.steam.steamid == plyr.player.steam).FirstOrDefault();
                             if (browser != null)

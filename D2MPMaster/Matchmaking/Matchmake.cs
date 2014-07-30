@@ -61,7 +61,7 @@ namespace D2MPMaster.Matchmaking
             bool result = false;
 
             //not the same match
-            if (this != pMatch &&
+            if (this != pMatch && pMatch.Status != MatchmakeStatus.AlreadyMatched && //not already matched
                 (pTeam || this.Users.Count <= (MatchmakeManager.TEAM_PLAYERS - pMatch.Users.Count))) //there is room for everybody
             {
                 result = this.GetMatchedMods(pMatch).Length > 0;

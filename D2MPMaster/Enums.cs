@@ -14,7 +14,8 @@ namespace D2MPMaster
     public enum MatchmakeStatus : int
     {
         PlayerQueue = 0,
-        TeamQueue = 1
+        TeamQueue = 1,
+        AlreadyMatched = 2
     }
 
     [Serializable]

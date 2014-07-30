@@ -32,7 +32,7 @@ namespace D2MPMaster.Storage
         {
             if (mod.staticClientBundle != null)
                 return mod.staticClientBundle;
-            return "http://static.d2modd.in/d2moddin/" + mod.bundle;
+			return "http://cdn.germangang.com/d2moddin/" + mod.bundle;
             //return GenerateBundleURL(mod.bundle);
         }
     }
