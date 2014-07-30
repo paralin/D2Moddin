@@ -37,8 +37,13 @@ namespace D2MPMaster.WebHandler
 
             var browsers = Browsers.Find(m => m.user != null);
             data["online"] = browsers.Count();
-            if(lastMonth == 0 || (DateTime.UtcNow-lastupdated).TotalHours>1)
-                data["lastmonth"] = lastMonth = (int)Mongo.Users.Count(Query.GT("steam.lastlogoff", DateTime.Now.AddDays(-30).ToUnixTime()));
+            if (lastMonth == 0 || (DateTime.UtcNow - lastupdated).TotalHours > 1)
+            {
+                data["lastmonth"] =
+                    lastMonth =
+                        (int) Mongo.Users.Count(Query.GT("steam.lastlogoff", DateTime.Now.AddDays(-30).ToUnixTime()));
+                lastupdated = DateTime.UtcNow;
+            }
             else
             {
                 data["lastmonth"] = lastMonth;
