@@ -884,7 +884,8 @@ namespace D2MPMaster.Browser
             if (!isDuplicate)
             {
                 LobbyManager.ForceLeaveLobby(this);
-                FriendManager.updateStatus(this.user.steam.steamid, FriendStatus.Offline);
+                if(this.user != null)
+                    FriendManager.updateStatus(this.user.steam.steamid, FriendStatus.Offline);
             }
         }
 
