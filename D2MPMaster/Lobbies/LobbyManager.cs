@@ -575,7 +575,7 @@ namespace D2MPMaster.Lobbies
 							password = string.Empty,
                             state = GameState.Init,
 							LobbyType = LobbyType.Normal,
-#if DEBUG
+#if DEBUG||DEV
                             requiresFullLobby = false,
 #else
                             requiresFullLobby =
