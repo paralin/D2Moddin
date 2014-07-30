@@ -127,7 +127,7 @@ namespace D2MPMaster.Friends
             var upd = new JObject();
             upd["msg"] = "colupd";
             upd["ops"] = new JArray { friend.Update("friends", fields) };
-            Browsers.AsyncSendTo(m => m.friendlist.Any(x => x.id == friend.id), new TextArgs(upd.ToString(Formatting.None), "friend"),
+            Browsers.AsyncSendTo(m => m.friendlist != null && m.friendlist.Any(x => x.id == friend.id), new TextArgs(upd.ToString(Formatting.None), "friend"),
                 req => { });
         }
 
