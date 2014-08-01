@@ -238,12 +238,19 @@ namespace D2MPMaster.Browser
                                                           RespondError(jdata, "You are already in a lobby.");
                                                           return; //omfg
                                                       }
+
                                                       if(!user.authItems.Contains("tested")){
                                                           var obj = new JObject();
                                                           obj["msg"] = "testneeded";
                                                           Send(obj.ToString(Formatting.None));
                                                           return;
                                                       }
+
+													  if(user.authItems.Contains("createban")){
+										                  RespondError(jdata, "You are banned from creating lobbies.");
+													  	  return;
+													  }
+									                  
                                                       //Parse the create lobby request
                                                       var req = jdata["req"].ToObject<CreateLobby>();
                                                       if (req.name == null)
