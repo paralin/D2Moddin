@@ -103,7 +103,7 @@ namespace D2MPMaster.Lobbies
         }
         public Player[] getPlayers()
         {
-            return this.radiant.Concat(this.dire).ToArray();
+            return this.radiant.Concat(this.dire).Where(m=>m!=null).ToArray();
         }
     }
 }
