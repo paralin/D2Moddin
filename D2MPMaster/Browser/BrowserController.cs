@@ -9,6 +9,7 @@ using D2MPMaster.Database;
 using D2MPMaster.LiveData;
 using D2MPMaster.Lobbies;
 using D2MPMaster.Model;
+using D2MPMaster.Friends;
 using d2mpserver;
 using MongoDB.Driver.Builders;
 using Newtonsoft.Json;
@@ -18,6 +19,7 @@ using XSockets.Core.Common.Socket.Event.Interface;
 using XSockets.Core.XSocket;
 using XSockets.Core.XSocket.Helpers;
 using InstallMod = D2MPMaster.Browser.Methods.InstallMod;
+using System.Collections.Generic;
 
 
 namespace D2MPMaster.Browser
@@ -57,6 +59,7 @@ namespace D2MPMaster.Browser
                 {
                     this.AsyncSendTo(m => m.user != null && m.user.Id == user.Id, ClearPublicLobbies(),
                         req => { });
+                    FriendManager.updateStatus(this.user.steam.steamid, FriendStatus.InLobby, Mods.Mods.ByID(value.mod).fullname);
                 }
                 else
                 {
@@ -64,9 +67,12 @@ namespace D2MPMaster.Browser
                         req => { });
                     this.AsyncSendTo(m => m.user != null && m.user.Id == user.Id, ClearLobbyR(),
                         req => { });
+                    FriendManager.updateStatus(this.user.steam.steamid, FriendStatus.Online);
                 }
             }
         }
+
+        public List<Friend> friendlist = null;
 
         #endregion
 
@@ -206,6 +212,8 @@ namespace D2MPMaster.Browser
                                                                   "auth");
                                                               this.Send(PublicLobbySnapshot());
                                                               SendManagerStatus();
+                                                              FriendManager.buildList(this);
+                                                              FriendManager.updateStatus(this.user.steam.steamid, FriendStatus.Online);
                                                           }
                                                           else
                                                           {
@@ -596,6 +604,22 @@ namespace D2MPMaster.Browser
                                                       LobbyManager.JoinLobby(lob, user, this);
                                                       break;
                                                   }
+                                                  case "invitefriend":
+                                                  {
+                                                      if (user == null)
+                                                      {
+                                                          RespondError(jdata, "You are not logged in.");
+                                                          return;
+                                                      }
+                                                      if (lobby == null)
+                                                      {
+                                                          RespondError(jdata, "You are not in a lobby to invite your friend to.");
+                                                          return;
+                                                      }
+                                                      var req = jdata["req"].ToObject<InviteFriend>();
+                                                      FriendManager.InviteFriend(this, req.steamid);
+                                                      break;
+                                                  }
                                                   case "joinpasswordlobby":
                                                   {
                                                       if (user == null)
@@ -655,6 +679,73 @@ namespace D2MPMaster.Browser
                                                       }
 
                                                       LobbyManager.JoinLobby(lob, user, this);
+                                                      break;
+                                                  }
+                                                  case "joinfriendlobby":
+                                                  {
+                                                      if (user == null)
+                                                      {
+                                                          RespondError(jdata, "You are not logged in yet.");
+                                                          return;
+                                                      }
+                                                      if (lobby != null)
+                                                      {
+                                                          RespondError(jdata, "You are already in a lobby.");
+                                                          return;
+                                                      }
+                                                      if (!user.authItems.Contains("tested"))
+                                                      {
+                                                          var obj = new JObject();
+                                                          obj["msg"] = "testneeded";
+                                                          Send(obj.ToString(Formatting.None));
+                                                          return;
+                                                      }
+                                                      var req = jdata["req"].ToObject<JoinFriendLobby>();
+                                                      //Find lobby
+                                                      var lob =
+                                                          LobbyManager.PlayingLobbies.FirstOrDefault(
+                                                              m => m.getPlayers().Where(p=>p.steam == req.steamid).Any());
+                                                      if (lob == null)
+                                                      {
+                                                          RespondError(jdata,
+                                                              "Player is not in a lobby.");
+                                                          return;
+                                                      }
+                                                      if (lob.TeamCount(lob.dire) >= 5 &&
+                                                          lob.TeamCount(lob.radiant) >= 5)
+                                                      {
+                                                          RespondError(jdata, "That lobby is full.");
+                                                          return;
+                                                      }
+                                                      if (lob.banned.Contains(user.steam.steamid))
+                                                      {
+                                                          RespondError(jdata, "You are banned from that lobby.");
+                                                          return;
+                                                      }
+                                                      //Find the mod
+                                                      var mod = Mods.Mods.ByID(lob.mod);
+                                                      if (mod == null)
+                                                      {
+                                                          RespondError(jdata,
+                                                              "Can't find the mod, you probably don't have access.");
+                                                          return;
+                                                      }
+                                                      //Find the client
+                                                      var clients = ClientsController.Find(m => m.UID == user.Id);
+                                                      if (
+                                                          !clients.Any(
+                                                              m =>
+                                                                  m.Mods.Any(
+                                                                      c =>
+                                                                          c.name == mod.name && c.version == mod.version)))
+                                                      {
+                                                          var obj = new JObject();
+                                                          obj["msg"] = "modneeded";
+                                                          obj["name"] = mod.name;
+                                                          Send(obj.ToString(Formatting.None));
+                                                          return;
+                                                      }
+                                                      LobbyManager.JoinLobby(lob, user, this, req.steamid);
                                                       break;
                                                   }
                                                   case "installmod":
@@ -797,8 +888,12 @@ namespace D2MPMaster.Browser
 
         public void OnClosed(object sender, OnClientDisconnectArgs e)
         {
-            if(!isDuplicate)
+            if (!isDuplicate)
+            {
                 LobbyManager.ForceLeaveLobby(this);
+                if(this.user != null)
+                    FriendManager.updateStatus(this.user.steam.steamid, FriendStatus.Offline);
+            }
         }
 
         public static ITextArgs ClearLobbyR()
@@ -857,6 +952,38 @@ namespace D2MPMaster.Browser
             upd["msg"] = "colupd";
             upd["ops"] = ops;
             return new TextArgs(upd.ToString(Formatting.None), "lobby");
+        }
+
+        public static ITextArgs FriendsSnapshot(List<Friend> l)
+        {
+            var upd = new JObject();
+            var ops = new JArray { DiffGenerator.RemoveAll("friends") };
+            try
+            {
+                Friend[] snap;
+                snap = l.ToArray();
+                foreach (var friend in snap)
+                {
+                    if (friend != null)
+                        ops.Add(friend.Add("friends"));
+                }
+            }
+            catch (Exception ex)
+            {
+                log.Error("Problem creating friend snapshot: ", ex);
+            }
+            upd["msg"] = "colupd";
+            upd["ops"] = ops;
+            return new TextArgs(upd.ToString(Formatting.None), "friend");
+        }
+
+        public static ITextArgs inviteFriend(Lobby l, string sourceSteamid)
+        {
+            var cmd = new JObject();
+            cmd["msg"] = "invite";
+            cmd["source"] = sourceSteamid;
+            cmd["mod"] = Mods.Mods.ByID(l.mod).fullname;
+            return new TextArgs(cmd.ToString(Formatting.None), "invite");
         }
 
         public static ITextArgs ClearPublicLobbies()
