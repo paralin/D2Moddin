@@ -495,7 +495,7 @@ namespace D2MPMaster.Lobbies
 
         public static void JoinLobby(Lobby lobby, User user, BrowserController controller, string friendId = null)
         {
-            if (lobby==null || user == null) return;
+            if (lobby==null || user == null || lobby.status > LobbyStatus.Start) return;
             foreach (var result in Browsers.Find(m => m.user != null && m.user.Id == user.Id && m.lobby!=null))
             {
                 LeaveLobby(result);
