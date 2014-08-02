@@ -505,7 +505,7 @@ namespace D2MPMaster.Lobbies
             if (direCount >= 5 && radCount >= 5) return;
             if (friendId != null)
             {
-                if (radCount < 5 && lobby.radiant.Where(l => l.steam == friendId).Any())
+                if (radCount < 5 && lobby.radiant.Any(l => l!=null && l.steam == friendId))
                 {
                     lobby.AddPlayer(lobby.radiant, Player.FromUser(user, lobby.creatorid == user.Id));
                 }
