@@ -246,13 +246,14 @@ namespace D2MPMaster.Browser
                                                           RespondError(jdata, "You are already in a lobby.");
                                                           return; //omfg
                                                       }
-
+#if !DEV
                                                       if(!user.authItems.Contains("tested")){
                                                           var obj = new JObject();
                                                           obj["msg"] = "testneeded";
                                                           Send(obj.ToString(Formatting.None));
                                                           return;
                                                       }
+#endif
 
 													  if(user.authItems.Contains("createban")){
 										                  RespondError(jdata, "You are banned from creating lobbies.");
@@ -547,12 +548,14 @@ namespace D2MPMaster.Browser
                                                           RespondError(jdata, "You are already in a lobby.");
                                                           return;
                                                       }
+#if !DEV
                                                       if(!user.authItems.Contains("tested")){
                                                           var obj = new JObject();
                                                           obj["msg"] = "testneeded";
                                                           Send(obj.ToString(Formatting.None));
                                                           return;
                                                         }
+#endif
                                                       var req = jdata["req"].ToObject<JoinLobby>();
                                                       Lobby lob = null;
                                                       //Find lobby
@@ -693,6 +696,7 @@ namespace D2MPMaster.Browser
                                                           RespondError(jdata, "You are already in a lobby.");
                                                           return;
                                                       }
+#if !DEV
                                                       if (!user.authItems.Contains("tested"))
                                                       {
                                                           var obj = new JObject();
@@ -700,6 +704,7 @@ namespace D2MPMaster.Browser
                                                           Send(obj.ToString(Formatting.None));
                                                           return;
                                                       }
+#endif
                                                       var req = jdata["req"].ToObject<JoinFriendLobby>();
                                                       //Find lobby
                                                       var lob =
