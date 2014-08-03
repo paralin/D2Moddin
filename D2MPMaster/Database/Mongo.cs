@@ -26,14 +26,14 @@ namespace D2MPMaster.Database
                 log.Error("Tried to create a second instance of Mongo.");
                 return;
             }
-#if DEBUG
+#if DEBUG||DEV
             var connectString = Settings.Default.MongoDevURL;
 #else
             var connectString = Settings.Default.MongoURL;
 #endif
             Client = new MongoClient(connectString);
             Server = Client.GetServer();
-#if DEBUG
+#if DEBUG||DEV
             Database = Server.GetDatabase(Settings.Default.MongoDevDB);
 #else
             Database = Server.GetDatabase(Settings.Default.MongoDB);

@@ -15,4 +15,9 @@ namespace D2MPMaster.Browser.Methods
     {
         public string password;
     }
+
+    public class JoinFriendLobby
+    {
+        public string steamid;
+    }
 }

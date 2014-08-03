@@ -148,12 +148,12 @@ namespace D2MPMaster.Properties {
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("CBD4B6FF1511AD17841196BCE6B1E3E4")]
-        public string SteamAPIKey {
+        public string SteamWebAPIKey {
             get {
-                return ((string)(this["SteamAPIKey"]));
+                return ((string)(this["SteamWebAPIKey"]));
             }
             set {
-                this["SteamAPIKey"] = value;
+                this["SteamWebAPIKey"] = value;
             }
         }
     }

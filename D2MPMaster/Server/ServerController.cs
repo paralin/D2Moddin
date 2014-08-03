@@ -177,7 +177,8 @@ namespace D2MPMaster.Server
                                RconPass = lobby.id + "R",
                                Server = this,
                                state = GameState.Init,
-                               map = (mod.mapOverride ?? mod.name)
+                               map = (mod.mapOverride ?? mod.name),
+                               totalPlayers = lobby.TeamCount(lobby.radiant) + lobby.TeamCount(lobby.dire)
                            };
             var command = "launchServer|" + instance.ID + "|" +
                           (lobby.devMode ? bool.TrueString : bool.FalseString) + "|" + Mods.Mods.ByID(lobby.mod).name +
@@ -192,10 +193,10 @@ namespace D2MPMaster.Server
             var cmds = new List<string>
                        {
                            "d2lobby_gg_time " + (lobby.enableGG ? "10" : "-1"),
-#if DEBUG
+#if DEBUG||DEV
                            "match_post_url \"http://127.0.0.1:8080/gdataapi/matchres\"",
 #else
-                "match_post_url \"http://" + Settings.Default.WebAddress + "/gdataapi/matchres\"",
+                           "match_post_url \"http://" + Settings.Default.WebAddress + "/gdataapi/matchres\"",
 #endif
                            "set_match_id \"" + lobby.id + "\"",
                            "d2l_disable_pause " + (lobby.disablePause ? "1" : "0")

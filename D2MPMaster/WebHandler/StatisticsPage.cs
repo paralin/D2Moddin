@@ -1,22 +1,53 @@
 ﻿using System;
 using System.Linq;
+using D2MPMaster.Browser;
+using D2MPMaster.Database;
 using D2MPMaster.Lobbies;
 using D2MPMaster.Server;
+using MongoDB.Driver.Builders;
 using Nancy;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using ServiceStack.Text;
 using XSockets.Core.XSocket.Helpers;
 
 namespace D2MPMaster.WebHandler
 {
     public class StatisticsPage : NancyModule
     {
+        private const string secret = "3J6EB7QIWUsCyk4MKBSe8y";
+        private static readonly BrowserController Browsers = new BrowserController();
+        private static int lastMonth = 0;
+        private static DateTime lastupdated = DateTime.UtcNow;
         public StatisticsPage()
         {
             Get["/stats/general"] = data => HandleStatsGeneral();
-            Get["/stats/lobbies"] = data => HandleStatsLobbies();
-            Get["/stats/servers"] = data => HandleStatsServers();
+            Get["/stats/"+secret+"/lobbies"] = data => HandleStatsLobbies();
+            Get["/stats/"+secret+"/servers"] = data => HandleStatsServers();
             Get["/stats/mods"] = data => HandleStatsMods();
+            Get["/stats/players"] = data => HandleStatsPlayers();
+        }
+
+        private string HandleStatsPlayers()
+        {
+            JObject data = new JObject();
+
+            var browsers = Browsers.Find(m => m.user != null);
+            data["online"] = browsers.Count();
+            if (lastMonth == 0 || (DateTime.UtcNow - lastupdated).TotalHours > 1)
+            {
+                data["lastmonth"] =
+                    lastMonth =
+                        (int) Mongo.Users.Count(Query.GT("steam.lastlogoff", DateTime.UtcNow.AddDays(-30).ToUnixTime()));
+                lastupdated = DateTime.UtcNow;
+            }
+            else
+            {
+                data["lastmonth"] = lastMonth;
+            }
+            data["playing"] = browsers.Count(m=>m.lobby != null);
+
+            return data.ToString(Formatting.Indented);
         }
 
         private string HandleStatsServers()

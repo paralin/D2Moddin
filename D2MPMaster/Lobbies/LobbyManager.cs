@@ -547,9 +547,9 @@ namespace D2MPMaster.Lobbies
             }
         }
 
-        public static void JoinLobby(Lobby lobby, User user, BrowserController controller)
+        public static void JoinLobby(Lobby lobby, User user, BrowserController controller, string friendId = null)
         {
-            if (lobby == null || user == null) return;
+            if (lobby==null || user == null || lobby.status > LobbyStatus.Start) return;
             foreach (var result in Browsers.Find(m => m.user != null && m.user.Id == user.Id && m.lobby != null))
             {
                 LeaveLobby(result);
@@ -557,7 +557,18 @@ namespace D2MPMaster.Lobbies
             var direCount = lobby.TeamCount(lobby.dire);
             var radCount = lobby.TeamCount(lobby.radiant);
             if (direCount >= 5 && radCount >= 5) return;
-            if (direCount < radCount || direCount == radCount)
+            if (friendId != null)
+            {
+                if (radCount < 5 && lobby.radiant.Any(l => l!=null && l.steam == friendId))
+                {
+                    lobby.AddPlayer(lobby.radiant, Player.FromUser(user, lobby.creatorid == user.Id));
+                }
+                else
+                {
+                    lobby.AddPlayer(lobby.dire, Player.FromUser(user, lobby.creatorid == user.Id));
+                }
+            }
+            else if (direCount < radCount || direCount == radCount)
             {
                 lobby.AddPlayer(lobby.dire, Player.FromUser(user, lobby.creatorid == user.Id));
             }
@@ -619,7 +630,7 @@ namespace D2MPMaster.Lobbies
                             password = string.Empty,
                             state = GameState.Init,
 							LobbyType = LobbyType.Normal,
-#if DEBUG
+#if DEBUG||DEV
                             requiresFullLobby = false,
 #else
                             requiresFullLobby =
@@ -1037,15 +1048,7 @@ namespace D2MPMaster.Lobbies
             }
             else if (lob.LobbyType == LobbyType.PlayerTest)
             {
-                foreach (var player in lob.radiant.Where(m => m != null))
-                {
-                    var browser = Browsers.Find(m => m.user != null && m.user.steam.steamid == player.steam).FirstOrDefault();
-                    if (browser != null)
-                    {
-                        BrowserController.SetTested(browser.user, !player.failedConnect);
-                    }
-                }
-                foreach (var player in lob.dire.Where(m => m != null))
+                foreach (var player in lob.getPlayers())
                 {
                     if (player == null) continue;
                     var browser = Browsers.Find(m => m.user != null && m.user.steam.steamid == player.steam).FirstOrDefault();
@@ -1059,22 +1062,7 @@ namespace D2MPMaster.Lobbies
             else if (lob.LobbyType == LobbyType.Matchmaking)
             {
                 var didntFail = new List<BrowserController>(10);
-                foreach (var player in lob.radiant.Where(m=>m!=null))
-                {
-                    var browser = Browsers.Find(m => m.user != null && m.user.steam.steamid == player.steam).FirstOrDefault();
-                    if (browser == null) continue;
-                    if (player.failedConnect)
-                    {
-                        BrowserController.SetTested(browser.user, false);
-                        browser.user.profile.PreventMMUntil = DateTime.UtcNow + TimeSpan.FromMinutes(5);
-                        browser.SaveUser();
-                    }
-                    else
-                        didntFail.Add(browser);
-                    browser.lobby = null;
-                    browser.matchmake = null;
-                }
-                foreach (var player in lob.dire.Where(m=>m!=null))
+                foreach (var player in lob.getPlayers())
                 {
                     var browser = Browsers.Find(m => m.user != null && m.user.steam.steamid == player.steam).FirstOrDefault();
                     if (browser == null) continue;

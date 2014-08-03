@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Dynamic;
 using System.Linq;
-using System.Linq.Expressions;
-using D2MPMaster.LiveData;
+using D2MPMaster.Friends;
 
 namespace D2MPMaster.Lobbies
 {
@@ -55,7 +53,30 @@ namespace D2MPMaster.Lobbies
         [ExcludeField(Collections = new[] { "publicLobbies" })]
         public GameState state { get; set; }
         public ServerRegion region { get; set; }
-        public LobbyStatus status { get; set; }
+        private LobbyStatus _status;
+        public LobbyStatus status
+        {
+            get
+            {
+                return _status;
+            }
+            set
+            {
+
+                foreach (var player in this.getPlayers())
+                {
+                    if (value > LobbyStatus.Queue)
+                    {
+                        FriendManager.updateStatus(player.steam, FriendStatus.InGame);
+                    }
+                    else
+                    {
+                        FriendManager.updateStatus(player.steam, FriendStatus.InLobby);
+                    }
+                }
+                _status = value;
+            }
+        }
         [ExcludeField(Collections = new[] { "publicLobbies", "lobbies" })]
         public DateTime IdleSince { get; set; }
         public LobbyType LobbyType {get;set;}
@@ -76,6 +97,10 @@ namespace D2MPMaster.Lobbies
                 p0[i] = fromUser;
                 return;
             }
+        }
+        public Player[] getPlayers()
+        {
+            return this.radiant.Concat(this.dire).Where(m=>m!=null).ToArray();
         }
     }
 }

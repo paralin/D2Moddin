@@ -11,5 +11,6 @@ namespace D2MPMaster.Server
         public GameState state;
         public int port;
         public string map;
+        public int totalPlayers;
     }
 }
