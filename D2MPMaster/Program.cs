@@ -5,6 +5,7 @@ using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Threading;
+using D2MPMaster.Browser;
 using D2MPMaster.Database;
 using D2MPMaster.LiveData;
 using D2MPMaster.MatchData;
@@ -84,6 +85,7 @@ namespace D2MPMaster
                     {
                         Thread.Sleep(100);
                     }
+                    BrowserController.cts.Cancel();
 					Lobbies.LobbyManager.Stop ();
 					Mods.Mods.StopUpdateTimer();
                     server.StopServers();

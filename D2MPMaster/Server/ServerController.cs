@@ -4,8 +4,8 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
-using System.Timers;
 using D2MPMaster.Lobbies;
 using D2MPMaster.Model;
 using D2MPMaster.Properties;
@@ -18,6 +18,7 @@ using XSockets.Core.Common.Socket.Event.Interface;
 using XSockets.Core.XSocket;
 using XSockets.Core.XSocket.Helpers;
 using System.Diagnostics;
+using Timer = System.Timers.Timer;
 
 namespace D2MPMaster.Server
 {
@@ -33,6 +34,13 @@ namespace D2MPMaster.Server
         public ConcurrentDictionary<int, GameInstance> Instances = new ConcurrentDictionary<int, GameInstance>();
         public bool Inited { get; set; }
         private object ConcurrentLock = new object();
+
+        // Create a scheduler that uses a configurable number of threads. 
+        static LimitedConcurrencyLevelTaskScheduler lcts = new LimitedConcurrencyLevelTaskScheduler(5);
+
+        // Create a TaskFactory and pass it our custom scheduler. 
+        static TaskFactory factory = new TaskFactory(lcts);
+        public static CancellationTokenSource cts = new CancellationTokenSource();
 
         public ServerController()
         {
@@ -74,21 +82,24 @@ namespace D2MPMaster.Server
 
         public override void OnMessage(XSockets.Core.Common.Socket.Event.Interface.ITextArgs textArgs)
         {
+            factory.StartNew(() => ProcessMessage(textArgs), cts.Token);
+        }
+
+        public void ProcessMessage(ITextArgs textArgs)
+        {
             try
             {
                 var jdata = JObject.Parse(textArgs.data);
                 var id = jdata["msg"];
                 if (id == null) return;
                 var command = id.Value<string>();
-                Task.Factory.StartNew(() =>
+                lock (ConcurrentLock)
                 {
-                    lock (ConcurrentLock)
+                    try
                     {
-                        try
+                        switch (command)
                         {
-                            switch (command)
-                            {
-                                case Init.Msg:
+                            case Init.Msg:
                                 {
                                     if (Inited) return;
                                     var msg = jdata.ToObject<Init>();
@@ -105,17 +116,17 @@ namespace D2MPMaster.Server
                                     }
                                     //Build server addon operation 
                                     var add = (from addon in ServerAddons.Addons
-                                        let exist =
-                                            msg.addons.FirstOrDefault(
-                                                m => m.name == addon.name && m.version == addon.version)
-                                        where exist == null
-                                        select
-                                            addon.name + ">" + addon.version + ">" +
-                                            Program.S3.GenerateBundleURL(addon.bundle).Replace('|', ' ')).ToList();
+                                               let exist =
+                                                   msg.addons.FirstOrDefault(
+                                                       m => m.name == addon.name && m.version == addon.version)
+                                               where exist == null
+                                               select
+                                                   addon.name + ">" + addon.version + ">" +
+                                                   Program.S3.GenerateBundleURL(addon.bundle).Replace('|', ' ')).ToList();
                                     var del = (from addon in msg.addons
-                                        let exist = ServerAddons.Addons.FirstOrDefault(m => m.name == addon.name)
-                                        where exist == null
-                                        select addon.name).ToList();
+                                               let exist = ServerAddons.Addons.FirstOrDefault(m => m.name == addon.name)
+                                               where exist == null
+                                               select addon.name).ToList();
                                     if ((add.Count + del.Count) == 0)
                                     {
                                         InitData = msg;
@@ -128,7 +139,7 @@ namespace D2MPMaster.Server
                                     }
                                     break;
                                 }
-                                case OnServerLaunched.Msg:
+                            case OnServerLaunched.Msg:
                                 {
                                     var msg = jdata.ToObject<OnServerLaunched>();
                                     if (Instances.ContainsKey(msg.id))
@@ -139,7 +150,7 @@ namespace D2MPMaster.Server
                                     }
                                     break;
                                 }
-                                case OnServerShutdown.Msg:
+                            case OnServerShutdown.Msg:
                                 {
                                     var msg = jdata.ToObject<OnServerShutdown>();
                                     if (Instances.ContainsKey(msg.id))
@@ -150,14 +161,13 @@ namespace D2MPMaster.Server
                                     }
                                     break;
                                 }
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            log.Error("Problem processing server message: ", ex);
                         }
                     }
-                });
+                    catch (Exception ex)
+                    {
+                        log.Error("Problem processing server message: ", ex);
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -206,7 +216,7 @@ namespace D2MPMaster.Server
                 if (string.IsNullOrWhiteSpace(name)) name = "Player";
                 cmds.Add(string.Format("add_radiant_player \"{0}\" \"{1}\"", plyr.steam, name));
             }
-            
+
             foreach (var plyr in lobby.dire.Where(p => p != null))
             {
                 var name = Regex.Replace(plyr.name, "[^a-zA-Z0-9 -]", "");
