@@ -30,7 +30,7 @@ namespace D2MPMaster.Browser
         private static readonly ClientController ClientsController = new ClientController();
 
         // Create a scheduler that uses a configurable number of threads. 
-        static LimitedConcurrencyLevelTaskScheduler lcts = new LimitedConcurrencyLevelTaskScheduler(15);
+        static LimitedConcurrencyLevelTaskScheduler lcts = new LimitedConcurrencyLevelTaskScheduler(30);
 
         // Create a TaskFactory and pass it our custom scheduler. 
         static TaskFactory factory = new TaskFactory(lcts);
