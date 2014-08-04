@@ -9,5 +9,6 @@ sessions:
   session
 users:
   steam.steamid: 1
+  profile.mmr.reflex
 mods:
   name
