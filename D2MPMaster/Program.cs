@@ -5,6 +5,7 @@ using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Threading;
+using System.Threading.Tasks;
 using Amazon.Runtime;
 using D2MPMaster.Browser;
 using D2MPMaster.Client;
@@ -40,6 +41,7 @@ namespace D2MPMaster
             log.Info("Initializing database...");
             log.Debug(Settings.Default.MongoURL);
             Mongo.Setup();
+            Task.Factory.StartNew(Mongo.UpdateOldMatchResults);
 
             log.Info("Caching mods...");
             Mods.Mods.InitCache();

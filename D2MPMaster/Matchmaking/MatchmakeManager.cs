@@ -263,10 +263,10 @@ namespace D2MPMaster.Matchmaking
             {
                 //if the user does not have a MMR for it
                 if (user.profile.mmr == null) user.profile.mmr = new Dictionary<string, int>();
-                if (!user.profile.mmr.ContainsKey(mod.Id))
+                if (!user.profile.mmr.ContainsKey(mod.name))
                 {
                     //Assign base
-                    user.profile.mmr.Add(mod.Id, BaseMmr);
+                    user.profile.mmr.Add(mod.name, BaseMmr);
                 }
             }
             Mongo.Users.Save(user);
@@ -275,8 +275,8 @@ namespace D2MPMaster.Matchmaking
             {
                 id = Utils.RandomString(17),
                 Users = new List<User>(TEAM_PLAYERS) { user },
-                Mods = mods.Select(x => x.Id).ToArray(),
-                Ratings = user.profile.mmr.Where(x => mods.Any(y => x.Key == y.Id)).ToDictionary(x => x.Key, x => x.Value),
+                Mods = mods.Select(x => x.name).ToArray(),
+                Ratings = user.profile.mmr.Where(x => mods.Any(y => x.Key == y.name)).ToDictionary(x => x.Key, x => x.Value),
                 TryCount = 1
             };
 
@@ -360,8 +360,8 @@ namespace D2MPMaster.Matchmaking
 
             var mod = Mods.Mods.ByName(pMatchData.mod);
             //avg the MMR
-            double radiantAvg = radiantPlayers.Average(a => a.profile.mmr[mod.Id]);
-            double direAvg = direPlayers.Average(a => a.profile.mmr[mod.Id]);
+            double radiantAvg = radiantPlayers.Average(a => a.profile.mmr[mod.name]);
+            double direAvg = direPlayers.Average(a => a.profile.mmr[mod.name]);
 
             //calculate probability to win
             double qa = Math.Pow(10, (radiantAvg / 400.0));
@@ -388,19 +388,19 @@ namespace D2MPMaster.Matchmaking
             }
 
             //increment results
-            radiantPlayers.ForEach(player => player.profile.mmr[mod.Id] += incRadiant);
-            direPlayers.ForEach(player => player.profile.mmr[mod.Id] += incDire);
+            radiantPlayers.ForEach(player => player.profile.mmr[mod.name] += incRadiant);
+            direPlayers.ForEach(player => player.profile.mmr[mod.name] += incDire);
 
             //todo: add individual increment and/or decrement based on gameplay
 
             //check roof, floor and save
             foreach (var player in radiantPlayers.Union(direPlayers))
             {
-                if (player.profile.mmr[mod.Id] > MmrRoof)
-                    player.profile.mmr[mod.Id] = MmrRoof;
+                if (player.profile.mmr[mod.name] > MmrRoof)
+                    player.profile.mmr[mod.name] = MmrRoof;
 
-                if (player.profile.mmr[mod.Id] < MmrFloor)
-                    player.profile.mmr[mod.Id] = MmrFloor;
+                if (player.profile.mmr[mod.name] < MmrFloor)
+                    player.profile.mmr[mod.name] = MmrFloor;
 
                 foreach (var browser in Browsers.Find(m => m.user != null && m.user.Id == player.Id))
                 {

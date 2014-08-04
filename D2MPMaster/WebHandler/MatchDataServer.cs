@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Linq;
 using D2MPMaster.Lobbies;
 using Nancy;
 using Nancy.ErrorHandling;
@@ -40,7 +41,10 @@ namespace D2MPMaster.MatchData
                     }
                 }else if (status == "completed")
                 {
-					HandleMatchComplete(JsonConvert.DeserializeObject<Model.MatchData>(baseData.ToString()).ConvertData(), lob);
+                    var data = JsonConvert.DeserializeObject<Model.MatchData>(baseData.ToString()).ConvertData();
+                    data.ranked = lob.LobbyType == LobbyType.Matchmaking;
+                    data.steamids = data.teams[0].players.Select(x=>x.steam_id).Union(data.teams[1].players.Select(y=>y.steam_id)).ToArray();
+					HandleMatchComplete(data, lob);
                 }
                 else if (status == "load_failed")
                 {

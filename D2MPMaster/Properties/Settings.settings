@@ -18,7 +18,7 @@
       <Value Profile="(Default)">[{"name":"d2fixups","version":"0.2","bundle":"serv_d2fixups.zip"},{"name":"metamod","version":"0.3.4","bundle":"metamod.zip"},{"name":"lobby","version":"1.6","bundle":"lobby.zip"},{"name":"dst","version":"0.1","bundle":"dst.zip"}]</Value>
     </Setting>
     <Setting Name="MongoURL" Type="System.String" Scope="User">
-      <Value Profile="(Default)">mongodb://d2mpsys:aucCXtn7d8twSEm4C28G@10.128.135.236/d2moddin</Value>
+      <Value Profile="(Default)">mongodb://d2mpsys:aucCXtn7d8twSEm4C28G@internal.d2modd.in/d2moddin</Value>
     </Setting>
     <Setting Name="WebserverBind" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">8080</Value>
@@ -32,11 +32,7 @@
     <Setting Name="WebAddress" Type="System.String" Scope="User">
       <Value Profile="(Default)">net1.d2modd.in</Value>
     </Setting>
-<<<<<<< HEAD
-    <Setting Name="SteamAPIKey" Type="System.String" Scope="User">
-=======
     <Setting Name="SteamWebAPIKey" Type="System.String" Scope="User">
->>>>>>> master
       <Value Profile="(Default)">CBD4B6FF1511AD17841196BCE6B1E3E4</Value>
     </Setting>
   </Settings>

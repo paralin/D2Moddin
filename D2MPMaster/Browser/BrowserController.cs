@@ -254,6 +254,9 @@ namespace D2MPMaster.Browser
                                                                            browser.Close();
                                                                        }));
                                                               }
+
+                                                              user.CheckAndInit();
+
                                                               this.SendJson("{\"msg\": \"auth\", \"status\": true}",
                                                                   "auth");
                                                               this.Send(PublicLobbySnapshot());

@@ -92,81 +92,81 @@ namespace D2MPMaster.Server
                 var id = jdata["msg"];
                 if (id == null) return;
                 var command = id.Value<string>();
-                    lock (ConcurrentLock)
+                lock (ConcurrentLock)
+                {
+                    try
                     {
-                        try
+                        switch (command)
                         {
-                            switch (command)
+                            case Init.Msg:
                             {
-                                case Init.Msg:
+                                if (Inited) return;
+                                var msg = jdata.ToObject<Init>();
+                                if (msg.password != Init.Password)
                                 {
-                                    if (Inited) return;
-                                    var msg = jdata.ToObject<Init>();
-                                    if (msg.password != Init.Password)
-                                    {
-                                        //Wrong password
-                                        Send("authFail");
-                                        return;
-                                    }
-                                    if (msg.version != Init.Version)
-                                    {
-                                        Send("outOfDate|" + Program.S3.GenerateBundleURL("s" + Init.Version + ".zip"));
-                                        return;
-                                    }
-                                    //Build server addon operation 
-                                    var add = (from addon in ServerAddons.Addons
-                                        let exist =
-                                            msg.addons.FirstOrDefault(
-                                                m => m.name == addon.name && m.version == addon.version)
-                                        where exist == null
-                                        select
-                                            addon.name + ">" + addon.version + ">" +
-                                            Program.S3.GenerateBundleURL(addon.bundle).Replace('|', ' ')).ToList();
-                                    var del = (from addon in msg.addons
-                                        let exist = ServerAddons.Addons.FirstOrDefault(m => m.name == addon.name)
-                                        where exist == null
-                                        select addon.name).ToList();
-                                    if ((add.Count + del.Count) == 0)
-                                    {
-                                        InitData = msg;
-                                        Address = InitData.publicIP;
-                                        Inited = true;
-                                    }
-                                    else
-                                    {
-                                        Send("addonOps|" + string.Join(",", add) + "|" + string.Join(",", del));
-                                    }
-                                    break;
+                                    //Wrong password
+                                    Send("authFail");
+                                    return;
                                 }
-                                case OnServerLaunched.Msg:
+                                if (msg.version != Init.Version)
                                 {
-                                    var msg = jdata.ToObject<OnServerLaunched>();
-                                    if (Instances.ContainsKey(msg.id))
-                                    {
-                                        var instance = Instances[msg.id];
-                                        instance.port = msg.port;
-                                        LobbyManager.OnServerReady(instance);
-                                    }
-                                    break;
+                                    Send("outOfDate|" + Program.S3.GenerateBundleURL("s" + Init.Version + ".zip"));
+                                    return;
                                 }
-                                case OnServerShutdown.Msg:
+                                //Build server addon operation 
+                                var add = (from addon in ServerAddons.Addons
+                                    let exist =
+                                        msg.addons.FirstOrDefault(
+                                            m => m.name == addon.name && m.version == addon.version)
+                                    where exist == null
+                                    select
+                                        addon.name + ">" + addon.version + ">" +
+                                        Program.S3.GenerateBundleURL(addon.bundle).Replace('|', ' ')).ToList();
+                                var del = (from addon in msg.addons
+                                    let exist = ServerAddons.Addons.FirstOrDefault(m => m.name == addon.name)
+                                    where exist == null
+                                    select addon.name).ToList();
+                                if ((add.Count + del.Count) == 0)
                                 {
-                                    var msg = jdata.ToObject<OnServerShutdown>();
-                                    if (Instances.ContainsKey(msg.id))
-                                    {
-                                        GameInstance instance;
-                                        Instances.TryRemove(msg.id, out instance);
-                                        LobbyManager.OnServerShutdown(instance);
-                                    }
-                                    break;
+                                    InitData = msg;
+                                    Address = InitData.publicIP;
+                                    Inited = true;
                                 }
+                                else
+                                {
+                                    Send("addonOps|" + string.Join(",", add) + "|" + string.Join(",", del));
+                                }
+                                break;
+                            }
+                            case OnServerLaunched.Msg:
+                            {
+                                var msg = jdata.ToObject<OnServerLaunched>();
+                                if (Instances.ContainsKey(msg.id))
+                                {
+                                    var instance = Instances[msg.id];
+                                    instance.port = msg.port;
+                                    LobbyManager.OnServerReady(instance);
+                                }
+                                break;
+                            }
+                            case OnServerShutdown.Msg:
+                            {
+                                var msg = jdata.ToObject<OnServerShutdown>();
+                                if (Instances.ContainsKey(msg.id))
+                                {
+                                    GameInstance instance;
+                                    Instances.TryRemove(msg.id, out instance);
+                                    LobbyManager.OnServerShutdown(instance);
+                                }
+                                break;
                             }
                         }
-                        catch (Exception ex)
-                        {
-                            log.Error("Problem processing server message: ", ex);
-                        }
                     }
+                    catch (Exception ex)
+                    {
+                        log.Error("Problem processing server message: ", ex);
+                    }
+                }
             }
             catch (Exception ex)
             {

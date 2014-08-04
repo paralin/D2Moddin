@@ -1,5 +1,6 @@
 ﻿using Amazon.DataPipeline.Model;
 using D2MPMaster.Database;
+using MongoDB.Bson;
 using MongoDB.Driver.Linq;
 using Query = MongoDB.Driver.Builders.Query;
 
@@ -7,7 +8,9 @@ namespace D2MPMaster.Model
 {
     public class MatchData
     {
+        public ObjectId _id { get; set; }
 		public string mod;
+        public bool ranked;
         public bool automatic_surrender;
         public long date;
         public int duration;
@@ -19,6 +22,7 @@ namespace D2MPMaster.Model
         public string server_addr;
         public int server_version;
         public TeamRecord[] teams;
+        public string[] steamids;
 
         public MatchData ConvertData()
         {
