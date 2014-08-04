@@ -4,8 +4,8 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
-using System.Timers;
 using D2MPMaster.Lobbies;
 using D2MPMaster.Model;
 using D2MPMaster.Properties;
@@ -17,6 +17,7 @@ using XSockets.Core.Common.Socket.Event.Interface;
 using XSockets.Core.XSocket;
 using XSockets.Core.XSocket.Helpers;
 using System.Diagnostics;
+using Timer = System.Timers.Timer;
 
 namespace D2MPMaster.Server
 {
@@ -33,7 +34,12 @@ namespace D2MPMaster.Server
         public bool Inited { get; set; }
         private object ConcurrentLock = new object();
 
-        private object MsgLock = new object();
+        // Create a scheduler that uses a configurable number of threads. 
+        static LimitedConcurrencyLevelTaskScheduler lcts = new LimitedConcurrencyLevelTaskScheduler(5);
+
+        // Create a TaskFactory and pass it our custom scheduler. 
+        static TaskFactory factory = new TaskFactory(lcts);
+        public static CancellationTokenSource cts = new CancellationTokenSource();
 
         public ServerController()
         {
@@ -75,14 +81,17 @@ namespace D2MPMaster.Server
 
         public override void OnMessage(XSockets.Core.Common.Socket.Event.Interface.ITextArgs textArgs)
         {
+            factory.StartNew(() => ProcessMessage(textArgs), cts.Token);
+        }
+
+        public void ProcessMessage(ITextArgs textArgs)
+        {
             try
             {
                 var jdata = JObject.Parse(textArgs.data);
                 var id = jdata["msg"];
                 if (id == null) return;
                 var command = id.Value<string>();
-                Task.Factory.StartNew(() =>
-                {
                     lock (ConcurrentLock)
                     {
                         try
@@ -158,7 +167,6 @@ namespace D2MPMaster.Server
                             log.Error("Problem processing server message: ", ex);
                         }
                     }
-                });
             }
             catch (Exception ex)
             {

@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Timers;
+using System.Threading;
+using System.Threading.Tasks;
 using ClientCommon.Data;
 using ClientCommon.Methods;
 using D2MPMaster.Browser;
@@ -16,6 +17,7 @@ using XSockets.Core.XSocket.Helpers;
 using Query = MongoDB.Driver.Builders.Query;
 using Version = ClientCommon.Version;
 using System.Collections.Generic;
+using Timer = System.Timers.Timer;
 
 namespace D2MPMaster.Client
 {
@@ -27,7 +29,14 @@ namespace D2MPMaster.Client
         public Init InitData;
         public string UID;
         public string SteamID;
-        private Timer mAckTimer = new Timer(10000);//10 seconds
+        private Timer mAckTimer = new Timer(15000);//15 seconds
+
+        // Create a scheduler that uses a configurable number of threads. 
+        static LimitedConcurrencyLevelTaskScheduler lcts = new LimitedConcurrencyLevelTaskScheduler(20);
+
+        // Create a TaskFactory and pass it our custom scheduler. 
+        static TaskFactory factory = new TaskFactory(lcts);
+        public static CancellationTokenSource cts = new CancellationTokenSource();
 
         public bool Inited { get; set; }
 
@@ -143,6 +152,11 @@ namespace D2MPMaster.Client
 
         public override void OnMessage(ITextArgs textArgs)
         {
+            factory.StartNew(() => HandleMessage(textArgs), cts.Token);
+        }
+
+        public void HandleMessage(ITextArgs textArgs)
+        {
             try
             {
                 var jdata = JObject.Parse(textArgs.data);
@@ -200,7 +214,7 @@ namespace D2MPMaster.Client
             }
             catch (Exception ex)
             {
-                //log.Error("Parsing client message.", ex);
+                log.Error("Error parsing client message.", ex);
             }
         }
 

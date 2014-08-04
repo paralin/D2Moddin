@@ -29,6 +29,13 @@ namespace D2MPMaster.Browser
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         private static readonly ClientController ClientsController = new ClientController();
 
+        // Create a scheduler that uses a configurable number of threads. 
+        static LimitedConcurrencyLevelTaskScheduler lcts = new LimitedConcurrencyLevelTaskScheduler(30);
+
+        // Create a TaskFactory and pass it our custom scheduler. 
+        static TaskFactory factory = new TaskFactory(lcts);
+        public static CancellationTokenSource cts = new CancellationTokenSource();
+
         private object ConcurrentLock = new object();
 
         public string ID;
@@ -172,13 +179,15 @@ namespace D2MPMaster.Browser
         #region Message Handling
         public override void OnMessage(ITextArgs args)
         {
+            factory.StartNew(() => ProcessMessage(args), cts.Token);
+        }
+
+        public void ProcessMessage(ITextArgs args){
             try
             {
                 var jdata = JObject.Parse(args.data);
                 var id = jdata["id"];
                 if (id == null) return;
-                Task.Factory.StartNew(() =>
-                                      {
                                           lock (ConcurrentLock)
                                           {
                                               var command = id.Value<string>();
@@ -1008,7 +1017,6 @@ namespace D2MPMaster.Browser
                                                       return;
                                               }
                                           }
-                                      });
             }
             catch (Exception ex)
             {

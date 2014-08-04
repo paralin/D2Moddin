@@ -132,6 +132,7 @@
     <Compile Include="Matchmaking\Matchmake.cs" />
     <Compile Include="Matchmaking\MatchmakeManager.cs" />
     <Compile Include="Model\MatchData.cs" />
+    <Compile Include="TaskScheduler.cs" />
     <Compile Include="WebHandler\MatchDataServer.cs" />
     <Compile Include="Model\ClientRecord.cs" />
     <Compile Include="Model\Mod.cs" />
