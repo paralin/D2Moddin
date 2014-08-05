@@ -246,6 +246,10 @@ namespace D2MPMaster.Browser
                                                                       lobby = browser.lobby; this.AsyncSend(LobbySnapshot(lobby),
                                               cb => { });
                                                                   }
+                                                                  if (browser.matchmake != null)
+                                                                  {
+                                                                      matchmake = browser.matchmake;
+                                                                  }
                                                                   browser.isDuplicate = true;
                                                                   browser.AsyncSend(AlreadyConnected(), cb => Task.Factory.StartNew
                                                                       (() =>
