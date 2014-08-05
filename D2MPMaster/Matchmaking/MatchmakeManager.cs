@@ -47,12 +47,7 @@ namespace D2MPMaster.Matchmaking
         /// Maximum MMR archievable by a player
         /// </summary>
         private const int MmrRoof = 5000;
-
-#if DEBUG
-        public const int TEAM_PLAYERS = 1;
-#else
-        public const int TEAM_PLAYERS = 5;
-#endif
+        public const int TEAM_PLAYERS = 3;
 
         /// <summary>
         /// Factors to calculate MMR after match
@@ -124,6 +119,8 @@ namespace D2MPMaster.Matchmaking
         {
             Matchmake[] mmArray;
 
+            List<Matchmake> deleted = new List<Matchmake>(5);
+
             //we can't lock the whole thing, will make scale a pain
             lock (inMatchmaking)
                 mmArray = inMatchmaking.ToArray();
@@ -133,52 +130,54 @@ namespace D2MPMaster.Matchmaking
                 //if the match was moved to the other queue, simply ignore it
                 if (match.Status == MatchmakeStatus.TeamQueue)
                     continue;
-
+                if (deleted.Contains(match)) continue;
                 // Find match with a similar rating (search margin increases every try), enough free slots and a common mod
-                var matchFound = mmArray.FirstOrDefault(x => match.IsMatch(x));
+                var matchFound = mmArray.FirstOrDefault(x => x != match && match.IsMatch(x) && !deleted.Contains(x));
+                
                 if (matchFound != null)
                 {
                     // Merge everything to the new match
-                    matchFound.MergeMatches(match);
+                    match.MergeMatches(matchFound);
+                    deleted.Add(matchFound);
+
+                    match.UpdateRating();
+
                     // update the browsers with the new match
-                    foreach (
-                        var browser in
-                            Browsers.Find(b => b.user != null && b.matchmake != null && b.matchmake.id == match.id))
+                    foreach (var browser in Browsers.Find(b => b.user != null && b.matchmake != null && b.matchmake.id == matchFound.id))
                     {
-                        browser.matchmake = matchFound;
+                        browser.matchmake = match;
                     }
 
                     log.InfoFormat(
                         "Matchmake merged from {0} players to {1} players after {2} tries. New rating: {3}",
-                        match.Users.Count, matchFound.Users.Count, match.TryCount,
-                        string.Join(", ", matchFound.Ratings.Values));
+                        matchFound.Users.Count, match.Users.Count, match.TryCount,
+                        string.Join(", ", match.Ratings.Values));
 
                     //remove the old match, we dont need it
                     lock (inMatchmaking)
-                        inMatchmaking.Remove(match);
+                        inMatchmaking.Remove(matchFound);
 
                     //if we are crowded
-                    if (matchFound.Users.Count == TEAM_PLAYERS)
+                    if (match.Users.Count == TEAM_PLAYERS)
                     {
                         //reset the tries and dont ignore it
-                        matchFound.TryCount = 1;
+                        match.TryCount = 1;
 
                         //move to team MM
                         lock (inMatchmaking)
-                            inMatchmaking.Remove(matchFound);
+                            inMatchmaking.Remove(match);
 
                         lock (inTeamMatchmaking)
-                            inTeamMatchmaking.Add(matchFound);
+                            inTeamMatchmaking.Add(match);
 
-                        matchFound.Status = MatchmakeStatus.TeamQueue;
-                        TransmitMatchmakeUpdate(matchFound, new[] {"Status", "UserCount"});
+                        match.Status = MatchmakeStatus.TeamQueue;
+                        TransmitMatchmakeUpdate(match, new[] { "Status", "UserCount" });
                     }
                     else
                     {
-                        TransmitMatchmakeUpdate(matchFound, new[] {"UserCount"});
+                        TransmitMatchmakeUpdate(match, new[] { "UserCount" });
                     }
                 }
-#if DEBUG
                 // match is already full, add to teamMM, should only happen if TEAM_PLAYERS is 1 or when changing values in debug mode.
                 else if (match.Users.Count == TEAM_PLAYERS)
                 {
@@ -193,9 +192,8 @@ namespace D2MPMaster.Matchmaking
                         inTeamMatchmaking.Add(match);
 
                     match.Status = MatchmakeStatus.TeamQueue;
-                    TransmitMatchmakeUpdate(matchFound, new[] {"Status", "UserCount"});
+                    TransmitMatchmakeUpdate(match, new[] { "Status", "UserCount" });
                 }
-#endif
                 else
                 {
                     //no match found, open the possibilities

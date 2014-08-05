@@ -751,7 +751,7 @@ namespace D2MPMaster.Lobbies
         /// <returns></returns>
         public static Lobby CreateMatchedLobby(Matchmake team1, Matchmake team2, string mod)
         {
-            var setMod = Mods.Mods.ByID(mod);
+            var setMod = Mods.Mods.ByName(mod);
             var lob = new Lobby()
             {
                 dire = new Player[5],
@@ -760,7 +760,7 @@ namespace D2MPMaster.Lobbies
                 enableGG = true,
                 hasPassword = false,
                 id = team1.id,
-                mod = mod,
+                mod = setMod.Id,
                 region = 0,
                 name = "Ranked "+setMod.fullname+" Game",
                 isPublic = false,

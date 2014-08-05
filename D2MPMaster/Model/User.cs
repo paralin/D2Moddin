@@ -38,8 +38,12 @@ namespace D2MPMaster.Model
                         profile.metrics[match.mod].losses++;
                     }
                 }
-                Database.Mongo.Users.Save(this);
             }
+            if (!profile.metrics.ContainsKey("reflex"))
+            {
+                profile.metrics["reflex"] = new ModMetric();
+            }
+            Database.Mongo.Users.Save(this);
         }
     }
 

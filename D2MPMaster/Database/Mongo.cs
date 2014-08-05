@@ -52,19 +52,25 @@ namespace D2MPMaster.Database
         public static void UpdateOldMatchResults()
         {
             var matches = Results.FindAs<Model.MatchData>(Query.NotExists("steamids"));
+            matches.SetFlags(QueryFlags.NoCursorTimeout);
             var count = matches.Count();
             log.DebugFormat("Updating {0} old match results...", count);
             int i=0;
+
             foreach (var match in matches)
             {
                 i++;
-                if(i%20==0)
+                if (i%20 == 0)
                     log.DebugFormat("Current: {0} of {1}", i, count);
                 match.ranked = false;
                 match.steamids =
                     match.teams[0].players.Select(x => x.steam_id)
                         .Union(match.teams[1].players.Select(y => y.steam_id))
                         .ToArray();
+                foreach (var player in match.teams.SelectMany(team => team.players))
+                {
+                    player.ConvertData();
+                }
                 Results.Save(match);
             }
             log.InfoFormat("Updated [{0}] old matches.", count);

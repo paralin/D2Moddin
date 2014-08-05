@@ -54,6 +54,8 @@ namespace D2MPMaster.Model
         public int account_id;
         public string steam_id;
         public string user_id;
+        public string avatar;
+        public string name;
         public int claimed_denies;
         public int claimed_farm_gold;
         public int deaths;
@@ -79,6 +81,8 @@ namespace D2MPMaster.Model
             if (user != null)
             {
                 user_id = user.Id;
+                avatar = user.steam.avatarfull;
+                name = user.profile.name;
             }
             else
             {

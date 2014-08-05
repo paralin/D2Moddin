@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Linq;
 using D2MPMaster.Lobbies;
 using Nancy;
@@ -6,6 +7,7 @@ using Nancy.ErrorHandling;
 using Nancy.Responses;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using ServiceStack.Text;
 
 namespace D2MPMaster.MatchData
 {
@@ -41,9 +43,11 @@ namespace D2MPMaster.MatchData
                     }
                 }else if (status == "completed")
                 {
-                    var data = JsonConvert.DeserializeObject<Model.MatchData>(baseData.ToString()).ConvertData();
+                    var data = JsonConvert.DeserializeObject<Model.MatchData>(baseData.ToString());
                     data.ranked = lob.LobbyType == LobbyType.Matchmaking;
+                    data.ConvertData();
                     data.steamids = data.teams[0].players.Select(x=>x.steam_id).Union(data.teams[1].players.Select(y=>y.steam_id)).ToArray();
+                    data.date = DateTime.UtcNow.ToUnixTime();
 					HandleMatchComplete(data, lob);
                 }
                 else if (status == "load_failed")

@@ -1,24 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
-using System.Net.NetworkInformation;
-using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
-using Amazon.Runtime;
 using D2MPMaster.Browser;
 using D2MPMaster.Client;
 using D2MPMaster.Database;
-using D2MPMaster.LiveData;
-using D2MPMaster.MatchData;
 using D2MPMaster.Properties;
 using D2MPMaster.Server;
 using D2MPMaster.Storage;
 using log4net.Config;
 using Nancy.Hosting.Self;
 using XSockets.Core.Common.Socket;
-using XSockets.Core.Configuration;
 using XSockets.Plugin.Framework;
 
 namespace D2MPMaster
