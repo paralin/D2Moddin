@@ -853,7 +853,32 @@ namespace D2MPMaster.Lobbies
             {
                 log.Error("No match result info for regular lobby, returning to wait.");
                 ReturnToWait(instance.lobby);
-            }else
+            }else if (instance.lobby.LobbyType == LobbyType.Matchmaking)
+            {
+                foreach (var browser in instance.lobby.radiant.Where(player => player != null).Select(player => Browsers.Find(m => m.user != null && m.user.steam.steamid == player.steam).FirstOrDefault()).Where(browser => browser != null))
+                {
+                    browser.RespondError(null, "The server did not report the match result before closing, you will not receive/lose mmr for that game. Sorry for the inconvenience. We have recorded this failure and will examine it throughly.");
+                }
+                foreach (var browser in instance.lobby.dire.Where(player => player != null).Select(player => Browsers.Find(m => m.user != null && m.user.steam.steamid == player.steam).FirstOrDefault()).Where(browser => browser != null))
+                {
+                    browser.RespondError(null, "The server did not report the match result before closing, you will not receive/lose mmr for that game. Sorry for the inconvenience. We have recorded this failure and will examine it throughly.");
+                }
+                Mongo.ResultFailures.Insert(new ResultFailure()
+                {
+                    creator = instance.lobby.creator,
+                    creatorid = instance.lobby.creatorid,
+                    enableGG = instance.lobby.enableGG,
+                    hasPassword = instance.lobby.hasPassword,
+                    isPublic = instance.lobby.isPublic,
+                    isRanked = instance.lobby.isRanked,
+                    mod = instance.lobby.mod,
+                    name = instance.lobby.name,
+                    password = instance.lobby.password,
+                    region = (int) instance.lobby.region,
+                });
+                CloseLobby(instance.lobby);
+            }
+            else
                 CloseLobby(instance.lobby);
         }
 

@@ -21,6 +21,7 @@ namespace D2MPMaster.Database
         public static MongoCollection Results;
         public static MongoCollection InviteQueue;
         public static MongoCollection InviteKeys;
+        public static MongoCollection ResultFailures;
 
         public static void Setup()
         {
@@ -47,6 +48,7 @@ namespace D2MPMaster.Database
             Results = Database.GetCollection("matchResults");
             InviteQueue = Database.GetCollection("inviteQueue");
             InviteKeys = Database.GetCollection("inviteKeys");
+            ResultFailures = Database.GetCollection("resultFailures");
         }
 
         public static void UpdateOldMatchResults()
