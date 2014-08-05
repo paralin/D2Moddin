@@ -16,5 +16,7 @@ namespace D2MPMaster.Browser.Methods
     {
         // Mod ids
         public string[] mods { get; set; }
+
+        public ServerRegion region { get; set; }
     }
 }

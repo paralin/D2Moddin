@@ -460,7 +460,7 @@ namespace D2MPMaster.Lobbies
             {
                 var browser = Browsers.Find(m => m.user != null && m.user.steam.steamid == player.steam).FirstOrDefault();
                 if (browser == null) continue;
-                if (mm1 == null) mm1 = MatchmakeManager.CreateMatchmake(browser.user, browser.QueuedWithMods);
+                if (mm1 == null) mm1 = MatchmakeManager.CreateMatchmake(browser.user, browser.QueuedWithMods, lob.region);
                 else
                 {
                     mm1.Users = mm1.Users.Union(new[] { browser.user }).ToList<User>();
@@ -480,7 +480,7 @@ namespace D2MPMaster.Lobbies
                 var browser =
                     Browsers.Find(m => m.user != null && m.user.steam.steamid == player.steam).FirstOrDefault();
                 if (browser == null) continue;
-                if (mm2 == null) mm2 = MatchmakeManager.CreateMatchmake(browser.user, browser.QueuedWithMods);
+                if (mm2 == null) mm2 = MatchmakeManager.CreateMatchmake(browser.user, browser.QueuedWithMods, lob.region);
                 else
                 {
                     mm2.Users = mm2.Users.Union(new[] { browser.user }).ToList<User>();
@@ -748,8 +748,9 @@ namespace D2MPMaster.Lobbies
         /// <param name="team1">Dire team.</param>
         /// <param name="team2">Radiant team.</param>
         /// <param name="mod">Mod.</param>
+        /// <param name="region">Region.</param>
         /// <returns></returns>
-        public static Lobby CreateMatchedLobby(Matchmake team1, Matchmake team2, string mod)
+        public static Lobby CreateMatchedLobby(Matchmake team1, Matchmake team2, string mod, ServerRegion region)
         {
             var setMod = Mods.Mods.ByName(mod);
             var lob = new Lobby()
@@ -761,7 +762,7 @@ namespace D2MPMaster.Lobbies
                 hasPassword = false,
                 id = team1.id,
                 mod = setMod.Id,
-                region = 0,
+                region = region,
                 name = "Ranked "+setMod.fullname+" Game",
                 isPublic = false,
                 password = "",
@@ -1104,7 +1105,7 @@ namespace D2MPMaster.Lobbies
                 foreach (var player in didntFail)
                 {
                     //Requeue them. In the future group the people from their party.
-                    player.matchmake = MatchmakeManager.CreateMatchmake(player.user, player.QueuedWithMods);
+                    player.matchmake = MatchmakeManager.CreateMatchmake(player.user, player.QueuedWithMods, lob.region);
                 }
             }
         }

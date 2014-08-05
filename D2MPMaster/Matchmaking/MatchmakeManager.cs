@@ -223,10 +223,17 @@ namespace D2MPMaster.Matchmaking
                     var matchFound = mmArray.FirstOrDefault(x => match.IsMatch(x, true));
                     if (matchFound != null)
                     {
+                        //give priority to localized matches
+                        var region = ServerRegion.UNKNOWN;
+                        if (match.Region != ServerRegion.UNKNOWN)
+                            region = match.Region;
+                        else if (matchFound.Region != ServerRegion.UNKNOWN)
+                            region = matchFound.Region;
+
                         //get available mods by rating
                         var mods = match.GetMatchedMods(matchFound);
                         //create a lobby with one of the mods
-                        var lobby = LobbyManager.CreateMatchedLobby(match, matchFound, mods[rnd.Next(0, mods.Length)]);
+                        var lobby = LobbyManager.CreateMatchedLobby(match, matchFound, mods[rnd.Next(0, mods.Length)], region);
                         //remove the matchmake from the browsers and set the lobby
                         foreach ( var browser in Browsers.Find( b => b.user != null && b.matchmake != null && (b.matchmake.id == match.id || b.matchmake.id == matchFound.id)))
                         {
@@ -254,7 +261,7 @@ namespace D2MPMaster.Matchmaking
             }
         }
 
-        public static Matchmake CreateMatchmake(User user, Mod[] mods)
+        public static Matchmake CreateMatchmake(User user, Mod[] mods, ServerRegion region = ServerRegion.UNKNOWN)
         {
             //loop through each mod
             foreach (var mod in mods)
@@ -274,6 +281,7 @@ namespace D2MPMaster.Matchmaking
                 id = Utils.RandomString(17),
                 Users = new List<User>(TEAM_PLAYERS) { user },
                 Mods = mods.Select(x => x.name).ToArray(),
+                Region = region,
                 Ratings = user.profile.mmr.Where(x => mods.Any(y => x.Key == y.name)).ToDictionary(x => x.Key, x => x.Value),
                 TryCount = 1
             };

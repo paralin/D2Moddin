@@ -448,7 +448,7 @@ namespace D2MPMaster.Browser
                                                               return;
                                                           }
                                                           QueuedWithMods = mods.ToArray();
-                                                          matchmake = MatchmakeManager.CreateMatchmake(user, QueuedWithMods);
+                                                          matchmake = MatchmakeManager.CreateMatchmake(user, QueuedWithMods, req.region);
                                                           break;
                                                       }
                                                   case "switchteam":
