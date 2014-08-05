@@ -385,6 +385,35 @@ namespace D2MPMaster.Matchmaking
                 incDire = (int)Math.Round(direFactor.Factor * (1.0 - direWinProb));
             }
 
+            foreach (var player in radiantPlayers)
+            {
+                if (player.profile.metrics == null) player.profile.metrics = new Dictionary<string, ModMetric>();
+                if (!player.profile.metrics.ContainsKey(mod.name))
+                {
+                    player.profile.metrics[mod.name] = new ModMetric();
+                }
+                if(pMatchData.good_guys_win)
+                    player.profile.metrics[mod.name].wins++;
+                else
+                {
+                    player.profile.metrics[mod.name].losses++;
+                }
+            }
+            foreach (var player in direPlayers)
+            {
+                if (player.profile.metrics == null) player.profile.metrics = new Dictionary<string, ModMetric>();
+                if (!player.profile.metrics.ContainsKey(mod.name))
+                {
+                    player.profile.metrics[mod.name] = new ModMetric();
+                }
+                if (pMatchData.good_guys_win)
+                    player.profile.metrics[mod.name].losses++;
+                else
+                {
+                    player.profile.metrics[mod.name].wins++;
+                }
+            }
+
             //increment results
             radiantPlayers.ForEach(player => player.profile.mmr[mod.name] += incRadiant);
             direPlayers.ForEach(player => player.profile.mmr[mod.name] += incDire);
@@ -403,8 +432,8 @@ namespace D2MPMaster.Matchmaking
                 foreach (var browser in Browsers.Find(m => m.user != null && m.user.Id == player.Id))
                 {
                     browser.user = player;
-                    browser.SaveUser();
                 }
+                Mongo.Users.Save(player);
             }
         }
     }

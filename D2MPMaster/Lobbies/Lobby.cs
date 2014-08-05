@@ -45,7 +45,6 @@ namespace D2MPMaster.Lobbies
         public bool isPublic { get; set; }
         [ExcludeField(Collections = new[] { "publicLobbies" })]
         public bool requiresFullLobby { get; set; }
-        public bool isRanked { get; set; }
         [ExcludeField(Collections = new[] { "publicLobbies", "lobbies" })]
         public bool devMode { get; set; }
         [ExcludeField(Collections = new[] { "publicLobbies", "lobbies" })]

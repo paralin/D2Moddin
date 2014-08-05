@@ -757,7 +757,7 @@ namespace D2MPMaster.Lobbies
                 dire = new Player[5],
                 radiant = new Player[5],
                 devMode = false,
-                enableGG = true,
+                enableGG = !setMod.disableGG,
                 hasPassword = false,
                 id = team1.id,
                 mod = setMod.Id,
@@ -769,7 +769,8 @@ namespace D2MPMaster.Lobbies
                 requiresFullLobby = true,
                 serverIP = "",
                 status = LobbyStatus.Queue,
-                LobbyType = LobbyType.Matchmaking
+                LobbyType = LobbyType.Matchmaking,
+                disablePause = !setMod.enablePause
             };
             foreach (var user in team1.Users.ToArray())
             {
@@ -870,7 +871,6 @@ namespace D2MPMaster.Lobbies
                     enableGG = instance.lobby.enableGG,
                     hasPassword = instance.lobby.hasPassword,
                     isPublic = instance.lobby.isPublic,
-                    isRanked = instance.lobby.isRanked,
                     mod = instance.lobby.mod,
                     name = instance.lobby.name,
                     password = instance.lobby.password,

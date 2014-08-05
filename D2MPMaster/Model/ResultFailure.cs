@@ -22,7 +22,6 @@ namespace D2MPMaster.Model
         public string mod { get; set; }
         public string serverIP { get; set; }
         public bool isPublic { get; set; }
-        public bool isRanked { get; set; }
         public bool enableGG { get; set; }
         public int region { get; set; }
     }
