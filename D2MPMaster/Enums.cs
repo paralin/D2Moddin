@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace d2mpserver
+namespace D2MPMaster
 {
 	[Serializable]
 	public enum LobbyType : int
@@ -9,6 +9,14 @@ namespace d2mpserver
 		PlayerTest=1,
 		Matchmaking=2
 	}
+
+    [Serializable]
+    public enum MatchmakeStatus : int
+    {
+        PlayerQueue = 0,
+        TeamQueue = 1,
+        AlreadyMatched = 2
+    }
 
     [Serializable]
     public enum ServerRegion : int

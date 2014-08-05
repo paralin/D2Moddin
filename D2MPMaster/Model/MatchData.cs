@@ -1,5 +1,7 @@
 ﻿using Amazon.DataPipeline.Model;
 using D2MPMaster.Database;
+using D2MPMaster.LiveData;
+using MongoDB.Bson;
 using MongoDB.Driver.Linq;
 using Query = MongoDB.Driver.Builders.Query;
 
@@ -7,7 +9,9 @@ namespace D2MPMaster.Model
 {
     public class MatchData
     {
+        public ObjectId _id { get; set; }
 		public string mod;
+        public bool ranked;
         public bool automatic_surrender;
         public long date;
         public int duration;
@@ -19,15 +23,20 @@ namespace D2MPMaster.Model
         public string server_addr;
         public int server_version;
         public TeamRecord[] teams;
+        public string[] steamids;
 
         public MatchData ConvertData()
         {
+            var goodguys = true;
             foreach(var team in teams)
             {
                 foreach (var player in team.players)
                 {
-                    player.ConvertData();
+                    var user = player.ConvertData();
+                    if(ranked && user != null)
+                        player.UpdateRanked(user, mod, (goodguys && good_guys_win) || (!goodguys && !good_guys_win));
                 }
+                goodguys = false;
             }
             return this;
         }
@@ -45,6 +54,8 @@ namespace D2MPMaster.Model
         public int account_id;
         public string steam_id;
         public string user_id;
+        public string avatar;
+        public string name;
         public int claimed_denies;
         public int claimed_farm_gold;
         public int deaths;
@@ -62,7 +73,7 @@ namespace D2MPMaster.Model
         public int tower_damage;
         public int xp_per_minute;
 
-        public void ConvertData()
+        public User ConvertData()
         {
             //Detect steamid from accountid
             steam_id = account_id.ToSteamID64();
@@ -70,10 +81,29 @@ namespace D2MPMaster.Model
             if (user != null)
             {
                 user_id = user.Id;
+                avatar = user.steam.avatarfull;
+                name = user.profile.name;
             }
             else
             {
-                log.Error("Can't find user for steam ID: "+steam_id+" account ID: "+account_id);
+                log.Error("Can't find user for steam ID: " + steam_id + " account ID: " + account_id);
+            }
+            return user;
+        }
+
+        public void UpdateRanked(User user, string mod, bool victory)
+        {
+            if (user == null) return;
+            user_id = user.Id;
+            if (!user.profile.metrics.ContainsKey(mod))
+            {
+                user.profile.metrics[mod] = new ModMetric();
+            }
+            if (victory)
+                user.profile.metrics[mod].wins++;
+            else
+            {
+                user.profile.metrics[mod].losses++;
             }
         }
     }

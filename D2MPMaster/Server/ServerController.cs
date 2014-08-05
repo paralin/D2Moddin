@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using D2MPMaster.Lobbies;
 using D2MPMaster.Model;
 using D2MPMaster.Properties;
-using d2mpserver;
 using Newtonsoft.Json.Linq;
 using ServerCommon.Data;
 using ServerCommon.Methods;
@@ -100,67 +99,67 @@ namespace D2MPMaster.Server
                         switch (command)
                         {
                             case Init.Msg:
+                            {
+                                if (Inited) return;
+                                var msg = jdata.ToObject<Init>();
+                                if (msg.password != Init.Password)
                                 {
-                                    if (Inited) return;
-                                    var msg = jdata.ToObject<Init>();
-                                    if (msg.password != Init.Password)
-                                    {
-                                        //Wrong password
-                                        Send("authFail");
-                                        return;
-                                    }
-                                    if (msg.version != Init.Version)
-                                    {
-                                        Send("outOfDate|" + Program.S3.GenerateBundleURL("s" + Init.Version + ".zip"));
-                                        return;
-                                    }
-                                    //Build server addon operation 
-                                    var add = (from addon in ServerAddons.Addons
-                                               let exist =
-                                                   msg.addons.FirstOrDefault(
-                                                       m => m.name == addon.name && m.version == addon.version)
-                                               where exist == null
-                                               select
-                                                   addon.name + ">" + addon.version + ">" +
-                                                   Program.S3.GenerateBundleURL(addon.bundle).Replace('|', ' ')).ToList();
-                                    var del = (from addon in msg.addons
-                                               let exist = ServerAddons.Addons.FirstOrDefault(m => m.name == addon.name)
-                                               where exist == null
-                                               select addon.name).ToList();
-                                    if ((add.Count + del.Count) == 0)
-                                    {
-                                        InitData = msg;
-                                        Address = InitData.publicIP;
-                                        Inited = true;
-                                    }
-                                    else
-                                    {
-                                        Send("addonOps|" + string.Join(",", add) + "|" + string.Join(",", del));
-                                    }
-                                    break;
+                                    //Wrong password
+                                    Send("authFail");
+                                    return;
                                 }
+                                if (msg.version != Init.Version)
+                                {
+                                    Send("outOfDate|" + Program.S3.GenerateBundleURL("s" + Init.Version + ".zip"));
+                                    return;
+                                }
+                                //Build server addon operation 
+                                var add = (from addon in ServerAddons.Addons
+                                    let exist =
+                                        msg.addons.FirstOrDefault(
+                                            m => m.name == addon.name && m.version == addon.version)
+                                    where exist == null
+                                    select
+                                        addon.name + ">" + addon.version + ">" +
+                                        Program.S3.GenerateBundleURL(addon.bundle).Replace('|', ' ')).ToList();
+                                var del = (from addon in msg.addons
+                                    let exist = ServerAddons.Addons.FirstOrDefault(m => m.name == addon.name)
+                                    where exist == null
+                                    select addon.name).ToList();
+                                if ((add.Count + del.Count) == 0)
+                                {
+                                    InitData = msg;
+                                    Address = InitData.publicIP;
+                                    Inited = true;
+                                }
+                                else
+                                {
+                                    Send("addonOps|" + string.Join(",", add) + "|" + string.Join(",", del));
+                                }
+                                break;
+                            }
                             case OnServerLaunched.Msg:
+                            {
+                                var msg = jdata.ToObject<OnServerLaunched>();
+                                if (Instances.ContainsKey(msg.id))
                                 {
-                                    var msg = jdata.ToObject<OnServerLaunched>();
-                                    if (Instances.ContainsKey(msg.id))
-                                    {
-                                        var instance = Instances[msg.id];
-                                        instance.port = msg.port;
-                                        LobbyManager.OnServerReady(instance);
-                                    }
-                                    break;
+                                    var instance = Instances[msg.id];
+                                    instance.port = msg.port;
+                                    LobbyManager.OnServerReady(instance);
                                 }
+                                break;
+                            }
                             case OnServerShutdown.Msg:
+                            {
+                                var msg = jdata.ToObject<OnServerShutdown>();
+                                if (Instances.ContainsKey(msg.id))
                                 {
-                                    var msg = jdata.ToObject<OnServerShutdown>();
-                                    if (Instances.ContainsKey(msg.id))
-                                    {
-                                        GameInstance instance;
-                                        Instances.TryRemove(msg.id, out instance);
-                                        LobbyManager.OnServerShutdown(instance);
-                                    }
-                                    break;
+                                    GameInstance instance;
+                                    Instances.TryRemove(msg.id, out instance);
+                                    LobbyManager.OnServerShutdown(instance);
                                 }
+                                break;
+                            }
                         }
                     }
                     catch (Exception ex)
@@ -201,11 +200,11 @@ namespace D2MPMaster.Server
         {
             var cmds = new List<string>
                        {
-                           "d2lobby_gg_time " + (lobby.enableGG ? "20" : "-1"),
+                           "d2lobby_gg_time " + (lobby.enableGG ? "10" : "-1"),
 #if DEBUG||DEV
                            "match_post_url \"http://127.0.0.1:8080/gdataapi/matchres\"",
 #else
-                "match_post_url \"http://" + Settings.Default.WebAddress + "/gdataapi/matchres\"",
+                           "match_post_url \"http://" + Settings.Default.WebAddress + "/gdataapi/matchres\"",
 #endif
                            "set_match_id \"" + lobby.id + "\"",
                            "d2l_disable_pause " + (lobby.disablePause ? "1" : "0")
@@ -216,7 +215,7 @@ namespace D2MPMaster.Server
                 if (string.IsNullOrWhiteSpace(name)) name = "Player";
                 cmds.Add(string.Format("add_radiant_player \"{0}\" \"{1}\"", plyr.steam, name));
             }
-
+            
             foreach (var plyr in lobby.dire.Where(p => p != null))
             {
                 var name = Regex.Replace(plyr.name, "[^a-zA-Z0-9 -]", "");

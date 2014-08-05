@@ -42,7 +42,7 @@ namespace d2mpserver
 
         private void SetupClient()
         {
-#if DEBUG
+#if DEBUG||DEV
             client = new XSocketClient("ws://localhost:4502/ServerController", "*");
 #else
             client = new XSocketClient(Settings.Default.serverIP, "*");

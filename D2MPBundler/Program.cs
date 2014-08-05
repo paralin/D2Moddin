@@ -99,6 +99,7 @@ namespace D2MPBundler
             DirectoryCopy(Path.Combine(path, "materials"), Path.Combine(modpath, "materials"), true);
             DirectoryCopy(Path.Combine(path, "particles"), Path.Combine(modpath, "particles"), true);
             DirectoryCopy(Path.Combine(path, "resource"), Path.Combine(modpath, "resource"), true);
+            DirectoryCopy(Path.Combine(path, "models"), Path.Combine(modpath, "models"), true);
             DirectoryCopy(Path.Combine(path, "scripts"), Path.Combine(modpath, "scripts"), true);
             DirectoryCopy(Path.Combine(path, "sound"), Path.Combine(modpath, "sound"), true);
             var addonInfo = string.Format(@"""AddonInfo""

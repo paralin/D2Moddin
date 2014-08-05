@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Dynamic;
 using System.Linq;
-using System.Linq.Expressions;
-using D2MPMaster.LiveData;
-using d2mpserver;
 using D2MPMaster.Friends;
 
 namespace D2MPMaster.Lobbies
@@ -49,6 +45,7 @@ namespace D2MPMaster.Lobbies
         public bool isPublic { get; set; }
         [ExcludeField(Collections = new[] { "publicLobbies" })]
         public bool requiresFullLobby { get; set; }
+        public bool isRanked { get; set; }
         [ExcludeField(Collections = new[] { "publicLobbies", "lobbies" })]
         public bool devMode { get; set; }
         [ExcludeField(Collections = new[] { "publicLobbies", "lobbies" })]

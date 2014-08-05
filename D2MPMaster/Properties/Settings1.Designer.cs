@@ -87,7 +87,7 @@ namespace D2MPMaster.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("mongodb://d2mpsys:aucCXtn7d8twSEm4C28G@10.128.135.236/d2moddin")]
+        [global::System.Configuration.DefaultSettingValueAttribute("mongodb://d2mpsys:aucCXtn7d8twSEm4C28G@internal.d2modd.in/d2moddin")]
         public string MongoURL {
             get {
                 return ((string)(this["MongoURL"]));

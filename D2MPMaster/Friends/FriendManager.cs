@@ -6,8 +6,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Net;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -16,12 +14,9 @@ using XSockets.Core.XSocket.Helpers;
 using D2MPMaster.Database;
 using MongoDB.Driver.Builders;
 using D2MPMaster.Model;
-using d2mpserver;
 using D2MPMaster.LiveData;
 using D2MPMaster.Browser;
-using System.Reflection;
 using XSockets.Core.Common.Socket.Event.Arguments;
-using D2MPMaster.Lobbies;
 
 
 namespace D2MPMaster.Friends
