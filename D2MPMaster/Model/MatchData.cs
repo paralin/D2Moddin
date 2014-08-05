@@ -1,4 +1,5 @@
-﻿using Amazon.DataPipeline.Model;
+﻿using System.Collections.Generic;
+using Amazon.DataPipeline.Model;
 using D2MPMaster.Database;
 using D2MPMaster.LiveData;
 using MongoDB.Bson;
@@ -27,16 +28,12 @@ namespace D2MPMaster.Model
 
         public MatchData ConvertData()
         {
-            var goodguys = true;
             foreach(var team in teams)
             {
                 foreach (var player in team.players)
                 {
-                    var user = player.ConvertData();
-                    if(ranked && user != null)
-                        player.UpdateRanked(user, mod, (goodguys && good_guys_win) || (!goodguys && !good_guys_win));
+                    player.ConvertData();
                 }
-                goodguys = false;
             }
             return this;
         }
@@ -89,22 +86,6 @@ namespace D2MPMaster.Model
                 log.Error("Can't find user for steam ID: " + steam_id + " account ID: " + account_id);
             }
             return user;
-        }
-
-        public void UpdateRanked(User user, string mod, bool victory)
-        {
-            if (user == null) return;
-            user_id = user.Id;
-            if (!user.profile.metrics.ContainsKey(mod))
-            {
-                user.profile.metrics[mod] = new ModMetric();
-            }
-            if (victory)
-                user.profile.metrics[mod].wins++;
-            else
-            {
-                user.profile.metrics[mod].losses++;
-            }
         }
     }
 }

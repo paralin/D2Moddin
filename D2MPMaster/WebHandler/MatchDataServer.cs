@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using D2MPMaster.Lobbies;
+using D2MPMaster.Model;
 using Nancy;
 using Nancy.ErrorHandling;
 using Nancy.Responses;
@@ -44,15 +45,21 @@ namespace D2MPMaster.MatchData
                 }else if (status == "completed")
                 {
                     var data = JsonConvert.DeserializeObject<Model.MatchData>(baseData.ToString());
+                    data.mod = Mods.Mods.ByID(lob.mod).name;
                     data.ranked = lob.LobbyType == LobbyType.Matchmaking;
-                    data.ConvertData();
+                    data = data.ConvertData();
                     data.steamids = data.teams[0].players.Select(x=>x.steam_id).Union(data.teams[1].players.Select(y=>y.steam_id)).ToArray();
                     data.date = DateTime.UtcNow.ToUnixTime();
+                    log.DebugFormat("Match complete, {0} ranked: {1}, mod: {2}", lob.id, data.ranked, data.mod);
 					HandleMatchComplete(data, lob);
                 }
                 else if (status == "load_failed")
                 {
                     HandleLoadFail(matchid, baseData.Value<JArray>("failed_players")); //parse the players property here for mroe reliable data
+                }
+                else if (status == "shutdown")
+                {
+                    log.DebugFormat("Received shutdown event for lobby [{0}]", lob.id);
                 }
                 else
                 {
@@ -60,7 +67,7 @@ namespace D2MPMaster.MatchData
                 }
                 return "success";
             }
-            catch{} //Ignore any JSON parser errors
+            catch(Exception ex){log.Error("Issue parsing match result data", ex);}
             return "fail";
         }
 
@@ -70,7 +77,7 @@ namespace D2MPMaster.MatchData
         }
 
 		private static void HandleMatchComplete(Model.MatchData toObject, Lobby lob)
-        {
+		{
 			var mod = Mods.Mods.ByID(lob.mod);
 			if(mod != null)
 				toObject.mod = mod.name;
