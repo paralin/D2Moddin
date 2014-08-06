@@ -35,14 +35,13 @@ namespace D2MPClientInstaller
         private static string installdir;
         static void Log(string text)
         {
-            if (doLog)
-                File.AppendAllText(Path.Combine(ourDir, logFile), text + "\n");
+            if (doLog) File.AppendAllText(Path.Combine(ourDir, logFile), text + "\n");
         }
 
         static void DeleteOurselves(string path)
         {
-            ProcessStartInfo info = new ProcessStartInfo("cmd.exe");
-            info.Arguments = "/C timeout 2 & Del \"" + path+"\"";
+            var info = new ProcessStartInfo("cmd.exe");
+            info.Arguments = "/C timeout 2 & Del \"" + path + "\"";
 
             if (doLog)
                 info.Arguments += " & Del \"" + Path.Combine(Path.GetDirectoryName(path), logFile) + "\"";
@@ -52,10 +51,19 @@ namespace D2MPClientInstaller
             Process.Start(info);
         }
 
+        static void RunOurselves()
+        {
+            var proc = new Process();
+            proc.StartInfo.FileName = Assembly.GetExecutingAssembly().Location;
+            proc.StartInfo.UseShellExecute = false;
+            proc.Start();
+        }
+
         static void LaunchD2MP(string path)
         {
             var info = new ProcessStartInfo(path);
             info.WorkingDirectory = Path.GetDirectoryName(path);
+            Log(string.Format("Starting on '{0}'", path));
             Process.Start(info);
         }
 
@@ -95,9 +103,26 @@ namespace D2MPClientInstaller
             }
         }
 
-        static void ShowError(string message)
+        static void ShowError(string message, string url = "")
         {
-            MessageBox.Show(message, "D2Moddin");
+            using (var frm = new tryAgainForm(message))
+            {
+                if (!string.IsNullOrEmpty(url))
+                {
+                    frm.DownloadManuallyClick += (sender, args) => Process.Start(url);
+                }
+                else
+                {
+                    frm.DisableDownload();
+                }
+
+                if (frm.ShowDialog() == DialogResult.Retry)
+                {
+                    RunOurselves();
+                }
+
+                Environment.Exit(1);
+            }
         }
 
         /// <summary>
@@ -108,12 +133,12 @@ namespace D2MPClientInstaller
         {
             ourDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 
+            Application.EnableVisualStyles();
+
             AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
             {
-                string msg = string.Format("Unhandled exception: {0}", args.ExceptionObject);
-                Log(msg);
-                ShowError(msg);
-                Environment.Exit(1);
+                Log(string.Format("Unhandled exception: {0}", args.ExceptionObject));
+                ShowError(string.Format("Unhandled exception.\n{0}\nSee log for more details.", (args.ExceptionObject as Exception).Message));
             };
 
             Log("Finding install directories...");
@@ -133,12 +158,13 @@ namespace D2MPClientInstaller
                 }
                 catch (Exception e)
                 {
-                    ShowError("Failed to download the latest client version information. Check your internet connection!");
-                    return;
+                    Log(e.ToString());
+                    ShowError("Failed to download the latest client version information.\nCheck your internet connection!\nSomething is blocking us.");
+                    return;//will exit after the error message anyway
                 }
             }
 
-            Log("Client info: \n"+infos);
+            Log("Client info: \n" + infos);
             var info = infos.Split('|');
             Log("Version string: " + String.Join(",", info));
             var versplit = info[0].Split(':');
@@ -160,7 +186,7 @@ namespace D2MPClientInstaller
                     try
                     {
                         var dlPath = Path.Combine(installdir, "archive.zip");
-                        using(WebClient client = new WebClient())
+                        using (WebClient client = new WebClient())
                         {
                             client.DownloadFile(info[1], dlPath);
                         }
@@ -169,9 +195,8 @@ namespace D2MPClientInstaller
                     catch (Exception ex)
                     {
                         Log(ex.ToString());
-                        ShowError("Problem downloading new D2Moddin launcher: " + ex);
-                        ShowError("You can manually download the client from " + info[1]);
-                        return;
+                        ShowError("Problem downloading new D2Moddin launcher:\n" + ex.Message, info[1]);
+                        return;//will exit after the error message anyway
                     }
                 }
             }

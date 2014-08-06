@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>D2MPClientInstaller</RootNamespace>
     <AssemblyName>D2MPClientInstaller</AssemblyName>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
   </PropertyGroup>
@@ -45,7 +45,10 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="..\D2MPClient\UnZip.cs">
@@ -67,6 +70,12 @@
     <Compile Include="Encryption\ZipAESTransform.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="SharpZipBaseException.cs" />
+    <Compile Include="tryAgainForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="tryAgainForm.Designer.cs">
+      <DependentUpon>tryAgainForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="Zip\Compression\Deflater.cs" />
     <Compile Include="Zip\Compression\DeflaterConstants.cs" />
     <Compile Include="Zip\Compression\DeflaterEngine.cs" />
@@ -97,6 +106,11 @@
   <ItemGroup>
     <None Include="App.config" />
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="tryAgainForm.resx">
+      <DependentUpon>tryAgainForm.cs</DependentUpon>
+    </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
