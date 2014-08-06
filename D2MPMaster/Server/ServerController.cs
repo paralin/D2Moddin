@@ -202,7 +202,7 @@ namespace D2MPMaster.Server
                        {
                            "d2lobby_gg_time " + (lobby.enableGG ? "10" : "-1"),
 #if DEBUG||DEV
-                           "match_post_url \"http://127.0.0.1:8080/gdataapi/matchres\"",
+                           "match_post_url \"http://172.250.79.95:8080/gdataapi/matchres\"",
 #else
                            "match_post_url \"http://" + Settings.Default.WebAddress + "/gdataapi/matchres\"",
 #endif

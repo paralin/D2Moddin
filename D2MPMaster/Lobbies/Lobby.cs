@@ -53,6 +53,10 @@ namespace D2MPMaster.Lobbies
         public GameState state { get; set; }
         public ServerRegion region { get; set; }
         private LobbyStatus _status;
+
+        [ExcludeField(Collections = new[] { "publicLobbies", "lobbies" })]
+        public bool allowLeave { get; set; }
+
         public LobbyStatus status
         {
             get

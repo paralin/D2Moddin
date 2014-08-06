@@ -41,6 +41,8 @@ namespace D2MPMaster.Model
 
         public string mapOverride { get; set; }
 
+        public bool allowLeave { get; set; }
+
         /// <summary>
         /// Use some other static hosting off of AWS
         /// </summary>

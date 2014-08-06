@@ -427,24 +427,26 @@ namespace D2MPMaster.Lobbies
             if (controller.lobby == null || controller.user == null) return;
             var lob = controller.lobby;
             controller.lobby = null;
-            if (lob.status > LobbyStatus.Queue) return;
+            if (lob.status > LobbyStatus.Queue && !lob.allowLeave) return;
             //Find the player
             var team = RemoveFromTeam(lob, controller.user.steam.steamid);
-            if ((lob.TeamCount(lob.dire) == 0 && lob.TeamCount(lob.radiant) == 0) || lob.creatorid == controller.user.Id)
+            if (((lob.TeamCount(lob.dire) == 0 && lob.TeamCount(lob.radiant) == 0) || (lob.creatorid == controller.user.Id)) && lob.status <= LobbyStatus.Queue)
             {
                 CloseLobby(lob);
                 return;
             }
 
-            if (lob.LobbyType == LobbyType.Matchmaking)
+            if (lob.LobbyType == LobbyType.Matchmaking && lob.status <= LobbyStatus.Queue)
             {
                 HandleLeaveRankedLobby(controller, lob);
                 return;
             }
+
             if (lob.status == LobbyStatus.Queue)
             {
                 CancelQueue(lob);
             }
+
             TransmitLobbyUpdate(lob, new[] { "radiant", "dire" });
         }
 
@@ -500,7 +502,7 @@ namespace D2MPMaster.Lobbies
             if (controller.lobby == null || controller.user == null) return;
             var lob = controller.lobby;
             controller.lobby = null;
-            if (lob.status > LobbyStatus.Queue) return; //will be auto handled later
+            if (lob.status > LobbyStatus.Queue && !lob.allowLeave) return;
             if (lob.LobbyType == LobbyType.PlayerTest)
             {
                 RemoveFromTeam(lob, controller.user.steam.steamid);
@@ -537,14 +539,19 @@ namespace D2MPMaster.Lobbies
                 HandleLeaveRankedLobby(controller, lob);
                 return;
             }
-            lob.status = LobbyStatus.Start;
-            CancelQueue(lob);
+
+            if (lob.status < LobbyStatus.Configure)
+            {
+                CancelQueue(lob);
+                lob.status = LobbyStatus.Start;
+                if ((lob.TeamCount(lob.dire) == 0 && lob.TeamCount(lob.radiant) == 0) || lob.creatorid == controller.user.Id)
+                {
+                    CloseLobby(lob);
+                }
+            }
+            
             if (team != null)
                 TransmitLobbyUpdate(lob, new[] { team });
-            if ((lob.TeamCount(lob.dire) == 0 && lob.TeamCount(lob.radiant) == 0) || lob.creatorid == controller.user.Id)
-            {
-                CloseLobby(lob);
-            }
         }
 
         public static void JoinLobby(Lobby lobby, User user, BrowserController controller, string friendId = null)
@@ -638,7 +645,8 @@ namespace D2MPMaster.Lobbies
                                   user.authItems.Contains("moderator"))),
 #endif
 							serverIP = string.Empty,
-                            disablePause = !mod.enablePause
+                            disablePause = !mod.enablePause,
+                            allowLeave = mod.allowLeave
                         };
             lob.radiant[0] = Player.FromUser(user, true);
             lock(PublicLobbies)
@@ -1149,7 +1157,7 @@ namespace D2MPMaster.Lobbies
                     if (plyr != null)
                     {
                         log.Debug(lob.id + " -> player disconnected: " + plyr.player.name);
-                        if (lob.LobbyType == LobbyType.Normal && lob.state < GameState.PostGame && lob.state > GameState.WaitLoad)
+                        if (lob.LobbyType == LobbyType.Normal && lob.state < GameState.PostGame && lob.state > GameState.WaitLoad && !lob.allowLeave)
                         {
                             var browser = Browsers.Find(m => m.user != null && m.user.steam.steamid == plyr.player.steam).FirstOrDefault();
                             if (browser != null)

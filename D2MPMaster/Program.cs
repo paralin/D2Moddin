@@ -52,6 +52,7 @@ namespace D2MPMaster
 				IList<Uri> uris = new List<Uri>();
 #if DEBUG||DEV
                 uris.Add(new Uri("http://127.0.0.1:" + Settings.Default.WebserverBind));
+                //uris.Add(new Uri("http://10.0.1.3:" + Settings.Default.WebserverBind));
 #else
                 //uris.Add(new Uri("http://net1.d2modd.in:" + Settings.Default.WebserverBind));
                 uris.Add(new Uri("http://"+Settings.Default.WebAddress+":"+Settings.Default.WebserverBind));
