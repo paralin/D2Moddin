@@ -20,4 +20,8 @@ namespace D2MPMaster.Browser.Methods
     {
         public string steamid;
     }
+    public class JoinParty
+    {
+        public string steamid;
+    }
 }
