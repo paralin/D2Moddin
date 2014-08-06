@@ -32,6 +32,9 @@ namespace D2MPMaster.Matchmaking
          [ExcludeField(Collections = new[] { "matchmake" })]
         public Dictionary<string, int> Ratings { get; set; }
 
+        [ExcludeField(Collections = new[] { "matchmake" })]
+        public ServerRegion Region { get; set; }
+
         public int TryCount { get; set; }
 
         public int UserCount
@@ -49,6 +52,10 @@ namespace D2MPMaster.Matchmaking
             this.Users = this.Users.Union(pMatch.Users).ToList<User>();
             this.Mods = this.GetMatchedMods(pMatch);
 
+            //give priority to localized matches
+            if (pMatch.Region != ServerRegion.UNKNOWN)
+                this.Region = pMatch.Region;
+
             this.UpdateRating();
         }
         
@@ -62,6 +69,7 @@ namespace D2MPMaster.Matchmaking
 
             //not the same match
             if (this != pMatch && pMatch.Status != MatchmakeStatus.AlreadyMatched && //not already matched
+                (this.Region == ServerRegion.UNKNOWN || pMatch.Region == ServerRegion.UNKNOWN || this.Region == pMatch.Region) && //all or same region
                 (pTeam || this.Users.Count <= (MatchmakeManager.TEAM_PLAYERS - pMatch.Users.Count))) //there is room for everybody
             {
                 result = this.GetMatchedMods(pMatch).Length > 0;
