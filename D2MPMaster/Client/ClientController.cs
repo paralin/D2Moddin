@@ -79,7 +79,7 @@ namespace D2MPMaster.Client
 		{
 			//Figure out UID
 		    User user = null;
-			foreach (var steamid in InitData.SteamIDs.Where(steamid => steamid.Length == 17))
+			foreach (var steamid in InitData.SteamIDs.Where(steamid => steamid != null && steamid.Length == 17))
 			{
 				var userb = Mongo.Users.FindOneAs<User>(Query.EQ("steam.steamid", steamid));
 			    if (userb != null)
@@ -190,7 +190,7 @@ namespace D2MPMaster.Client
                                 this.SendJson(JObject.FromObject(new Shutdown()).ToString(Formatting.None), "commands");
                                 return;
                             }
-                            foreach (var mod in msg.Mods.Where(mod => mod.name != null && mod.version != null)) Mods.Add(mod);
+                            foreach (var mod in msg.Mods.Where(mod => mod != null && mod.name != null && mod.version != null)) Mods.Add(mod);
                             //Insert the client into the DB
                             RegisterClient();
                             break;
