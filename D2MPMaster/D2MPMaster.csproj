@@ -131,8 +131,11 @@
     <Compile Include="Lobbies\Player.cs" />
     <Compile Include="Matchmaking\Matchmake.cs" />
     <Compile Include="Matchmaking\MatchmakeManager.cs" />
+    <Compile Include="Party\Party.cs" />
     <Compile Include="Model\MatchData.cs" />
     <Compile Include="Model\ResultFailure.cs" />
+    <Compile Include="Party\PartyManager.cs" />
+    <Compile Include="Party\PartyMember.cs" />
     <Compile Include="TaskScheduler.cs" />
     <Compile Include="WebHandler\MatchDataServer.cs" />
     <Compile Include="Model\ClientRecord.cs" />

@@ -22,6 +22,7 @@ using XSockets.Core.XSocket.Helpers;
 using PluginRange = XSockets.Plugin.Framework.PluginRange;
 using Query = MongoDB.Driver.Builders.Query;
 using D2MPMaster.Matchmaking;
+using D2MPMaster.Party;
 
 namespace D2MPMaster.Lobbies
 {
@@ -1094,6 +1095,8 @@ namespace D2MPMaster.Lobbies
             else if (lob.LobbyType == LobbyType.Matchmaking)
             {
                 var didntFail = new List<BrowserController>(10);
+                var failedParties = new List<Party.Party>(4); // Parties that contains one or more players who didn't load.
+                var matchedPartyIds = new List<string>(4);
                 foreach (var player in lob.getPlayers())
                 {
                     var browser = Browsers.Find(m => m.user != null && m.user.steam.steamid == player.steam).FirstOrDefault();
@@ -1103,6 +1106,7 @@ namespace D2MPMaster.Lobbies
                         BrowserController.SetTested(browser.user, false);
                         browser.user.profile.PreventMMUntil = DateTime.UtcNow + TimeSpan.FromMinutes(5);
                         browser.SaveUser();
+                        if (browser.party != null) failedParties.Add(browser.party);
                     }
                     else
                         didntFail.Add(browser);
@@ -1110,10 +1114,29 @@ namespace D2MPMaster.Lobbies
                     browser.matchmake = null;
                 }
                 CloseLobby(lob);
-                foreach (var player in didntFail)
+                foreach (var browser in didntFail)
                 {
-                    //Requeue them. In the future group the people from their party.
-                    player.matchmake = MatchmakeManager.CreateMatchmake(player.user, player.QueuedWithMods, lob.region);
+                    if (browser == null) continue;
+
+                    if (browser.party != null)
+                    {
+                        if (!failedParties.Contains(browser.party) && !matchedPartyIds.Contains(browser.party.id))
+                        {
+                            var partyBrowsers = Browsers.Find(x => x.party != null && x.user != null && x.party.id == browser.party.id);
+                            var users = partyBrowsers.Select(x => x.user).ToArray();
+                            var matchmake = MatchmakeManager.CreateMatchmake(users, browser.QueuedWithMods);
+                            foreach (var partymemberBrowser in didntFail.Where(x=>x.party == browser.party))
+                            {
+                                partymemberBrowser.matchmake = matchmake;
+                            }
+                            matchedPartyIds.Add(browser.party.id);
+                        }
+                    }
+                    else
+                    {
+                        //Requeue
+                        browser.matchmake = MatchmakeManager.CreateMatchmake(browser.user, browser.QueuedWithMods);
+                    }
                 }
             }
         }

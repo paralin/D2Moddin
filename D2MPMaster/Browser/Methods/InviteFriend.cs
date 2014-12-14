@@ -13,4 +13,12 @@ namespace D2MPMaster.Browser.Methods
         /// </summary>
         public string steamid { get; set; }
     }
+
+    class InviteFriendParty
+    {
+        /// <summary>
+        /// The steamid of the friend to invite
+        /// </summary>
+        public string steamid { get; set; }
+    }
 }

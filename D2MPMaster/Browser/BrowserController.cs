@@ -20,7 +20,7 @@ using XSockets.Core.Common.Socket.Event.Interface;
 using XSockets.Core.XSocket;
 using XSockets.Core.XSocket.Helpers;
 using InstallMod = D2MPMaster.Browser.Methods.InstallMod;
-
+using D2MPMaster.Party;
 
 namespace D2MPMaster.Browser
 {
@@ -105,6 +105,19 @@ namespace D2MPMaster.Browser
         }
 
         public List<Friend> friendlist = null;
+        public Party.Party _party = null;
+        public Party.Party party
+        {
+            get { return _party; }
+            set
+            {
+                _party = value;
+                if (value != null)
+                    this.AsyncSend(PartySnapshot(value), req => { });
+                else
+                    this.AsyncSend(ClearPartyR(), req => { });
+            }
+        }
 
         #endregion
 
@@ -448,7 +461,75 @@ namespace D2MPMaster.Browser
                                                               return;
                                                           }
                                                           QueuedWithMods = mods.ToArray();
-                                                          matchmake = MatchmakeManager.CreateMatchmake(user, QueuedWithMods, req.region);
+                                                          // Check if user is in a party with 2 or more users
+                                                          if (party != null)
+                                                          {
+                                                              if (party.users.Count() > 1)
+                                                              {
+                                                                  // Only the party host should start queueing for matchmaking
+                                                                  if (user.Id == party.creatorid)
+                                                                  {
+                                                                      RespondError(jdata, "You are not the party host");
+                                                                      return;
+                                                                  }
+                                                                  // Gather all browsers of the party
+                                                                  var pBrowsers = this.Find(x => x.party != null && x.party.id == party.id && x != this);
+                                                                  var errorList = new List<string>();
+                                                                  // Check if they are ready for matchmaking.
+                                                                  foreach (var b in pBrowsers)
+                                                                  {
+                                                                      // No need to check this again, we already did that
+                                                                      if (b != this)
+                                                                      {
+                                                                          var result = CheckMatchmake(b, QueuedWithMods);
+
+                                                                          // Uh-oh... A user isn't ready. Add the error to the errorList.
+                                                                          if (result != null)
+                                                                              errorList.Add(result);
+                                                                      }
+
+                                                                  }
+                                                                  // Submit error message to each user in party.
+                                                                  if (errorList.Count > 0)
+                                                                  {
+                                                                      foreach (var eBrowser in pBrowsers)
+                                                                      {
+                                                                          eBrowser.RespondError(jdata, String.Join(Environment.NewLine, errorList.ToArray()));
+                                                                      }
+                                                                      return;
+                                                                  }
+                                                                  // All users are ready. Let's put them in the queue
+                                                                  var m = MatchmakeManager.CreateMatchmake(pBrowsers.Select(x => x.user).ToArray(), QueuedWithMods);
+                                                                  foreach (var b in pBrowsers)
+                                                                  {
+                                                                      b.matchmake = m;
+                                                                  }
+                                                              }
+                                                              else
+                                                              {
+                                                                  // We're alone in a party. Let's remove this party and start matchmaking
+                                                                  party = null;
+                                                                  matchmake = MatchmakeManager.CreateMatchmake(user, QueuedWithMods);
+                                                              }
+                                                          }
+                                                          else
+                                                              matchmake = MatchmakeManager.CreateMatchmake(user, QueuedWithMods);
+                                                          break;
+                                                      }
+                                                  case "joinparty":
+                                                      {
+                                                          if (user == null)
+                                                          {
+                                                              RespondError(jdata, "You are not logged in yet.");
+                                                              return;
+                                                          }
+                                                          if (lobby != null)
+                                                          {
+                                                              // We're in a lobby. Let's leave this lobby...
+                                                              LobbyManager.LeaveLobby(this);
+                                                          }
+                                                          var req = jdata["req"].ToObject<JoinParty>();
+                                                          PartyManager.JoinParty(this, jdata, req.steamid);
                                                           break;
                                                       }
                                                   case "switchteam":
@@ -777,6 +858,17 @@ namespace D2MPMaster.Browser
                                                       FriendManager.InviteFriend(this, req.steamid);
                                                       break;
                                                   }
+                                                  case "invitefriendparty":
+                                                  {
+                                                      if (user == null)
+                                                      {
+                                                          RespondError(jdata, "You are not logged in.");
+                                                          return;
+                                                      }
+                                                      var req = jdata["req"].ToObject<InviteFriendParty>();
+                                                      PartyManager.InviteFriend(this, req.steamid);
+                                                      break;
+                                                  }
                                                   case "joinpasswordlobby":
                                                       {
                                                           if (user == null)
@@ -1055,6 +1147,7 @@ namespace D2MPMaster.Browser
             if (!isDuplicate)
             {
                 LobbyManager.ForceLeaveLobby(this);
+                PartyManager.LeaveParty(this);
                 MatchmakeManager.LeaveMatchmake(this);
                 if(this.user != null)
                     FriendManager.updateStatus(this.user.steam.steamid, FriendStatus.Offline);
@@ -1095,6 +1188,23 @@ namespace D2MPMaster.Browser
             return new TextArgs(upd.ToString(Formatting.None), "lobby");
         }
 
+        public static ITextArgs PartySnapshot(Party.Party p)
+        {
+            var upd = new JObject();
+            upd["msg"] = "colupd";
+            upd["ops"] = new JArray { DiffGenerator.RemoveAll("parties"), p.Add("parties") };
+            return new TextArgs(upd.ToString(Formatting.None), "party");
+        }
+
+        public static ITextArgs ClearPartyR()
+        {
+            var upd = new JObject();
+            upd["msg"] = "colupd";
+            upd["ops"] = new JArray { DiffGenerator.RemoveAll("parties") };
+            var msg = upd.ToString(Formatting.None);
+            return new TextArgs(msg, "party");
+        }
+
         public static ITextArgs PublicLobbySnapshot()
         {
             var upd = new JObject();
@@ -1118,6 +1228,7 @@ namespace D2MPMaster.Browser
             upd["ops"] = ops;
             return new TextArgs(upd.ToString(Formatting.None), "lobby");
         }
+
         public static ITextArgs MatchmakeSnapshot(Matchmake mm1)
         {
             var upd = new JObject();
@@ -1167,6 +1278,15 @@ namespace D2MPMaster.Browser
             return new TextArgs(cmd.ToString(Formatting.None), "invite");
         }
 
+        public static ITextArgs inviteFriendParty(Lobby l, string sourceSteamid)
+        {
+            var cmd = new JObject();
+            cmd["msg"] = "inviteParty";
+            cmd["source"] = sourceSteamid;
+            cmd["mod"] = Mods.Mods.ByID(l.mod).fullname;
+            return new TextArgs(cmd.ToString(Formatting.None), "invite");
+        }
+
         public static ITextArgs ClearPublicLobbies()
         {
             var upd = new JObject();
@@ -1199,6 +1319,46 @@ namespace D2MPMaster.Browser
             var upd = new JObject();
             upd["msg"] = "updatemods";
             return new TextArgs(upd.ToString(Formatting.None), "updatemods");
+        }
+
+        /// <summary>
+        /// Check if a user is ready for matchmaking
+        /// </summary>
+        /// <param name="controller">BrowserController of a user</param>
+        /// <returns>An error message.</returns>
+        public static string CheckMatchmake(BrowserController controller, Mod[] mods)
+        {
+            if (controller.user == null)
+            {
+                return "A user not logged in!";
+            }
+            if (controller.lobby != null)
+            {
+               return controller.user.profile.name + " is already in a lobby.";
+
+            }
+            if (controller.matchmake != null)
+            {
+                return controller.user.profile.name + " is already in a matchmaking queue.";
+            }
+            if (controller.user.profile.PreventMMUntil > DateTime.UtcNow)
+            {
+                return controller.user.profile.name + " is prevented from matchmaking until " +
+                    Utils.TimeFromNow(controller.user.profile.PreventMMUntil, true) + ".";
+            }
+            var client = ClientsController.Find(m => m.UID == controller.user.Id).FirstOrDefault();
+            foreach (var mod in mods)
+            {
+                if (client == null || !client.Mods.Any(c => c.name == mod.name && c.version == mod.version))
+                {
+                    var obj = new JObject();
+                    obj["msg"] = "modneeded";
+                    obj["name"] = mod.name;
+                    controller.Send(obj.ToString(Formatting.None));
+                    return controller.user.profile.name + " needs to install " + mod.fullname;
+                }
+            }
+            return null;
         }
     }
 }

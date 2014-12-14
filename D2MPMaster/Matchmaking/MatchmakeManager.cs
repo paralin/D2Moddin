@@ -296,6 +296,44 @@ namespace D2MPMaster.Matchmaking
             return matchmake;
         }
 
+        public static Matchmake CreateMatchmake(User[] users, Mod[] mods)
+        {
+            var Users = new List<User>(TEAM_PLAYERS);
+            foreach (var user in users)
+            {
+                //loop through each mod
+                foreach (var mod in mods)
+                {
+                    //if the user does not have a MMR for it
+                    if (user.profile.mmr == null) user.profile.mmr = new Dictionary<string, int>();
+                    if (!user.profile.mmr.ContainsKey(mod.name))
+                    {
+                        //Assign base
+                        user.profile.mmr.Add(mod.name, BaseMmr);
+                    }
+                }
+                Mongo.Users.Save(user);
+                Users.Add(user);
+            }
+
+            var matchmake = new Matchmake()
+            {
+                id = Utils.RandomString(17),
+                Users = Users,
+                Mods = mods.Select(x => x.name).ToArray(),
+                TryCount = 1
+            };
+            matchmake.UpdateRating();
+            log.InfoFormat("User {0} started matchmaking in a party.", Users.FirstOrDefault().profile.name);
+
+            //add to the queue
+            lock (inMatchmaking)
+            {
+                inMatchmaking.Add(matchmake);
+            }
+            return matchmake;
+        }
+
         public static void LeaveMatchmake(BrowserController controller)
         {
             if (controller.matchmake == null || controller.user == null)
