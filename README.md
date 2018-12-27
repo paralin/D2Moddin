@@ -1,7 +1,7 @@
 ![](http://i.imgur.com/UgN4uSs.png)
 ![](http://i.imgur.com/i0hzUwu.png)
 
-This is the final open source release of the [D2Moddin](http://d2modd.in/) client addon manager and launcher, and server network code.
+This is the final open source release of the [D2Moddin](http://paral.in/the-d2moddin-project/) client addon manager and launcher, and server network code.
 
 ## The Manager
 The manager is responsible for connecting to D2Moddin, checking the SteamIDs of the active users on the machine, detecting the versions of downloaded addons and, when requested, downloading and decompressing new addons. It runs without admin privileges of any kind and is as small and ephemeral as possible.
@@ -17,7 +17,7 @@ The launcher simply downloads the latest version of the D2Moddin manager. It is 
 
 The executable is as simple as possible, and follows this task list:
 
-1. Compare the existing D2Moddin manager version with the latest version (found at the [clientver](http://d2modd.in/clientver) page).
+1. Compare the existing D2Moddin manager version with the latest version (found at the clientver page).
 2. If the latest version is already downloaded, simply launch it.
 3. If an update is required (or it has never been run before), download it and extract the latest version to `%AppData%/D2MP/`, a temporary directory.
 
@@ -39,4 +39,4 @@ The system uses XSockets 3.0. We were working on an XSockets 4 implementation wh
 Full Writeup
 ============
 
-I have a writeup on everything you could possibly want to know about the project on [my blog](http://d2modd.in).
+I have a writeup on everything you could possibly want to know about the project on [my blog](http://paral.in/the-d2moddin-project/).
